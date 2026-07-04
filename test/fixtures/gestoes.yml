@@ -1,0 +1,9 @@
+# A vigente cobre o ano corrente; a antiga é a gestão anterior (consecutivas
+# compartilham o ano de fronteira, como na liga real).
+vigente:
+  ano_inicio: <%= Date.current.year - 1 %>
+  ano_fim: <%= Date.current.year + 1 %>
+
+antiga:
+  ano_inicio: <%= Date.current.year - 3 %>
+  ano_fim: <%= Date.current.year - 1 %>

@@ -8,6 +8,14 @@ Rails.application.routes.draw do
   resource :profile, only: %i[show update]
   resources :oauth_identities, only: :destroy
 
+  # Membros: cards com filtros (RF-MEM), grafo (RF-GRA) e geneograma (RF-GEN)
+  resources :members, only: %i[index show] do
+    collection do
+      get :grafo
+      get :geneograma
+    end
+  end
+
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check

@@ -9,3 +9,27 @@ diretor:
   name: Dario Diretor
   role: diretoria
   encrypted_password: <%= Devise::Encryptor.digest(User, "senha-segura-123") %>
+
+presidente_user:
+  email: presidente@example.com
+  name: Paula Presidente
+  role: presidencia
+  encrypted_password: <%= Devise::Encryptor.digest(User, "senha-segura-123") %>
+
+vice_user:
+  email: vice@example.com
+  name: Vitor Vice
+  role: presidencia
+  encrypted_password: <%= Devise::Encryptor.digest(User, "senha-segura-123") %>
+
+orientador_user:
+  email: orientador@example.com
+  name: Olga Orientadora
+  role: membro
+  encrypted_password: <%= Devise::Encryptor.digest(User, "senha-segura-123") %>
+
+membro_user:
+  email: membro@example.com
+  name: Marcos Membro
+  role: membro
+  encrypted_password: <%= Devise::Encryptor.digest(User, "senha-segura-123") %>

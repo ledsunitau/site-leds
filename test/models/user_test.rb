@@ -33,6 +33,12 @@ class UserTest < ActiveSupport::TestCase
     assert_nil users(:diretor).discord_username
   end
 
+  test "destruir usuário destrói o membro via callbacks (purga anexos)" do
+    assert_difference "Member.count", -1 do
+      users(:membro_user).destroy!
+    end
+  end
+
   test "foto rejeita arquivo que não é imagem" do
     user = users(:ana)
     user.foto.attach(io: StringIO.new("MZ..."), filename: "virus.exe",
