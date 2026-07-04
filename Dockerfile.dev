@@ -1,0 +1,23 @@
+# Ambiente de DESENVOLVIMENTO (usado pelo docker-compose.yml).
+# O Dockerfile (sem sufixo) segue sendo o de produção, usado pelo Kamal.
+ARG RUBY_VERSION=3.4.9
+FROM docker.io/library/ruby:$RUBY_VERSION-slim
+
+WORKDIR /rails
+
+# build-essential/libpq-dev: compilar a gem pg; postgresql-client: psql/pg_dump
+# exigidos pelo db:prepare com schema_format = :sql; libvips: Active Storage.
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+      build-essential curl git libpq-dev libvips libyaml-dev pkg-config postgresql-client && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+ENV BUNDLE_PATH="/usr/local/bundle"
+
+COPY Gemfile Gemfile.lock ./
+RUN bundle install
+
+# O código vem por bind mount (ver docker-compose.yml); os gems ficam no
+# volume bundle_cache, então mudar o Gemfile pede só `bundle install`, não rebuild.
+EXPOSE 3000
+CMD ["bin/rails", "server", "-b", "0.0.0.0"]

@@ -2,6 +2,14 @@
 
 # Mark the database schema as having been generated.
 db/schema.rb linguist-generated
+db/*structure.sql linguist-generated
+
+# Dumps SQL são gerados dentro de containers Linux e lidos pelo psql: força LF.
+db/*.sql text eol=lf
+
+# Binstubs run inside Linux containers and CI: force LF (except Windows .cmd wrappers).
+bin/* text eol=lf
+bin/*.cmd text eol=crlf
 
 # Mark any vendored files as having been vendored.
 vendor/* linguist-vendored
