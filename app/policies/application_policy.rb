@@ -36,6 +36,14 @@ class ApplicationPolicy
     false
   end
 
+  private
+
+  # Papéis com poder de gestão (matriz de permissões, seção 3.1 da spec) —
+  # usado pelas policies de escrita de todos os domínios.
+  def gestor?
+    user.present? && (user.diretoria? || user.presidencia?)
+  end
+
   class Scope
     def initialize(user, scope)
       @user = user

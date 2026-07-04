@@ -1,0 +1,21 @@
+pres:
+  user: presidente_user
+  founder: true
+  bio: Fundou a liga.
+
+vice:
+  user: vice_user
+  founder: true
+  padrinho: pres
+
+diretor_cientifica:
+  user: diretor
+  padrinho: pres
+
+orientador:
+  user: orientador_user
+
+membro_comum:
+  user: membro_user
+  padrinho: diretor_cientifica
+  bio: Entrou pela Científica.

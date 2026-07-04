@@ -140,6 +140,140 @@ CREATE TABLE public.ar_internal_metadata (
 
 
 --
+-- Name: diretorias; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.diretorias (
+    id bigint NOT NULL,
+    nome character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: diretorias_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.diretorias_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: diretorias_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.diretorias_id_seq OWNED BY public.diretorias.id;
+
+
+--
+-- Name: gestoes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.gestoes (
+    id bigint NOT NULL,
+    ano_inicio integer NOT NULL,
+    ano_fim integer NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT gestoes_anos_check CHECK ((ano_fim > ano_inicio))
+);
+
+
+--
+-- Name: gestoes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.gestoes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: gestoes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.gestoes_id_seq OWNED BY public.gestoes.id;
+
+
+--
+-- Name: mandatos; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.mandatos (
+    id bigint NOT NULL,
+    member_id bigint NOT NULL,
+    gestao_id bigint NOT NULL,
+    diretoria_id bigint,
+    cargo character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT mandatos_cargo_check CHECK (((cargo)::text = ANY (ARRAY[('presidente'::character varying)::text, ('vice'::character varying)::text, ('diretor'::character varying)::text, ('orientador'::character varying)::text, ('membro'::character varying)::text])))
+);
+
+
+--
+-- Name: mandatos_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.mandatos_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: mandatos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.mandatos_id_seq OWNED BY public.mandatos.id;
+
+
+--
+-- Name: members; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.members (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    padrinho_id bigint,
+    founder boolean DEFAULT false NOT NULL,
+    bio text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT members_padrinho_check CHECK (((padrinho_id IS NULL) OR (padrinho_id <> id)))
+);
+
+
+--
+-- Name: members_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.members_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: members_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.members_id_seq OWNED BY public.members.id;
+
+
+--
 -- Name: oauth_identities; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -151,7 +285,7 @@ CREATE TABLE public.oauth_identities (
     username character varying,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT oauth_identities_provider_check CHECK (((provider)::text = ANY ((ARRAY['google'::character varying, 'discord'::character varying])::text[])))
+    CONSTRAINT oauth_identities_provider_check CHECK (((provider)::text = ANY (ARRAY[('google'::character varying)::text, ('discord'::character varying)::text])))
 );
 
 
@@ -198,7 +332,7 @@ CREATE TABLE public.users (
     remember_created_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT users_role_check CHECK (((role)::text = ANY ((ARRAY['comunidade'::character varying, 'escritor'::character varying, 'parceiro'::character varying, 'membro'::character varying, 'diretoria'::character varying, 'presidencia'::character varying])::text[])))
+    CONSTRAINT users_role_check CHECK (((role)::text = ANY (ARRAY[('comunidade'::character varying)::text, ('escritor'::character varying)::text, ('parceiro'::character varying)::text, ('membro'::character varying)::text, ('diretoria'::character varying)::text, ('presidencia'::character varying)::text])))
 );
 
 
@@ -240,6 +374,34 @@ ALTER TABLE ONLY public.active_storage_blobs ALTER COLUMN id SET DEFAULT nextval
 --
 
 ALTER TABLE ONLY public.active_storage_variant_records ALTER COLUMN id SET DEFAULT nextval('public.active_storage_variant_records_id_seq'::regclass);
+
+
+--
+-- Name: diretorias id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.diretorias ALTER COLUMN id SET DEFAULT nextval('public.diretorias_id_seq'::regclass);
+
+
+--
+-- Name: gestoes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gestoes ALTER COLUMN id SET DEFAULT nextval('public.gestoes_id_seq'::regclass);
+
+
+--
+-- Name: mandatos id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mandatos ALTER COLUMN id SET DEFAULT nextval('public.mandatos_id_seq'::regclass);
+
+
+--
+-- Name: members id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.members ALTER COLUMN id SET DEFAULT nextval('public.members_id_seq'::regclass);
 
 
 --
@@ -286,6 +448,38 @@ ALTER TABLE ONLY public.active_storage_variant_records
 
 ALTER TABLE ONLY public.ar_internal_metadata
     ADD CONSTRAINT ar_internal_metadata_pkey PRIMARY KEY (key);
+
+
+--
+-- Name: diretorias diretorias_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.diretorias
+    ADD CONSTRAINT diretorias_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: gestoes gestoes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gestoes
+    ADD CONSTRAINT gestoes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: mandatos mandatos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mandatos
+    ADD CONSTRAINT mandatos_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: members members_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.members
+    ADD CONSTRAINT members_pkey PRIMARY KEY (id);
 
 
 --
@@ -341,6 +535,69 @@ CREATE UNIQUE INDEX index_active_storage_variant_records_uniqueness ON public.ac
 
 
 --
+-- Name: index_diretorias_on_nome; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_diretorias_on_nome ON public.diretorias USING btree (nome);
+
+
+--
+-- Name: index_gestoes_on_ano_inicio; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_gestoes_on_ano_inicio ON public.gestoes USING btree (ano_inicio);
+
+
+--
+-- Name: index_mandatos_on_cargo; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_mandatos_on_cargo ON public.mandatos USING btree (cargo);
+
+
+--
+-- Name: index_mandatos_on_diretoria_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_mandatos_on_diretoria_id ON public.mandatos USING btree (diretoria_id);
+
+
+--
+-- Name: index_mandatos_on_gestao_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_mandatos_on_gestao_id ON public.mandatos USING btree (gestao_id);
+
+
+--
+-- Name: index_mandatos_on_member_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_mandatos_on_member_id ON public.mandatos USING btree (member_id);
+
+
+--
+-- Name: index_mandatos_on_member_id_and_gestao_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_mandatos_on_member_id_and_gestao_id ON public.mandatos USING btree (member_id, gestao_id);
+
+
+--
+-- Name: index_members_on_padrinho_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_members_on_padrinho_id ON public.members USING btree (padrinho_id);
+
+
+--
+-- Name: index_members_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_members_on_user_id ON public.members USING btree (user_id);
+
+
+--
 -- Name: index_oauth_identities_on_provider_and_uid; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -369,6 +626,22 @@ CREATE UNIQUE INDEX index_users_on_reset_password_token ON public.users USING bt
 
 
 --
+-- Name: members fk_rails_1848f16cd8; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.members
+    ADD CONSTRAINT fk_rails_1848f16cd8 FOREIGN KEY (padrinho_id) REFERENCES public.members(id) ON DELETE SET NULL;
+
+
+--
+-- Name: members fk_rails_2e88fb7ce9; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.members
+    ADD CONSTRAINT fk_rails_2e88fb7ce9 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: oauth_identities fk_rails_2f75762ff1; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -393,12 +666,40 @@ ALTER TABLE ONLY public.active_storage_attachments
 
 
 --
+-- Name: mandatos fk_rails_cc3407d2c8; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mandatos
+    ADD CONSTRAINT fk_rails_cc3407d2c8 FOREIGN KEY (gestao_id) REFERENCES public.gestoes(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: mandatos fk_rails_ea23ad2fbc; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mandatos
+    ADD CONSTRAINT fk_rails_ea23ad2fbc FOREIGN KEY (member_id) REFERENCES public.members(id) ON DELETE CASCADE;
+
+
+--
+-- Name: mandatos fk_rails_f5a206f86f; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mandatos
+    ADD CONSTRAINT fk_rails_f5a206f86f FOREIGN KEY (diretoria_id) REFERENCES public.diretorias(id) ON DELETE SET NULL;
+
+
+--
 -- PostgreSQL database dump complete
 --
 
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260704060003'),
+('20260704060002'),
+('20260704060001'),
+('20260704060000'),
 ('20260704045151'),
 ('20260704045150'),
 ('20260704045149');

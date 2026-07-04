@@ -14,3 +14,15 @@
 # ActiveSupport::Inflector.inflections(:en) do |inflect|
 #   inflect.acronym "RESTful"
 # end
+
+# Nomes de domínio em português que o inflector inglês erra:
+#   - "-ao" ganha "s" simples (gestao -> "gestaos");
+#   - "-ia" é tratado como plural latino e fica IGUAL (diretoria -> "diretoria",
+#     regra default /([ti])a$/ para criteria/media).
+# Toda branch que criar tabela com nome em português DEVE conferir o plural
+# aqui (futuras: ideia, tecnologia, denuncia, acao, contribuicao,
+# apresentacao, autor->autores, item_pedido->itens_pedido...).
+ActiveSupport::Inflector.inflections(:en) do |inflect|
+  inflect.irregular "gestao", "gestoes"
+  inflect.irregular "diretoria", "diretorias"
+end

@@ -1,0 +1,33 @@
+pres_vigente:
+  member: pres
+  gestao: vigente
+  cargo: presidente
+
+vice_vigente:
+  member: vice
+  gestao: vigente
+  cargo: vice
+
+diretor_vigente:
+  member: diretor_cientifica
+  gestao: vigente
+  cargo: diretor
+  diretoria: cientifica
+
+orientador_vigente:
+  member: orientador
+  gestao: vigente
+  cargo: orientador
+
+membro_vigente:
+  member: membro_comum
+  gestao: vigente
+  cargo: membro
+  diretoria: cientifica
+
+# História para o geneograma: o atual diretor era membro na gestão anterior.
+diretor_antiga:
+  member: diretor_cientifica
+  gestao: antiga
+  cargo: membro
+  diretoria: cientifica

@@ -27,7 +27,7 @@ class ProfilesController < ApplicationController
       name: current_user.name,
       email: current_user.email,
       role: current_user.role,
-      foto_url: current_user.foto.attached? ? url_for(current_user.foto) : nil,
+      foto_url: FotoUrl.para(current_user.foto),
       contas_vinculadas: current_user.oauth_identities.map do |identity|
         { id: identity.id, provider: identity.provider, username: identity.username }
       end
