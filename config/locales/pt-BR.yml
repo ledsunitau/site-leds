@@ -1,0 +1,19 @@
+pt-BR:
+  activerecord:
+    models:
+      user: "Usuário"
+      oauth_identity: "Conta vinculada"
+    attributes:
+      user:
+        name: "Nome"
+        email: "E-mail"
+        password: "Senha"
+        password_confirmation: "Confirmação de senha"
+        current_password: "Senha atual"
+        foto: "Foto"
+  oauth:
+    vinculada: "Conta %{provider} vinculada ao seu perfil."
+    desvinculada: "Conta desvinculada."
+    vinculada_a_outra_conta: "Essa conta externa já está vinculada a outro usuário."
+    sem_email: "Não foi possível obter seu e-mail do provedor. Cadastre-se com e-mail e senha."
+    falha: "Falha na autenticação externa. Tente novamente."

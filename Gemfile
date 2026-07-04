@@ -40,9 +40,25 @@ gem "thruster", require: false
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem "image_processing", "~> 2.0"
 
+# Autenticação: e-mail/senha + OAuth Google e Discord (RF-AUT-01..07)
+gem "devise"
+gem "devise-i18n"
+gem "omniauth-google-oauth2"
+gem "omniauth-discord"
+gem "omniauth-rails_csrf_protection"
+
+# Autorização por papéis (matriz de permissões, seção 3.1 da spec)
+gem "pundit"
+
+# Rate limiting na camada de aplicação (RNF-15)
+gem "rack-attack"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
+
+  # Carrega variáveis do .env (credenciais OAuth etc.) — nunca commitar o .env
+  gem "dotenv-rails"
 
   # Audits gems for known security defects (use config/bundler-audit.yml to ignore issues)
   gem "bundler-audit", require: false

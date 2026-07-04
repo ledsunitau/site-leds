@@ -1,0 +1,11 @@
+ana:
+  email: ana@example.com
+  name: Ana Comunidade
+  role: comunidade
+  encrypted_password: <%= Devise::Encryptor.digest(User, "senha-segura-123") %>
+
+diretor:
+  email: diretor@example.com
+  name: Dario Diretor
+  role: diretoria
+  encrypted_password: <%= Devise::Encryptor.digest(User, "senha-segura-123") %>

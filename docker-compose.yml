@@ -27,6 +27,9 @@ services:
       - "3000:3000"
     environment:
       DB_HOST: db
+    env_file:
+      - path: .env
+        required: false
     depends_on:
       db:
         condition: service_healthy
