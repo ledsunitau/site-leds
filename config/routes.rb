@@ -1,5 +1,12 @@
 Rails.application.routes.draw do
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+  devise_for :users, controllers: {
+    omniauth_callbacks: "users/omniauth_callbacks",
+    sessions: "users/sessions"
+  }
+
+  # Perfil do usuário logado (RF-AUT-06) + desvínculo de contas externas (RF-AUT-05)
+  resource :profile, only: %i[show update]
+  resources :oauth_identities, only: :destroy
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
@@ -9,6 +16,5 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
-  # Defines the root path route ("/")
-  # root "posts#index"
+  root "home#index"
 end

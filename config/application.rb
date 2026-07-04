@@ -20,6 +20,10 @@ module SiteLeds
     # só db/structure.sql preserva isso — schema.rb não representa nada disso.
     config.active_record.schema_format = :sql
 
+    # RNF-11: interface em PT-BR (devise-i18n cobre as mensagens do Devise).
+    config.i18n.default_locale = :"pt-BR"
+    config.i18n.available_locales = [ :"pt-BR", :en ]
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files
