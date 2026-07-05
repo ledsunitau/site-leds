@@ -10,3 +10,16 @@ acao_bot:
   titulo: Bot do Discord
   status: rascunho
   criador: membro_comum
+
+acao_hackathon:
+  detalhe: hackathon (Evento)
+  titulo: Hackathon LEDS
+  descricao: Maratona de código da liga.
+  status: publicada
+  criador: diretor_cientifica
+
+acao_artigo:
+  detalhe: artigo_ed (Artigo)
+  titulo: Estruturas de Dados no Ensino
+  status: publicada
+  criador: diretor_cientifica

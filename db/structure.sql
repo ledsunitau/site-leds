@@ -24,6 +24,26 @@ CREATE EXTENSION IF NOT EXISTS citext WITH SCHEMA public;
 COMMENT ON EXTENSION citext IS 'data type for case-insensitive character strings';
 
 
+--
+-- Name: trg_artigo_temas_max(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.trg_artigo_temas_max() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  -- endurecimento documentado sobre o DDL: trava a linha do artigo para
+  -- serializar inserts concorrentes; sem isto duas transações passam
+  -- do máximo (cada uma vê count=2 e ambas commitam)
+  PERFORM 1 FROM artigos WHERE id = NEW.artigo_id FOR UPDATE;
+  IF (SELECT count(*) FROM artigo_temas WHERE artigo_id = NEW.artigo_id) >= 3 THEN
+    RAISE EXCEPTION 'Um artigo pode ter no máximo 3 temas (artigo_id=%)', NEW.artigo_id;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -166,6 +186,39 @@ ALTER SEQUENCE public.active_storage_variant_records_id_seq OWNED BY public.acti
 
 
 --
+-- Name: apresentacoes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.apresentacoes (
+    id bigint NOT NULL,
+    artigo_id bigint NOT NULL,
+    congresso_id bigint NOT NULL,
+    ano integer,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: apresentacoes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.apresentacoes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: apresentacoes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.apresentacoes_id_seq OWNED BY public.apresentacoes.id;
+
+
+--
 -- Name: ar_internal_metadata; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -175,6 +228,139 @@ CREATE TABLE public.ar_internal_metadata (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL
 );
+
+
+--
+-- Name: artigo_temas; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.artigo_temas (
+    id bigint NOT NULL,
+    artigo_id bigint NOT NULL,
+    tema_id bigint NOT NULL
+);
+
+
+--
+-- Name: artigo_temas_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.artigo_temas_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: artigo_temas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.artigo_temas_id_seq OWNED BY public.artigo_temas.id;
+
+
+--
+-- Name: artigos; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.artigos (
+    id bigint NOT NULL,
+    abstract text,
+    revista character varying,
+    publicacao_url character varying,
+    situacao character varying DEFAULT 'em_desenvolvimento'::character varying NOT NULL,
+    data_finalizacao date,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT artigos_situacao_check CHECK (((situacao)::text = ANY ((ARRAY['em_desenvolvimento'::character varying, 'finalizado'::character varying])::text[]))),
+    CONSTRAINT artigos_situacao_data_check CHECK (((((situacao)::text = 'finalizado'::text) AND (data_finalizacao IS NOT NULL)) OR (((situacao)::text = 'em_desenvolvimento'::text) AND (data_finalizacao IS NULL))))
+);
+
+
+--
+-- Name: artigos_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.artigos_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: artigos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.artigos_id_seq OWNED BY public.artigos.id;
+
+
+--
+-- Name: autores; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.autores (
+    id bigint NOT NULL,
+    artigo_id bigint NOT NULL,
+    member_id bigint,
+    nome character varying NOT NULL,
+    lattes_url character varying,
+    ordem integer DEFAULT 1 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: autores_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.autores_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: autores_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.autores_id_seq OWNED BY public.autores.id;
+
+
+--
+-- Name: congressos; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.congressos (
+    id bigint NOT NULL,
+    nome character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: congressos_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.congressos_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: congressos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.congressos_id_seq OWNED BY public.congressos.id;
 
 
 --
@@ -212,6 +398,72 @@ ALTER SEQUENCE public.contribuicoes_id_seq OWNED BY public.contribuicoes.id;
 
 
 --
+-- Name: convidado_links; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.convidado_links (
+    id bigint NOT NULL,
+    convidado_id bigint NOT NULL,
+    rede character varying NOT NULL,
+    url character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: convidado_links_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.convidado_links_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: convidado_links_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.convidado_links_id_seq OWNED BY public.convidado_links.id;
+
+
+--
+-- Name: convidados; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.convidados (
+    id bigint NOT NULL,
+    evento_id bigint NOT NULL,
+    nome character varying NOT NULL,
+    bio text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: convidados_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.convidados_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: convidados_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.convidados_id_seq OWNED BY public.convidados.id;
+
+
+--
 -- Name: diretorias; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -240,6 +492,74 @@ CREATE SEQUENCE public.diretorias_id_seq
 --
 
 ALTER SEQUENCE public.diretorias_id_seq OWNED BY public.diretorias.id;
+
+
+--
+-- Name: evento_membros; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.evento_membros (
+    id bigint NOT NULL,
+    evento_id bigint NOT NULL,
+    member_id bigint NOT NULL,
+    papel character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT evento_membros_papel_check CHECK (((papel)::text = ANY ((ARRAY['organizador'::character varying, 'participante'::character varying])::text[])))
+);
+
+
+--
+-- Name: evento_membros_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.evento_membros_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: evento_membros_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.evento_membros_id_seq OWNED BY public.evento_membros.id;
+
+
+--
+-- Name: eventos; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.eventos (
+    id bigint NOT NULL,
+    local character varying,
+    data_inicio timestamp(6) without time zone NOT NULL,
+    data_fim timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT eventos_datas_check CHECK (((data_fim IS NULL) OR (data_fim >= data_inicio)))
+);
+
+
+--
+-- Name: eventos_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.eventos_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: eventos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.eventos_id_seq OWNED BY public.eventos.id;
 
 
 --
@@ -488,6 +808,37 @@ ALTER SEQUENCE public.tecnologias_id_seq OWNED BY public.tecnologias.id;
 
 
 --
+-- Name: temas; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.temas (
+    id bigint NOT NULL,
+    nome character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: temas_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.temas_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: temas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.temas_id_seq OWNED BY public.temas.id;
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -589,6 +940,41 @@ ALTER TABLE ONLY public.active_storage_variant_records ALTER COLUMN id SET DEFAU
 
 
 --
+-- Name: apresentacoes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.apresentacoes ALTER COLUMN id SET DEFAULT nextval('public.apresentacoes_id_seq'::regclass);
+
+
+--
+-- Name: artigo_temas id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.artigo_temas ALTER COLUMN id SET DEFAULT nextval('public.artigo_temas_id_seq'::regclass);
+
+
+--
+-- Name: artigos id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.artigos ALTER COLUMN id SET DEFAULT nextval('public.artigos_id_seq'::regclass);
+
+
+--
+-- Name: autores id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.autores ALTER COLUMN id SET DEFAULT nextval('public.autores_id_seq'::regclass);
+
+
+--
+-- Name: congressos id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.congressos ALTER COLUMN id SET DEFAULT nextval('public.congressos_id_seq'::regclass);
+
+
+--
 -- Name: contribuicoes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -596,10 +982,38 @@ ALTER TABLE ONLY public.contribuicoes ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: convidado_links id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.convidado_links ALTER COLUMN id SET DEFAULT nextval('public.convidado_links_id_seq'::regclass);
+
+
+--
+-- Name: convidados id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.convidados ALTER COLUMN id SET DEFAULT nextval('public.convidados_id_seq'::regclass);
+
+
+--
 -- Name: diretorias id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.diretorias ALTER COLUMN id SET DEFAULT nextval('public.diretorias_id_seq'::regclass);
+
+
+--
+-- Name: evento_membros id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.evento_membros ALTER COLUMN id SET DEFAULT nextval('public.evento_membros_id_seq'::regclass);
+
+
+--
+-- Name: eventos id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eventos ALTER COLUMN id SET DEFAULT nextval('public.eventos_id_seq'::regclass);
 
 
 --
@@ -652,6 +1066,13 @@ ALTER TABLE ONLY public.tecnologias ALTER COLUMN id SET DEFAULT nextval('public.
 
 
 --
+-- Name: temas id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.temas ALTER COLUMN id SET DEFAULT nextval('public.temas_id_seq'::regclass);
+
+
+--
 -- Name: users id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -698,11 +1119,51 @@ ALTER TABLE ONLY public.active_storage_variant_records
 
 
 --
+-- Name: apresentacoes apresentacoes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.apresentacoes
+    ADD CONSTRAINT apresentacoes_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: ar_internal_metadata ar_internal_metadata_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.ar_internal_metadata
     ADD CONSTRAINT ar_internal_metadata_pkey PRIMARY KEY (key);
+
+
+--
+-- Name: artigo_temas artigo_temas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.artigo_temas
+    ADD CONSTRAINT artigo_temas_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: artigos artigos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.artigos
+    ADD CONSTRAINT artigos_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: autores autores_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.autores
+    ADD CONSTRAINT autores_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: congressos congressos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.congressos
+    ADD CONSTRAINT congressos_pkey PRIMARY KEY (id);
 
 
 --
@@ -714,11 +1175,43 @@ ALTER TABLE ONLY public.contribuicoes
 
 
 --
+-- Name: convidado_links convidado_links_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.convidado_links
+    ADD CONSTRAINT convidado_links_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: convidados convidados_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.convidados
+    ADD CONSTRAINT convidados_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: diretorias diretorias_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.diretorias
     ADD CONSTRAINT diretorias_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: evento_membros evento_membros_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.evento_membros
+    ADD CONSTRAINT evento_membros_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: eventos eventos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eventos
+    ADD CONSTRAINT eventos_pkey PRIMARY KEY (id);
 
 
 --
@@ -786,6 +1279,14 @@ ALTER TABLE ONLY public.tecnologias
 
 
 --
+-- Name: temas temas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.temas
+    ADD CONSTRAINT temas_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -844,6 +1345,55 @@ CREATE UNIQUE INDEX index_active_storage_variant_records_uniqueness ON public.ac
 
 
 --
+-- Name: index_apresentacoes_on_artigo_id_and_congresso_id_and_ano; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_apresentacoes_on_artigo_id_and_congresso_id_and_ano ON public.apresentacoes USING btree (artigo_id, congresso_id, ano);
+
+
+--
+-- Name: index_apresentacoes_on_congresso_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_apresentacoes_on_congresso_id ON public.apresentacoes USING btree (congresso_id);
+
+
+--
+-- Name: index_artigo_temas_on_artigo_id_and_tema_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_artigo_temas_on_artigo_id_and_tema_id ON public.artigo_temas USING btree (artigo_id, tema_id);
+
+
+--
+-- Name: index_artigo_temas_on_tema_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_artigo_temas_on_tema_id ON public.artigo_temas USING btree (tema_id);
+
+
+--
+-- Name: index_autores_on_artigo_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_autores_on_artigo_id ON public.autores USING btree (artigo_id);
+
+
+--
+-- Name: index_autores_on_member_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_autores_on_member_id ON public.autores USING btree (member_id);
+
+
+--
+-- Name: index_congressos_on_nome; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_congressos_on_nome ON public.congressos USING btree (nome);
+
+
+--
 -- Name: index_contribuicoes_on_member_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -858,10 +1408,45 @@ CREATE UNIQUE INDEX index_contribuicoes_on_projeto_id_and_member_id_and_papel ON
 
 
 --
+-- Name: index_convidado_links_on_convidado_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_convidado_links_on_convidado_id ON public.convidado_links USING btree (convidado_id);
+
+
+--
+-- Name: index_convidados_on_evento_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_convidados_on_evento_id ON public.convidados USING btree (evento_id);
+
+
+--
 -- Name: index_diretorias_on_nome; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE UNIQUE INDEX index_diretorias_on_nome ON public.diretorias USING btree (nome);
+
+
+--
+-- Name: index_evento_membros_on_evento_id_and_member_id_and_papel; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_evento_membros_on_evento_id_and_member_id_and_papel ON public.evento_membros USING btree (evento_id, member_id, papel);
+
+
+--
+-- Name: index_evento_membros_on_member_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_evento_membros_on_member_id ON public.evento_membros USING btree (member_id);
+
+
+--
+-- Name: index_eventos_on_data_inicio; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_eventos_on_data_inicio ON public.eventos USING btree (data_inicio);
 
 
 --
@@ -949,6 +1534,13 @@ CREATE UNIQUE INDEX index_tecnologias_on_nome ON public.tecnologias USING btree 
 
 
 --
+-- Name: index_temas_on_nome; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_temas_on_nome ON public.temas USING btree (nome);
+
+
+--
 -- Name: index_users_on_email; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -970,11 +1562,34 @@ CREATE INDEX index_versions_on_item_type_and_item_id ON public.versions USING bt
 
 
 --
+-- Name: artigo_temas artigo_temas_max; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER artigo_temas_max BEFORE INSERT ON public.artigo_temas FOR EACH ROW EXECUTE FUNCTION public.trg_artigo_temas_max();
+
+
+--
+-- Name: convidados fk_rails_08fae7ff70; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.convidados
+    ADD CONSTRAINT fk_rails_08fae7ff70 FOREIGN KEY (evento_id) REFERENCES public.eventos(id) ON DELETE CASCADE;
+
+
+--
 -- Name: members fk_rails_1848f16cd8; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.members
     ADD CONSTRAINT fk_rails_1848f16cd8 FOREIGN KEY (padrinho_id) REFERENCES public.members(id) ON DELETE SET NULL;
+
+
+--
+-- Name: autores fk_rails_1bedd4e7e7; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.autores
+    ADD CONSTRAINT fk_rails_1bedd4e7e7 FOREIGN KEY (artigo_id) REFERENCES public.artigos(id) ON DELETE CASCADE;
 
 
 --
@@ -994,6 +1609,14 @@ ALTER TABLE ONLY public.oauth_identities
 
 
 --
+-- Name: artigo_temas fk_rails_2f7d23d9ee; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.artigo_temas
+    ADD CONSTRAINT fk_rails_2f7d23d9ee FOREIGN KEY (tema_id) REFERENCES public.temas(id) ON DELETE CASCADE;
+
+
+--
 -- Name: contribuicoes fk_rails_4043761945; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1002,11 +1625,43 @@ ALTER TABLE ONLY public.contribuicoes
 
 
 --
+-- Name: convidado_links fk_rails_42b3d2b040; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.convidado_links
+    ADD CONSTRAINT fk_rails_42b3d2b040 FOREIGN KEY (convidado_id) REFERENCES public.convidados(id) ON DELETE CASCADE;
+
+
+--
+-- Name: evento_membros fk_rails_4aff658e44; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.evento_membros
+    ADD CONSTRAINT fk_rails_4aff658e44 FOREIGN KEY (evento_id) REFERENCES public.eventos(id) ON DELETE CASCADE;
+
+
+--
+-- Name: autores fk_rails_633dbf1289; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.autores
+    ADD CONSTRAINT fk_rails_633dbf1289 FOREIGN KEY (member_id) REFERENCES public.members(id) ON DELETE SET NULL;
+
+
+--
 -- Name: projeto_tecnologias fk_rails_6da1aaeee2; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.projeto_tecnologias
     ADD CONSTRAINT fk_rails_6da1aaeee2 FOREIGN KEY (projeto_id) REFERENCES public.projetos(id) ON DELETE CASCADE;
+
+
+--
+-- Name: apresentacoes fk_rails_792f2a0778; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.apresentacoes
+    ADD CONSTRAINT fk_rails_792f2a0778 FOREIGN KEY (congresso_id) REFERENCES public.congressos(id) ON DELETE RESTRICT;
 
 
 --
@@ -1050,6 +1705,14 @@ ALTER TABLE ONLY public.mandatos
 
 
 --
+-- Name: artigo_temas fk_rails_ce9cd5773d; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.artigo_temas
+    ADD CONSTRAINT fk_rails_ce9cd5773d FOREIGN KEY (artigo_id) REFERENCES public.artigos(id) ON DELETE CASCADE;
+
+
+--
 -- Name: contribuicoes fk_rails_cf67cdf227; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1066,11 +1729,27 @@ ALTER TABLE ONLY public.mandatos
 
 
 --
+-- Name: apresentacoes fk_rails_ec8f774d5b; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.apresentacoes
+    ADD CONSTRAINT fk_rails_ec8f774d5b FOREIGN KEY (artigo_id) REFERENCES public.artigos(id) ON DELETE CASCADE;
+
+
+--
 -- Name: mandatos fk_rails_f5a206f86f; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.mandatos
     ADD CONSTRAINT fk_rails_f5a206f86f FOREIGN KEY (diretoria_id) REFERENCES public.diretorias(id) ON DELETE SET NULL;
+
+
+--
+-- Name: evento_membros fk_rails_fa54a66cb7; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.evento_membros
+    ADD CONSTRAINT fk_rails_fa54a66cb7 FOREIGN KEY (member_id) REFERENCES public.members(id) ON DELETE CASCADE;
 
 
 --
@@ -1080,6 +1759,15 @@ ALTER TABLE ONLY public.mandatos
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260705040008'),
+('20260705040007'),
+('20260705040006'),
+('20260705040005'),
+('20260705040004'),
+('20260705040003'),
+('20260705040002'),
+('20260705040001'),
+('20260705040000'),
 ('20260705010005'),
 ('20260705010004'),
 ('20260705010003'),

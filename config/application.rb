@@ -24,6 +24,10 @@ module SiteLeds
     config.i18n.default_locale = :"pt-BR"
     config.i18n.available_locales = [ :"pt-BR", :en ]
 
+    # A liga é de Taubaté/SP: estado derivado de eventos, "fim do dia" e
+    # janelas do calendário contam no fuso local, não em UTC.
+    config.time_zone = "America/Sao_Paulo"
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files

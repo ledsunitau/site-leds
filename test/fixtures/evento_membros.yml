@@ -1,0 +1,9 @@
+hack_organizador:
+  evento: hackathon
+  member: diretor_cientifica
+  papel: organizador
+
+hack_participante:
+  evento: hackathon
+  member: membro_comum
+  papel: participante

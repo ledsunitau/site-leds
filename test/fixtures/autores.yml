@@ -1,0 +1,13 @@
+# externo primeiro no arquivo de propósito: a ordenação deve vir de `ordem`
+autor_externo:
+  artigo: artigo_ed
+  nome: Coautora Externa
+  lattes_url: http://lattes.cnpq.br/999
+  ordem: 2
+
+autora_membro:
+  artigo: artigo_ed
+  member: diretor_cientifica
+  nome: Dario Diretor
+  lattes_url: http://lattes.cnpq.br/111
+  ordem: 1
