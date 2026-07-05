@@ -11,7 +11,7 @@ class ProfilesController < ApplicationController
     if current_user.update(profile_params)
       render json: profile_json
     else
-      render json: { errors: current_user.errors.full_messages }, status: :unprocessable_entity
+      render_invalido(current_user)
     end
   end
 

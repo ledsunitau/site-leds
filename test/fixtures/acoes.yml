@@ -1,0 +1,12 @@
+acao_site:
+  detalhe: site_liga (Projeto)
+  titulo: Site institucional da LEDS
+  descricao: Portal da liga.
+  status: publicada
+  criador: diretor_cientifica
+
+acao_bot:
+  detalhe: bot_discord (Projeto)
+  titulo: Bot do Discord
+  status: rascunho
+  criador: membro_comum

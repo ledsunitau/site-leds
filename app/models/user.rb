@@ -1,5 +1,6 @@
 class User < ApplicationRecord
-  include FotoValidavel
+  include ImagemValidavel
+  valida_imagem :foto
 
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable,

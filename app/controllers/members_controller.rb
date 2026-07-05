@@ -43,13 +43,6 @@ class MembersController < ApplicationController
     @gestao_vigente = Gestao.vigente
   end
 
-  # Filtros vêm de query string pública: só valores escalares (hash/array em
-  # where() levanta TypeError -> 500).
-  def filtro(chave)
-    valor = params[chave]
-    valor if valor.is_a?(String) && valor.present?
-  end
-
   def mandatos_vigentes
     Mandato.where(gestao: gestao_vigente)
            .includes(:diretoria,

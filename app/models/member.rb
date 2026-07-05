@@ -1,5 +1,6 @@
 class Member < ApplicationRecord
-  include FotoValidavel
+  include ImagemValidavel
+  valida_imagem :foto
 
   belongs_to :user
   # RF-GEN-04: quem trouxe o membro para a liga (registrado, mas não é o eixo
