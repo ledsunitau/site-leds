@@ -11,6 +11,11 @@ class ApplicationController < ActionController::Base
     head :forbidden
   end
 
+  # Contrato único de erro de validação (render_invalido) para todo save!.
+  rescue_from ActiveRecord::RecordInvalid do |e|
+    render_invalido(e.record)
+  end
+
   # O sanitizer padrão do Devise só permite email/senha; sem isto o `name`
   # (NOT NULL) é descartado e nenhum cadastro por e-mail/senha funciona.
   before_action :configure_permitted_parameters, if: :devise_controller?
@@ -35,5 +40,17 @@ class ApplicationController < ActionController::Base
   # Contrato único de erro de validação da API JSON.
   def render_invalido(registro)
     render json: { errors: registro.errors.full_messages }, status: :unprocessable_entity
+  end
+
+  # Ações que gravam autoria/aprovação precisam do perfil Member do usuário
+  # (role pode ser promovida antes do perfil existir). Renderiza o 422 e
+  # devolve nil quando falta — chamador faz `return if membro.nil?`.
+  def exigir_member!
+    membro = current_user.member
+    if membro.nil?
+      render json: { errors: [ "Seu usuário ainda não tem perfil de membro cadastrado." ] },
+             status: :unprocessable_entity
+    end
+    membro
   end
 end

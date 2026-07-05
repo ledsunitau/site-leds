@@ -10,6 +10,8 @@ class User < ApplicationRecord
   # dependent: :destroy espelha o ON DELETE CASCADE do banco, mas via
   # callbacks — necessário para o Active Storage purgar a foto do membro.
   has_one :member, dependent: :destroy
+  # espelha o ON DELETE SET NULL do banco: o post sobrevive ao autor
+  has_many :posts, dependent: :nullify, inverse_of: :autor
   has_one_attached :foto
 
   # Papel de ACESSO (autorização via Pundit). O cargo detalhado e histórico do

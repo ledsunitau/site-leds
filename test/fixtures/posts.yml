@@ -1,0 +1,40 @@
+noticia_publicada:
+  autor: membro_user
+  tipo: noticia
+  titulo: LEDS vence o hackathon estadual
+  caller: A liga levou o primeiro lugar na maratona.
+  status: publicado
+  aprovador: diretor_cientifica
+  approved_at: <%= 10.days.ago %>
+  published_at: <%= 10.days.ago %>
+
+noticia_antiga:
+  autor: diretor
+  tipo: noticia
+  titulo: Nova gestão eleita
+  status: publicado
+  aprovador: pres
+  approved_at: <%= 30.days.ago %>
+  published_at: <%= 30.days.ago %>
+
+blog_publicado:
+  autor: escritor_user
+  tipo: blog
+  titulo: Como estudar grafos
+  subtitulo: Um roteiro prático
+  status: publicado
+  aprovador: diretor_cientifica
+  approved_at: <%= 5.days.ago %>
+  published_at: <%= 5.days.ago %>
+
+rascunho_do_membro:
+  autor: membro_user
+  tipo: noticia
+  titulo: Rascunho de notícia
+  status: rascunho
+
+blog_em_aprovacao:
+  autor: escritor_user
+  tipo: blog
+  titulo: Post aguardando aprovação
+  status: em_aprovacao

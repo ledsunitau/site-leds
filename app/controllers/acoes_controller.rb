@@ -40,11 +40,8 @@ class AcoesController < ApplicationController
     authorize Acao
     autoriza_arquivamento!(Acao)
 
-    criador = current_user.member
-    if criador.nil?
-      return render json: { errors: [ "Seu usuário ainda não tem perfil de membro cadastrado." ] },
-                    status: :unprocessable_entity
-    end
+    criador = exigir_member!
+    return if criador.nil?
 
     dados = params.require(:acao)
     tipo = TIPOS_DETALHE.keys.find { |k| dados[k].is_a?(ActionController::Parameters) }
@@ -59,8 +56,6 @@ class AcoesController < ApplicationController
     end
 
     render json: acao_json(acao, completo: true), status: :created
-  rescue ActiveRecord::RecordInvalid => e
-    render_invalido(e.record)
   end
 
   def update
@@ -74,8 +69,6 @@ class AcoesController < ApplicationController
     end
 
     render json: acao_json(acao, completo: true)
-  rescue ActiveRecord::RecordInvalid => e
-    render_invalido(e.record)
   end
 
   # RF-INI-02: compilado de ações em destaque para a landing (cache TTL,

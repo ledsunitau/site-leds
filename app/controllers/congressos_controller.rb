@@ -13,7 +13,5 @@ class CongressosController < ApplicationController
 
     congresso = Congresso.create!(params.expect(congresso: [ :nome ]))
     render json: congresso.card_json, status: :created
-  rescue ActiveRecord::RecordInvalid => e
-    render_invalido(e.record)
   end
 end
