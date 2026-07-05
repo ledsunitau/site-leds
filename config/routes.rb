@@ -31,6 +31,21 @@ Rails.application.routes.draw do
   resources :congressos, only: %i[index create]
   resources :temas, only: :index
 
+  # Novidades (RF-NOV): notícias/blog com fila de aprovação (RN-02) +
+  # últimas notícias da landing (RF-INI-07) + histórico de versões (RF-NOV-07)
+  resources :posts, only: %i[index show create update destroy] do
+    collection do
+      get :ultimas
+      get :meus
+    end
+    member do
+      post :submeter
+      post :aprovar
+      post :rejeitar
+      get :versoes
+    end
+  end
+
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check

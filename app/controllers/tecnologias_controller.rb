@@ -13,7 +13,5 @@ class TecnologiasController < ApplicationController
 
     tecnologia = Tecnologia.create!(params.expect(tecnologia: [ :nome, :icone ]))
     render json: tecnologia.card_json, status: :created
-  rescue ActiveRecord::RecordInvalid => e
-    render_invalido(e.record)
   end
 end

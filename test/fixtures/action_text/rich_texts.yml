@@ -1,0 +1,9 @@
+corpo_noticia_publicada:
+  record: noticia_publicada (Post)
+  name: corpo
+  body: <p>A LEDS venceu o hackathon com um projeto de <strong>grafos</strong>.</p>
+
+corpo_blog_publicado:
+  record: blog_publicado (Post)
+  name: corpo
+  body: <p>Comece pelos fundamentos de busca em largura.</p>
