@@ -1,0 +1,4 @@
+hackathon:
+  local: Auditório UNITAU
+  data_inicio: <%= 30.days.from_now.to_fs(:db) %>
+  data_fim: <%= (30.days.from_now + 8.hours).to_fs(:db) %>

@@ -15,6 +15,12 @@ class Projeto < ApplicationRecord
   # Espelho da CHECK do banco: finalizado ⇒ tem data; em dev ⇒ sem data.
   validate :coerencia_situacao_data
 
+  # Card da ação (RF-ACO-03): "em dev" ou a data de finalização. No model
+  # porque a vitrine de parceiros (RF-PAR-02) também renderiza estes cards.
+  def card_json
+    { situacao: situacao, data_finalizacao: data_finalizacao }
+  end
+
   private
 
   def coerencia_situacao_data

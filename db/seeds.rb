@@ -19,6 +19,11 @@ ActiveRecord::Base.transaction do
   %w[Ruby Rails PostgreSQL JavaScript TypeScript React Python Docker Figma]
     .each { |nome| Tecnologia.find_or_create_by!(nome: nome) }
 
+  # Temas pré-definidos dos artigos (RF-ACO-05, 1 a 3 por artigo)
+  [ "Estruturas de Dados", "Inteligência Artificial", "Desenvolvimento Web",
+    "Educação", "Otimização", "Segurança" ]
+    .each { |nome| Tema.find_or_create_by!(nome: nome) }
+
   # --- Fundadores placeholder (SÓ dev/test) ---
   # Senha fixa e pública no repo: jamais pode existir em produção; os dados
   # reais entram pela tela de admin (RF-ADM-03).

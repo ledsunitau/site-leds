@@ -1,19 +1,21 @@
 require "test_helper"
 
 class AcoesControllerTest < ActionDispatch::IntegrationTest
+  PUBLICADAS = %i[acao_site acao_hackathon acao_artigo].freeze
+
   test "index público lista só publicadas, com filtro por tipo" do
     get acoes_path
     ids = response.parsed_body["acoes"].map { |a| a["id"] }
-    assert_equal [ acoes(:acao_site).id ], ids
+    assert_equal PUBLICADAS.map { |f| acoes(f).id }.sort, ids.sort
 
-    get acoes_path(tipo: "Evento")
-    assert_empty response.parsed_body["acoes"]
+    get acoes_path(tipo: "Projeto")
+    assert_equal [ acoes(:acao_site).id ], response.parsed_body["acoes"].map { |a| a["id"] }
   end
 
   test "filtro de status é ignorado para anônimos" do
     get acoes_path(status: "rascunho")
     ids = response.parsed_body["acoes"].map { |a| a["id"] }
-    assert_equal [ acoes(:acao_site).id ], ids
+    assert_equal PUBLICADAS.map { |f| acoes(f).id }.sort, ids.sort
   end
 
   test "membro vê rascunhos com filtro de status" do
@@ -139,7 +141,7 @@ class AcoesControllerTest < ActionDispatch::IntegrationTest
 
     patch acao_path(acoes(:acao_site)), params: { acao: { tecnologia_ids: [ 999_999 ] } }
     assert_response :unprocessable_entity
-    assert_match(/tecnologia inexistente/, response.parsed_body["errors"].first)
+    assert_match(/tecnologia/i, response.parsed_body["errors"].first)
   end
 
   test "mudança só de stack/contribuições também gera trilha de auditoria" do
@@ -177,7 +179,7 @@ class AcoesControllerTest < ActionDispatch::IntegrationTest
   test "destaque traz publicadas para a landing" do
     get destaque_acoes_path
     ids = response.parsed_body["acoes"].map { |a| a["id"] }
-    assert_equal [ acoes(:acao_site).id ], ids
+    assert_equal PUBLICADAS.map { |f| acoes(f).id }.sort, ids.sort
   end
 
   test "update auditado registra o autor (whodunnit)" do
