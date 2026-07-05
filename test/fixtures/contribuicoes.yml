@@ -1,0 +1,9 @@
+diretor_backend:
+  projeto: site_liga
+  member: diretor_cientifica
+  papel: backend
+
+membro_frontend:
+  projeto: site_liga
+  member: membro_comum
+  papel: frontend

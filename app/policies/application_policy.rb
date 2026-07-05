@@ -44,6 +44,11 @@ class ApplicationPolicy
     user.present? && (user.diretoria? || user.presidencia?)
   end
 
+  # Membro da liga ou acima (cria/edita Ações e Produtos — RN-13).
+  def membro_liga?
+    user.present? && (user.membro? || gestor?)
+  end
+
   class Scope
     def initialize(user, scope)
       @user = user

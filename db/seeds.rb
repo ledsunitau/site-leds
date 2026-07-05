@@ -15,6 +15,10 @@ ActiveRecord::Base.transaction do
   gestao = Gestao.order(:ano_inicio).last ||
            Gestao.create!(ano_inicio: Date.current.year - 1, ano_fim: Date.current.year + 1)
 
+  # Catálogo inicial de tecnologias (stack dos projetos — RF-ACO-03)
+  %w[Ruby Rails PostgreSQL JavaScript TypeScript React Python Docker Figma]
+    .each { |nome| Tecnologia.find_or_create_by!(nome: nome) }
+
   # --- Fundadores placeholder (SÓ dev/test) ---
   # Senha fixa e pública no repo: jamais pode existir em produção; os dados
   # reais entram pela tela de admin (RF-ADM-03).

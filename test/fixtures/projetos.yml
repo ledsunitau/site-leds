@@ -1,0 +1,9 @@
+site_liga:
+  link: https://leds.example.com
+  repo_url: https://github.com/leds/site
+  hospedagem: VPS próprio
+  situacao: finalizado
+  data_finalizacao: 2026-01-15
+
+bot_discord:
+  situacao: em_desenvolvimento

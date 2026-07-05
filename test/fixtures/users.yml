@@ -33,3 +33,10 @@ membro_user:
   name: Marcos Membro
   role: membro
   encrypted_password: <%= Devise::Encryptor.digest(User, "senha-segura-123") %>
+
+# role de membro SEM registro Member (promovido antes do perfil existir)
+membro_sem_perfil:
+  email: sem-perfil@example.com
+  name: Sofia Sem Perfil
+  role: membro
+  encrypted_password: <%= Devise::Encryptor.digest(User, "senha-segura-123") %>

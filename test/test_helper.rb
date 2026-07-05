@@ -4,8 +4,10 @@ require "rails/test_help"
 
 module ActiveSupport
   class TestCase
-    # Run tests in parallel with specified workers
-    parallelize(workers: :number_of_processors, with: :threads)
+    # Run tests in parallel with specified workers.
+    # Processos (não threads): threads disputam a conexão do Postgres com
+    # fixtures transacionais e quebram com "owned by a different thread".
+    parallelize(workers: :number_of_processors)
 
     # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all

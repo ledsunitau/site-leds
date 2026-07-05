@@ -1,0 +1,7 @@
+site_ruby:
+  projeto: site_liga
+  tecnologia: ruby
+
+site_rails:
+  projeto: site_liga
+  tecnologia: rails
