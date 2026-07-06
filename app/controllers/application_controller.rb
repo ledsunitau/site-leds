@@ -1,4 +1,7 @@
 class ApplicationController < ActionController::Base
+  # ANTES dos rescue_from específicos: o último handler compatível ganha,
+  # então Pundit/RecordInvalid seguem 403/422 sem virar error_log.
+  include CapturaDeErros
   include Pundit::Authorization
 
   # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and CSS :has.
@@ -35,6 +38,36 @@ class ApplicationController < ActionController::Base
   def filtro(chave)
     valor = params[chave]
     valor if valor.is_a?(String) && valor.present?
+  end
+
+  # Data ISO vinda de query string; inválida/ausente vira nil.
+  def data_do_filtro(chave)
+    Date.iso8601(filtro(chave)) if filtro(chave)
+  rescue Date::Error
+    nil
+  end
+
+  # Paginação simples por query string (?pagina=N). O clamp de cima importa:
+  # sem ele, um número gigante estoura o bigint do OFFSET (500 público).
+  def paginar(escopo, por_pagina: 20)
+    pagina = filtro(:pagina).to_i.clamp(1, 100_000)
+    escopo.limit(por_pagina).offset((pagina - 1) * por_pagina)
+  end
+
+  # Janela ?de=/&ate= (ISO) sobre uma coluna de timestamp.
+  def filtrar_por_periodo(escopo, coluna)
+    de = data_do_filtro(:de)
+    ate = data_do_filtro(:ate)
+    escopo = escopo.where(coluna => de.beginning_of_day..) if de
+    escopo = escopo.where(coluna => ..ate.end_of_day) if ate
+    escopo
+  end
+
+  # Diff de uma versão do PaperTrail sem o ruído de timestamps/id. Lista de
+  # exclusão ÚNICA (posts#versoes e admin/audits): mascarar um atributo
+  # sensível aqui vale para as duas telas.
+  def mudancas_da_versao(versao)
+    versao.object_changes&.except("updated_at", "created_at", "id")
   end
 
   # Contrato único de erro de validação da API JSON.

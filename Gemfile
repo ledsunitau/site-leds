@@ -56,6 +56,9 @@ gem "rack-attack"
 # Auditoria e histórico de versões (RF-ADM-07, RF-NOV-07, RNF-09)
 gem "paper_trail"
 
+# Painel do Solid Queue em /admin/jobs, atrás do gate de gestão (RF-ADM-01)
+gem "mission_control-jobs"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"

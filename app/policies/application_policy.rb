@@ -39,9 +39,10 @@ class ApplicationPolicy
   private
 
   # Papéis com poder de gestão (matriz de permissões, seção 3.1 da spec) —
-  # usado pelas policies de escrita de todos os domínios.
+  # usado pelas policies de escrita de todos os domínios. A definição de
+  # "gestão" mora em User#gestao? (mesma fonte do gate do /admin).
   def gestor?
-    user.present? && (user.diretoria? || user.presidencia?)
+    user.present? && user.gestao?
   end
 
   # Membro da liga ou acima (cria/edita Ações e Produtos — RN-13).

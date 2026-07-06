@@ -7,10 +7,16 @@ class DiscordWebhookJob < ApplicationJob
   queue_as :default
 
   # 4xx (menos 429) é permanente — webhook revogado/URL errada nunca vai
-  # passar; repetir só ocuparia a fila. 429/5xx/timeout recuam e tentam.
+  # passar; repetir só ocuparia a fila. Só o TRANSIENTE recua e tenta de
+  # novo: timeout (Net::*Timeout < RuntimeError), rede (SystemCallError,
+  # SocketError) e o nosso raise de 429/5xx (RuntimeError). Erro de código
+  # (NoMethodError etc.) falha alto de primeira, sem retry.
+  # As classes são disjuntas de ErroPermanente — o discard nunca é
+  # sombreado pelo retry (handlers casam do último declarado para trás).
   class ErroPermanente < StandardError; end
+  retry_on RuntimeError, SystemCallError, SocketError,
+           wait: :polynomially_longer, attempts: 5
   discard_on ErroPermanente
-  retry_on StandardError, wait: :polynomially_longer, attempts: 5
 
   def perform(post_id)
     url = ENV["DISCORD_WEBHOOK_URL"]

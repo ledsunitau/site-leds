@@ -529,6 +529,48 @@ ALTER SEQUENCE public.diretorias_id_seq OWNED BY public.diretorias.id;
 
 
 --
+-- Name: error_logs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.error_logs (
+    id bigint NOT NULL,
+    user_id bigint,
+    occurred_at timestamp(6) without time zone NOT NULL,
+    rota character varying,
+    componente character varying,
+    acao_tentada character varying,
+    input_payload jsonb,
+    error_class character varying,
+    error_message text,
+    backtrace text,
+    severidade character varying DEFAULT 'error'::character varying NOT NULL,
+    ambiente character varying,
+    user_agent character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT error_logs_severidade_check CHECK (((severidade)::text = ANY ((ARRAY['info'::character varying, 'warning'::character varying, 'error'::character varying, 'fatal'::character varying])::text[])))
+);
+
+
+--
+-- Name: error_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.error_logs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: error_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.error_logs_id_seq OWNED BY public.error_logs.id;
+
+
+--
 -- Name: evento_membros; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1085,6 +1127,13 @@ ALTER TABLE ONLY public.diretorias ALTER COLUMN id SET DEFAULT nextval('public.d
 
 
 --
+-- Name: error_logs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.error_logs ALTER COLUMN id SET DEFAULT nextval('public.error_logs_id_seq'::regclass);
+
+
+--
 -- Name: evento_membros id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1293,6 +1342,14 @@ ALTER TABLE ONLY public.convidados
 
 ALTER TABLE ONLY public.diretorias
     ADD CONSTRAINT diretorias_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: error_logs error_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.error_logs
+    ADD CONSTRAINT error_logs_pkey PRIMARY KEY (id);
 
 
 --
@@ -1538,6 +1595,34 @@ CREATE INDEX index_convidados_on_evento_id ON public.convidados USING btree (eve
 --
 
 CREATE UNIQUE INDEX index_diretorias_on_nome ON public.diretorias USING btree (nome);
+
+
+--
+-- Name: index_error_logs_on_occurred_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_error_logs_on_occurred_at ON public.error_logs USING btree (occurred_at);
+
+
+--
+-- Name: index_error_logs_on_rota; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_error_logs_on_rota ON public.error_logs USING btree (rota);
+
+
+--
+-- Name: index_error_logs_on_severidade; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_error_logs_on_severidade ON public.error_logs USING btree (severidade);
+
+
+--
+-- Name: index_error_logs_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_error_logs_on_user_id ON public.error_logs USING btree (user_id);
 
 
 --
@@ -1837,6 +1922,14 @@ ALTER TABLE ONLY public.projeto_tecnologias
 
 
 --
+-- Name: error_logs fk_rails_a23f9ccaf8; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.error_logs
+    ADD CONSTRAINT fk_rails_a23f9ccaf8 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 -- Name: active_storage_attachments fk_rails_c3b3935057; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1915,6 +2008,7 @@ ALTER TABLE ONLY public.evento_membros
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260706010000'),
 ('20260705150000'),
 ('20260705140003'),
 ('20260705040008'),

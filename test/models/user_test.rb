@@ -18,7 +18,11 @@ class UserTest < ActiveSupport::TestCase
   test "role padrão é comunidade e aceita só os papéis da matriz" do
     user = User.new(email: "novo@example.com", name: "Novo", password: "senha-segura-123")
     assert_equal "comunidade", user.role
-    assert_raises(ArgumentError) { user.role = "hacker" }
+
+    # validate: true — inválido é erro de validação (422), não ArgumentError
+    user.role = "hacker"
+    assert_not user.valid?
+    assert user.errors.of_kind?(:role, :inclusion)
   end
 
   test "CHECK do banco rejeita role fora da lista" do
