@@ -46,6 +46,22 @@ Rails.application.routes.draw do
     end
   end
 
+  # Métricas da landing (RF-INI-01)
+  get "metricas", to: "metricas#show"
+
+  # Admin (RF-ADM): tudo atrás do gate de gestão do Admin::BaseController
+  namespace :admin do
+    resources :error_logs, only: %i[index show]
+    resources :users, only: %i[index update]
+    resources :members, only: %i[create update destroy]
+    resources :mandatos, only: %i[create update destroy]
+    resources :diretorias, only: %i[create update]
+    resources :gestoes, only: :create
+    resources :approvals, only: :index
+    resources :audits, only: :index
+  end
+  mount MissionControl::Jobs::Engine, at: "/admin/jobs"
+
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check

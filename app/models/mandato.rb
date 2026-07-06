@@ -5,7 +5,8 @@ class Mandato < ApplicationRecord
 
   CARGOS = %w[presidente vice diretor orientador membro].freeze
 
-  enum :cargo, CARGOS.index_by(&:itself)
+  # validate: true — cargo inválido vira 422 normal, não ArgumentError
+  enum :cargo, CARGOS.index_by(&:itself), validate: true
 
   validates :gestao_id, uniqueness: { scope: :member_id }
   validate :diretoria_coerente_com_cargo

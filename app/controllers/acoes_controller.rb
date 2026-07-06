@@ -257,12 +257,6 @@ class AcoesController < ApplicationController
     authorize(alvo, :arquivar?) if novo == "arquivada" || atual == "arquivada"
   end
 
-  def data_do_filtro(chave)
-    Date.iso8601(filtro(chave)) if filtro(chave)
-  rescue Date::Error
-    nil
-  end
-
   # Cards de artigo mostram os ícones dos temas (RF-ACO-05): preload em lote
   # para a listagem não fazer N+1 por artigo.
   def preload_temas_dos_artigos(acoes)

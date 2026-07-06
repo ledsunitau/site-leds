@@ -4,8 +4,6 @@
 class PostsController < ApplicationController
   before_action :authenticate_user!, except: %i[index show ultimas]
 
-  POR_PAGINA = 20
-
   def index
     authorize Post
 
@@ -137,11 +135,6 @@ class PostsController < ApplicationController
     Post.includes(:autor, thumbnail_attachment: :blob)
   end
 
-  def paginar(posts)
-    pagina = [ filtro(:pagina).to_i, 1 ].max
-    posts.limit(POR_PAGINA).offset((pagina - 1) * POR_PAGINA)
-  end
-
   # sem a coluna object (snapshot completo por linha, nunca lida aqui):
   # um post muito editado tornaria a resposta megabytes por nada
   def versoes_leves(versions)
@@ -176,7 +169,7 @@ class PostsController < ApplicationController
       event: versao.event,
       whodunnit: versao.whodunnit,
       created_at: versao.created_at,
-      mudancas: versao.object_changes&.except("updated_at", "created_at", "id")
+      mudancas: mudancas_da_versao(versao)
     }
   end
 end

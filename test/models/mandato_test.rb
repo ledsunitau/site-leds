@@ -29,6 +29,9 @@ class MandatoTest < ActiveSupport::TestCase
   end
 
   test "cargo fora da lista é rejeitado" do
-    assert_raises(ArgumentError) { Mandato.new(cargo: "estagiario") }
+    # validate: true — inválido é erro de validação (422), não ArgumentError
+    mandato = Mandato.new(cargo: "estagiario")
+    assert_not mandato.valid?
+    assert mandato.errors.of_kind?(:cargo, :inclusion)
   end
 end

@@ -28,6 +28,11 @@ module SiteLeds
     # janelas do calendário contam no fuso local, não em UTC.
     config.time_zone = "America/Sao_Paulo"
 
+    # Painel do Solid Queue em /admin/jobs (RF-ADM-01): o gate é o mesmo do
+    # namespace admin (diretoria/presidência), não HTTP Basic.
+    config.mission_control.jobs.base_controller_class = "Admin::BaseController"
+    config.mission_control.jobs.http_basic_auth_enabled = false
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files

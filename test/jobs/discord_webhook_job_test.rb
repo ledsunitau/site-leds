@@ -48,6 +48,22 @@ class DiscordWebhookJobTest < ActiveJob::TestCase
     assert_equal 0, chamadas
   end
 
+  test "fim a fim: 404 descarta o job de vez (sem retry); 429 agenda retry" do
+    revogado = Net::HTTPNotFound.new("1.1", "404", "Not Found")
+    com_post_falso(->(*) { revogado }) do
+      assert_no_enqueued_jobs only: DiscordWebhookJob do
+        DiscordWebhookJob.perform_now(posts(:noticia_publicada).id)
+      end
+    end
+
+    rate_limit = Net::HTTPTooManyRequests.new("1.1", "429", "Too Many Requests")
+    com_post_falso(->(*) { rate_limit }) do
+      assert_enqueued_with job: DiscordWebhookJob do
+        DiscordWebhookJob.perform_now(posts(:noticia_publicada).id)
+      end
+    end
+  end
+
   test "429 levanta erro comum (vai para retry); 404 levanta erro permanente (descartado)" do
     rate_limit = Net::HTTPTooManyRequests.new("1.1", "429", "Too Many Requests")
     com_post_falso(->(*) { rate_limit }) do
