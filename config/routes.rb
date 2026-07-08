@@ -49,6 +49,11 @@ Rails.application.routes.draw do
   # Métricas da landing (RF-INI-01)
   get "metricas", to: "metricas#show"
 
+  # LGPD e analytics (Cluster 8): consentimento de cookies (RNF-04/05) +
+  # coleta de eventos só com consentimento (RN-14). Ambos públicos.
+  resources :consents, only: :create
+  resources :events, only: :create
+
   # Admin (RF-ADM): tudo atrás do gate de gestão do Admin::BaseController
   namespace :admin do
     resources :error_logs, only: %i[index show]
@@ -59,6 +64,7 @@ Rails.application.routes.draw do
     resources :gestoes, only: :create
     resources :approvals, only: :index
     resources :audits, only: :index
+    resource :metrics, only: :show
   end
   mount MissionControl::Jobs::Engine, at: "/admin/jobs"
 

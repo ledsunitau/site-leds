@@ -220,6 +220,42 @@ ALTER SEQUENCE public.active_storage_variant_records_id_seq OWNED BY public.acti
 
 
 --
+-- Name: analytics_events; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.analytics_events (
+    id bigint NOT NULL,
+    user_id bigint,
+    anonymous_id character varying,
+    nome character varying NOT NULL,
+    rota character varying,
+    referrer character varying,
+    ocorrido_em timestamp(6) without time zone NOT NULL,
+    metadata jsonb,
+    created_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: analytics_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.analytics_events_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: analytics_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.analytics_events_id_seq OWNED BY public.analytics_events.id;
+
+
+--
 -- Name: apresentacoes; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -495,6 +531,42 @@ CREATE SEQUENCE public.convidados_id_seq
 --
 
 ALTER SEQUENCE public.convidados_id_seq OWNED BY public.convidados.id;
+
+
+--
+-- Name: cookie_consents; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.cookie_consents (
+    id bigint NOT NULL,
+    user_id bigint,
+    anonymous_id character varying,
+    analytics boolean DEFAULT false NOT NULL,
+    marketing boolean DEFAULT false NOT NULL,
+    consented_at timestamp(6) without time zone NOT NULL,
+    user_agent character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: cookie_consents_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.cookie_consents_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: cookie_consents_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.cookie_consents_id_seq OWNED BY public.cookie_consents.id;
 
 
 --
@@ -1064,6 +1136,13 @@ ALTER TABLE ONLY public.active_storage_variant_records ALTER COLUMN id SET DEFAU
 
 
 --
+-- Name: analytics_events id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.analytics_events ALTER COLUMN id SET DEFAULT nextval('public.analytics_events_id_seq'::regclass);
+
+
+--
 -- Name: apresentacoes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1117,6 +1196,13 @@ ALTER TABLE ONLY public.convidado_links ALTER COLUMN id SET DEFAULT nextval('pub
 --
 
 ALTER TABLE ONLY public.convidados ALTER COLUMN id SET DEFAULT nextval('public.convidados_id_seq'::regclass);
+
+
+--
+-- Name: cookie_consents id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cookie_consents ALTER COLUMN id SET DEFAULT nextval('public.cookie_consents_id_seq'::regclass);
 
 
 --
@@ -1265,6 +1351,14 @@ ALTER TABLE ONLY public.active_storage_variant_records
 
 
 --
+-- Name: analytics_events analytics_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.analytics_events
+    ADD CONSTRAINT analytics_events_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: apresentacoes apresentacoes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1334,6 +1428,14 @@ ALTER TABLE ONLY public.convidado_links
 
 ALTER TABLE ONLY public.convidados
     ADD CONSTRAINT convidados_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cookie_consents cookie_consents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cookie_consents
+    ADD CONSTRAINT cookie_consents_pkey PRIMARY KEY (id);
 
 
 --
@@ -1514,6 +1616,27 @@ CREATE UNIQUE INDEX index_active_storage_variant_records_uniqueness ON public.ac
 
 
 --
+-- Name: index_analytics_events_on_nome; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_analytics_events_on_nome ON public.analytics_events USING btree (nome);
+
+
+--
+-- Name: index_analytics_events_on_ocorrido_em; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_analytics_events_on_ocorrido_em ON public.analytics_events USING btree (ocorrido_em);
+
+
+--
+-- Name: index_analytics_events_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_analytics_events_on_user_id ON public.analytics_events USING btree (user_id);
+
+
+--
 -- Name: index_apresentacoes_on_artigo_id_and_congresso_id_and_ano; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1588,6 +1711,20 @@ CREATE INDEX index_convidado_links_on_convidado_id ON public.convidado_links USI
 --
 
 CREATE INDEX index_convidados_on_evento_id ON public.convidados USING btree (evento_id);
+
+
+--
+-- Name: index_cookie_consents_on_anonymous_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_cookie_consents_on_anonymous_id ON public.cookie_consents USING btree (anonymous_id);
+
+
+--
+-- Name: index_cookie_consents_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_cookie_consents_on_user_id ON public.cookie_consents USING btree (user_id);
 
 
 --
@@ -1874,6 +2011,14 @@ ALTER TABLE ONLY public.evento_membros
 
 
 --
+-- Name: analytics_events fk_rails_5b319ff5df; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.analytics_events
+    ADD CONSTRAINT fk_rails_5b319ff5df FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 -- Name: posts fk_rails_5b5ddfd518; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1927,6 +2072,14 @@ ALTER TABLE ONLY public.projeto_tecnologias
 
 ALTER TABLE ONLY public.error_logs
     ADD CONSTRAINT fk_rails_a23f9ccaf8 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: cookie_consents fk_rails_bed9808f1f; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cookie_consents
+    ADD CONSTRAINT fk_rails_bed9808f1f FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
 
 
 --
@@ -2008,6 +2161,8 @@ ALTER TABLE ONLY public.evento_membros
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260708010001'),
+('20260708010000'),
 ('20260706010000'),
 ('20260705150000'),
 ('20260705140003'),

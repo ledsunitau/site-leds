@@ -30,6 +30,17 @@ class Rack::Attack
   throttle("password_resets/ip", limit: 5, period: 1.hour) do |req|
     req.ip if req.post? && normalized_path(req) == "/users/password"
   end
+
+  # Coleta de analytics (RN-14): folgado porque o cliente já manda em lote,
+  # mas fecha o flood de eventos forjados contra o endpoint público.
+  throttle("events/ip", limit: 60, period: 1.minute) do |req|
+    req.ip if req.post? && normalized_path(req) == "/events"
+  end
+
+  # Consentimento: a decisão muda raramente; corta spam de gravação.
+  throttle("consents/ip", limit: 20, period: 1.hour) do |req|
+    req.ip if req.post? && normalized_path(req) == "/consents"
+  end
 end
 
 Rack::Attack.enabled = !Rails.env.test?

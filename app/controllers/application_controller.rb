@@ -75,6 +75,15 @@ class ApplicationController < ActionController::Base
     render json: { errors: registro.errors.full_messages }, status: :unprocessable_entity
   end
 
+  # Id anônimo do visitante (RNF-04/05). Cookie ASSINADO para não ser forjável
+  # (senão dá para atribuir eventos a outro id e inflar visitantes_unicos).
+  # Só LÊ — quem cria/persiste o cookie é o ConsentsController. Compartilhado
+  # por consents e events: a leitura assinada precisa ser idêntica nos dois,
+  # ou a coleta cai em silêncio (id da coleta ≠ id do consentimento).
+  def anonymous_id
+    cookies.signed[:anonymous_id].presence
+  end
+
   # Ações que gravam autoria/aprovação precisam do perfil Member do usuário
   # (role pode ser promovida antes do perfil existir). Renderiza o 422 e
   # devolve nil quando falta — chamador faz `return if membro.nil?`.
