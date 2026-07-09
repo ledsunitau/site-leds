@@ -41,6 +41,11 @@ class Rack::Attack
   throttle("consents/ip", limit: 20, period: 1.hour) do |req|
     req.ip if req.post? && normalized_path(req) == "/consents"
   end
+
+  # Proposta de ideia (RF-IDE): submissão da comunidade — corta flood de spam.
+  throttle("ideias/ip", limit: 20, period: 1.hour) do |req|
+    req.ip if req.post? && normalized_path(req) == "/ideias"
+  end
 end
 
 Rack::Attack.enabled = !Rails.env.test?

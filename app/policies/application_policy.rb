@@ -50,6 +50,12 @@ class ApplicationPolicy
     user.present? && (user.membro? || gestor?)
   end
 
+  # Autor do registro (records com coluna user_id — Post, Ideia, ...). Fonte
+  # única do "é meu?" para não divergir entre policies.
+  def dono?
+    user.present? && record.respond_to?(:user_id) && record.user_id == user.id
+  end
+
   class Scope
     def initialize(user, scope)
       @user = user

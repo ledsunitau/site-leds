@@ -31,6 +31,14 @@ Rails.application.routes.draw do
   resources :congressos, only: %i[index create]
   resources :temas, only: :index
 
+  # Ideias (RF-IDE): comunidade propõe (RN-01), gestão revisa (RF-IDE-04)
+  resources :ideias, only: %i[index show create] do
+    member do
+      post :aprovar
+      post :rejeitar
+    end
+  end
+
   # Novidades (RF-NOV): notícias/blog com fila de aprovação (RN-02) +
   # últimas notícias da landing (RF-INI-07) + histórico de versões (RF-NOV-07)
   resources :posts, only: %i[index show create update destroy] do

@@ -20,10 +20,11 @@
 #   - "-ia" é tratado como plural latino e fica IGUAL (diretoria -> "diretoria",
 #     regra default /([ti])a$/ para criteria/media).
 # Toda branch que criar tabela com nome em português DEVE conferir o plural
-# aqui (pendentes: ideia, denuncia, item_pedido->itens_pedido...).
+# aqui (pendentes: denuncia, item_pedido->itens_pedido...).
 ActiveSupport::Inflector.inflections(:en) do |inflect|
   inflect.irregular "gestao", "gestoes"
   inflect.irregular "diretoria", "diretorias"
+  inflect.irregular "ideia", "ideias"
   inflect.irregular "acao", "acoes"
   inflect.irregular "tecnologia", "tecnologias"
   inflect.irregular "contribuicao", "contribuicoes"

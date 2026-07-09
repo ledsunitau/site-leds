@@ -18,6 +18,8 @@ class User < ApplicationRecord
                            class_name: "Noticed::Notification"
   has_many :notification_preferences, dependent: :destroy
   has_many :push_subscriptions, dependent: :destroy
+  # espelha o ON DELETE SET NULL: a ideia sobrevive ao autor (RN-01)
+  has_many :ideias, dependent: :nullify, inverse_of: :autor
   has_one_attached :foto
 
   # Papel de ACESSO (autorização via Pundit). O cargo detalhado e histórico do
