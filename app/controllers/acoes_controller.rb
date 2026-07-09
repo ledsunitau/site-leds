@@ -126,7 +126,11 @@ class AcoesController < ApplicationController
   private
 
   def acao_params
-    params.require(:acao).permit(:titulo, :descricao, :status, :thumbnail)
+    # ideia_id (RF-ACO-07): credita a ideia (idealizador = autor dela) na ação
+    # que um MEMBRO constrói. A comunidade propõe mas não constrói ações, então
+    # o vínculo não é do autor da ideia — é de quem executa. O model valida que
+    # a ideia existe, está aprovada, é imutável após criada e única (uma ação).
+    params.require(:acao).permit(:titulo, :descricao, :status, :thumbnail, :ideia_id)
   end
 
   def detalhe_params(tipo)

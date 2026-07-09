@@ -25,10 +25,6 @@ class PostPolicy < ApplicationPolicy
 
   private
 
-  def dono?
-    user.present? && record.user_id == user.id
-  end
-
   # Notícia: membro da liga ou acima. Blog: escritores também (RF-NOV-04).
   def pode_escrever?
     return false if user.nil?

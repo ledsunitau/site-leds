@@ -49,8 +49,8 @@ class ApplicationController < ActionController::Base
 
   # Paginação simples por query string (?pagina=N). O clamp de cima importa:
   # sem ele, um número gigante estoura o bigint do OFFSET (500 público).
-  def paginar(escopo, por_pagina: 20)
-    pagina = filtro(:pagina).to_i.clamp(1, 100_000)
+  def paginar(escopo, por_pagina: 20, param: :pagina)
+    pagina = filtro(param).to_i.clamp(1, 100_000)
     escopo.limit(por_pagina).offset((pagina - 1) * por_pagina)
   end
 

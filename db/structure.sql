@@ -62,6 +62,7 @@ CREATE TABLE public.acoes (
     created_by bigint,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    ideia_id bigint,
     CONSTRAINT acoes_detalhe_type_check CHECK (((detalhe_type)::text = ANY ((ARRAY['Projeto'::character varying, 'Evento'::character varying, 'Artigo'::character varying])::text[]))),
     CONSTRAINT acoes_status_check CHECK (((status)::text = ANY ((ARRAY['rascunho'::character varying, 'publicada'::character varying, 'arquivada'::character varying])::text[])))
 );
@@ -744,6 +745,45 @@ ALTER SEQUENCE public.gestoes_id_seq OWNED BY public.gestoes.id;
 
 
 --
+-- Name: ideias; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ideias (
+    id bigint NOT NULL,
+    user_id bigint,
+    tipo character varying NOT NULL,
+    titulo character varying NOT NULL,
+    descricao text,
+    status character varying DEFAULT 'pendente'::character varying NOT NULL,
+    reviewed_by bigint,
+    reviewed_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT ideias_status_check CHECK (((status)::text = ANY ((ARRAY['pendente'::character varying, 'aprovada'::character varying, 'rejeitada'::character varying])::text[]))),
+    CONSTRAINT ideias_tipo_check CHECK (((tipo)::text = ANY ((ARRAY['projeto'::character varying, 'pesquisa'::character varying])::text[])))
+);
+
+
+--
+-- Name: ideias_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.ideias_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: ideias_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.ideias_id_seq OWNED BY public.ideias.id;
+
+
+--
 -- Name: mandatos; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1381,6 +1421,13 @@ ALTER TABLE ONLY public.gestoes ALTER COLUMN id SET DEFAULT nextval('public.gest
 
 
 --
+-- Name: ideias id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ideias ALTER COLUMN id SET DEFAULT nextval('public.ideias_id_seq'::regclass);
+
+
+--
 -- Name: mandatos id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1647,6 +1694,14 @@ ALTER TABLE ONLY public.gestoes
 
 
 --
+-- Name: ideias ideias_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ideias
+    ADD CONSTRAINT ideias_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: mandatos mandatos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1771,6 +1826,13 @@ ALTER TABLE ONLY public.versions
 --
 
 CREATE UNIQUE INDEX index_acoes_on_detalhe_type_and_detalhe_id ON public.acoes USING btree (detalhe_type, detalhe_id);
+
+
+--
+-- Name: index_acoes_on_ideia_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_acoes_on_ideia_id ON public.acoes USING btree (ideia_id);
 
 
 --
@@ -1988,6 +2050,27 @@ CREATE INDEX index_eventos_on_data_inicio ON public.eventos USING btree (data_in
 --
 
 CREATE UNIQUE INDEX index_gestoes_on_ano_inicio ON public.gestoes USING btree (ano_inicio);
+
+
+--
+-- Name: index_ideias_on_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_ideias_on_status ON public.ideias USING btree (status);
+
+
+--
+-- Name: index_ideias_on_tipo; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_ideias_on_tipo ON public.ideias USING btree (tipo);
+
+
+--
+-- Name: index_ideias_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_ideias_on_user_id ON public.ideias USING btree (user_id);
 
 
 --
@@ -2243,6 +2326,14 @@ ALTER TABLE ONLY public.artigo_temas
 
 
 --
+-- Name: acoes fk_rails_38f7189c12; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.acoes
+    ADD CONSTRAINT fk_rails_38f7189c12 FOREIGN KEY (ideia_id) REFERENCES public.ideias(id) ON DELETE SET NULL;
+
+
+--
 -- Name: contribuicoes fk_rails_4043761945; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2315,6 +2406,14 @@ ALTER TABLE ONLY public.apresentacoes
 
 
 --
+-- Name: ideias fk_rails_7e7dc50700; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ideias
+    ADD CONSTRAINT fk_rails_7e7dc50700 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 -- Name: notification_preferences fk_rails_9503aade25; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2336,6 +2435,14 @@ ALTER TABLE ONLY public.active_storage_variant_records
 
 ALTER TABLE ONLY public.projeto_tecnologias
     ADD CONSTRAINT fk_rails_9b24c9a8a2 FOREIGN KEY (tecnologia_id) REFERENCES public.tecnologias(id) ON DELETE CASCADE;
+
+
+--
+-- Name: ideias fk_rails_a21b374619; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ideias
+    ADD CONSTRAINT fk_rails_a21b374619 FOREIGN KEY (reviewed_by) REFERENCES public.members(id) ON DELETE SET NULL;
 
 
 --
@@ -2433,6 +2540,7 @@ ALTER TABLE ONLY public.evento_membros
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260709010000'),
 ('20260708232202'),
 ('20260708232201'),
 ('20260708232200'),
