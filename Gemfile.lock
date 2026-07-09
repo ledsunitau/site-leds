@@ -443,7 +443,7 @@ DEPENDENCIES
   jbuilder
   kamal
   mission_control-jobs
-  noticed
+  noticed (~> 3.0)
   omniauth-discord
   omniauth-google-oauth2
   omniauth-rails_csrf_protection
@@ -463,7 +463,7 @@ DEPENDENCIES
   turbo-rails
   tzinfo-data
   web-console
-  web-push
+  web-push (~> 3.1)
 
 BUNDLED WITH
    2.6.9
