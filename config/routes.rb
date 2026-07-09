@@ -49,6 +49,17 @@ Rails.application.routes.draw do
   # Métricas da landing (RF-INI-01)
   get "metricas", to: "metricas#show"
 
+  # Notificações (RF-NOT): centro in-app, preferências por canal/categoria e
+  # inscrições de Web Push (VAPID).
+  resources :notifications, only: :index do
+    member { post :read }
+    collection { post :read_all }
+  end
+  resources :notification_preferences, only: %i[index create]
+  resources :push_subscriptions, only: %i[create destroy] do
+    collection { get :vapid_public_key }
+  end
+
   # LGPD e analytics (Cluster 8): consentimento de cookies (RNF-04/05) +
   # coleta de eventos só com consentimento (RN-14). Ambos públicos.
   resources :consents, only: :create

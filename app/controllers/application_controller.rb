@@ -75,6 +75,19 @@ class ApplicationController < ActionController::Base
     render json: { errors: registro.errors.full_messages }, status: :unprocessable_entity
   end
 
+  # Upsert idempotente sob corrida: dois requests concorrentes com a mesma
+  # chave única fazem o segundo pegar RecordNotUnique (o find_or_initialize não
+  # viu a linha que o outro acabou de inserir). Reexecuta uma vez — agora a
+  # linha existe e o find a encontra — em vez de estourar 500.
+  def com_upsert_concorrente
+    tentativas = 0
+    begin
+      yield
+    rescue ActiveRecord::RecordNotUnique
+      (tentativas += 1) <= 1 ? retry : raise
+    end
+  end
+
   # Id anônimo do visitante (RNF-04/05). Cookie ASSINADO para não ser forjável
   # (senão dá para atribuir eventos a outro id e inflar visitantes_unicos).
   # Só LÊ — quem cria/persiste o cookie é o ConsentsController. Compartilhado

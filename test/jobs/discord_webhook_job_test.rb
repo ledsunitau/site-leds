@@ -74,7 +74,7 @@ class DiscordWebhookJobTest < ActiveJob::TestCase
 
     revogado = Net::HTTPNotFound.new("1.1", "404", "Not Found")
     com_post_falso(->(*) { revogado }) do
-      assert_raises(DiscordWebhookJob::ErroPermanente) do
+      assert_raises(DiscordRest::ErroPermanente) do
         DiscordWebhookJob.new.perform(posts(:noticia_publicada).id)
       end
     end

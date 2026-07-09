@@ -59,6 +59,11 @@ gem "paper_trail"
 # Painel do Solid Queue em /admin/jobs, atrás do gate de gestão (RF-ADM-01)
 gem "mission_control-jobs"
 
+# Notificações: evento único → N entregas por destinatário/canal (RF-NOT-01..06)
+gem "noticed", "~> 3.0"
+# Web Push (VAPID) para o canal push do navegador (RF-NOT-02)
+gem "web-push", "~> 3.1"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"

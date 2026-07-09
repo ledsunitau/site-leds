@@ -12,6 +12,12 @@ class User < ApplicationRecord
   has_one :member, dependent: :destroy
   # espelha o ON DELETE SET NULL do banco: o post sobrevive ao autor
   has_many :posts, dependent: :nullify, inverse_of: :autor
+  # Notificações (gem noticed): destinatário restrito a User (modelagem C6).
+  # noticed_notifications não tem FK (recipient polimórfico) — dependent limpa.
+  has_many :notifications, as: :recipient, dependent: :destroy,
+                           class_name: "Noticed::Notification"
+  has_many :notification_preferences, dependent: :destroy
+  has_many :push_subscriptions, dependent: :destroy
   has_one_attached :foto
 
   # Papel de ACESSO (autorização via Pundit). O cargo detalhado e histórico do
@@ -25,10 +31,24 @@ class User < ApplicationRecord
 
   def gestao? = ROLES_DE_GESTAO.include?(role)
 
+  # Destinatários da gestão (fila de aprovação, moderação). Fonte única = ROLES_DE_GESTAO.
+  scope :gestao, -> { where(role: ROLES_DE_GESTAO) }
+
   validates :name, presence: true
 
   def discord_username
     # find (não find_by): aproveita o preload de oauth_identities nas listagens
-    oauth_identities.find { |i| i.provider == "discord" }&.username
+    identidade_discord&.username
+  end
+
+  # id do Discord (snowflake) = uid da oauth_identity; destino do DM (RF-NOT-04)
+  def discord_uid
+    identidade_discord&.uid
+  end
+
+  private
+
+  def identidade_discord
+    oauth_identities.find { |i| i.provider == "discord" }
   end
 end

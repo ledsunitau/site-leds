@@ -3,6 +3,11 @@
 # your test database is "scratch space" for the test suite and is wiped
 # and recreated between test runs. Don't rely on the data there!
 
+# VAPID de teste: os specs de push não podem depender do .env (gitignored,
+# ausente no CI). Valores fake — o envio real do WebPush é sempre stubado.
+ENV["VAPID_PUBLIC_KEY"] ||= "test-vapid-public"
+ENV["VAPID_PRIVATE_KEY"] ||= "test-vapid-private"
+
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 

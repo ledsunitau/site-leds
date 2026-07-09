@@ -14,6 +14,11 @@ class Post < ApplicationRecord
                      optional: true, inverse_of: :posts
   belongs_to :aprovador, class_name: "Member", foreign_key: :approved_by,
                          optional: true, inverse_of: false
+  # noticed usa record polimórfico SEM FK: sem esta limpeza, apagar um post
+  # deixa notificações órfãs cujo record vira nil (500 no centro do usuário).
+  # O Noticed::Event já apaga suas notifications em cascata (delete_all).
+  has_many :noticed_events, as: :record, dependent: :destroy,
+                            class_name: "Noticed::Event", inverse_of: :record
 
   has_rich_text :corpo
   has_one_attached :thumbnail
@@ -41,6 +46,11 @@ class Post < ApplicationRecord
   # VIRA publicado — inclusive re-aprovação de edição. after_commit: o job não
   # pode rodar antes do post publicado existir de fato no banco.
   after_commit :anunciar_no_discord, if: -> { saved_change_to_status? && publicado? }
+
+  # Notificações aos usuários (RF-NOT): fila → gestão (RF-ADM-04); resultado →
+  # autor (RF-NOV-05). after_commit: destinatário só é avisado de estado já
+  # persistido. Distinto do anúncio no canal (webhook), que é público.
+  after_commit :notificar_moderacao, if: -> { saved_change_to_status? }
 
   # O cache da landing (posts/ultimas) não pode servir notícia que saiu do ar
   # (retirada, rejeitada, apagada) — TTL cobre frescor, não retratação.
@@ -102,6 +112,16 @@ class Post < ApplicationRecord
 
   def anunciar_no_discord
     DiscordWebhookJob.perform_later(id)
+  end
+
+  def notificar_moderacao
+    case status
+    when "em_aprovacao"
+      gestores = User.gestao.where.not(id: user_id).to_a # não notifica o próprio autor gestor
+      PostSubmetidoNotifier.with(record: self).deliver(gestores) if gestores.any?
+    when "publicado", "rejeitado"
+      PostModeradoNotifier.with(record: self, resultado: status).deliver(autor) if autor
+    end
   end
 
   def expirar_cache_de_ultimas
