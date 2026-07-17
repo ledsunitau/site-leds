@@ -258,5 +258,7 @@ class ParceirosTest < ActionDispatch::IntegrationTest
     end
     assert_response :no_content
     assert Parceiro.exists?(parceiro.id), "o parceiro sobrevive à eliminação do lead (LGPD)"
+    assert_not Noticed::Event.where(type: "ParceriaLeadNotifier").exists?,
+               "a eliminação leva as notificações sobre o lead junto (sem órfã)"
   end
 end

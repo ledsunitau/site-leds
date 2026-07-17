@@ -3,6 +3,12 @@
 # parceiro_id) — mantém "interessado" e "parceiro efetivo" distintos.
 # A conversão passa por converter!, nunca por atribuição direta de status.
 class ParceriaLead < ApplicationRecord
+  # noticed usa record polimórfico SEM FK: o lead É destruído (eliminação LGPD
+  # no admin), então sem esta limpeza sobra notificação órfã — e o pedido de
+  # eliminação não teria levado tudo junto. Mesmo motivo do Post/Denuncia.
+  has_many :noticed_events, as: :record, dependent: :destroy,
+                            class_name: "Noticed::Event", inverse_of: :record
+
   belongs_to :parceiro, optional: true
 
   TIPOS = %w[software pesquisa evento patrocinio_geral].freeze

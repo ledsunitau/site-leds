@@ -52,6 +52,17 @@ class Rack::Attack
   throttle("parceria_leads/ip", limit: 10, period: 1.hour) do |req|
     req.ip if req.post? && normalized_path(req) == "/parceria_leads"
   end
+
+  # Comentários e denúncias (RF-NOV-08/09): escrita da comunidade em massa —
+  # o path varia (/posts/:id/comentarios, /comentarios/:id/denuncias), então
+  # casa por prefixo/sufixo em vez de igualdade.
+  throttle("comentarios/ip", limit: 30, period: 1.hour) do |req|
+    req.ip if req.post? && normalized_path(req).match?(%r{\A/posts/\d+/comentarios\z})
+  end
+
+  throttle("denuncias/ip", limit: 20, period: 1.hour) do |req|
+    req.ip if req.post? && normalized_path(req).match?(%r{\A/comentarios/\d+/denuncias\z})
+  end
 end
 
 Rack::Attack.enabled = !Rails.env.test?

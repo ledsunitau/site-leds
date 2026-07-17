@@ -1,0 +1,21 @@
+visivel_na_noticia:
+  post: noticia_publicada
+  autor: ana
+  corpo: Parabéns pela conquista!
+  status: visivel
+
+# já moderado: some do público, mas a linha fica (soft delete, RF-NOV-10)
+oculto_na_noticia:
+  post: noticia_publicada
+  autor: membro_user
+  corpo: Comentário fora de tom.
+  status: oculto
+  moderador: diretor_cientifica
+  moderated_at: <%= 2.days.ago %>
+
+# controle: em OUTRO post — prova que o índice escopa por post
+visivel_no_blog:
+  post: blog_publicado
+  autor: ana
+  corpo: Bom roteiro!
+  status: visivel

@@ -57,6 +57,14 @@ Rails.application.routes.draw do
       post :rejeitar
       get :versoes
     end
+    # RF-NOV-08: comentários de um post
+    resources :comentarios, only: %i[index create]
+  end
+
+  # Moderar comentário (RF-NOV-10) e denunciar (RF-NOV-09) independem do post
+  resources :comentarios, only: [] do
+    member { post :moderar }
+    resources :denuncias, only: :create
   end
 
   # Métricas da landing (RF-INI-01)
@@ -95,6 +103,10 @@ Rails.application.routes.draw do
         post :converter
         post :recusar
       end
+    end
+    # RF-ADM-05: aba de denúncias
+    resources :denuncias, only: :index do
+      member { post :resolver }
     end
   end
   mount MissionControl::Jobs::Engine, at: "/admin/jobs"

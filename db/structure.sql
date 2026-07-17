@@ -434,6 +434,43 @@ ALTER SEQUENCE public.autores_id_seq OWNED BY public.autores.id;
 
 
 --
+-- Name: comentarios; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.comentarios (
+    id bigint NOT NULL,
+    post_id bigint NOT NULL,
+    user_id bigint,
+    corpo text NOT NULL,
+    status character varying DEFAULT 'visivel'::character varying NOT NULL,
+    moderated_by bigint,
+    moderated_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT comentarios_status_check CHECK (((status)::text = ANY ((ARRAY['visivel'::character varying, 'oculto'::character varying, 'removido'::character varying])::text[])))
+);
+
+
+--
+-- Name: comentarios_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.comentarios_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: comentarios_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.comentarios_id_seq OWNED BY public.comentarios.id;
+
+
+--
 -- Name: congressos; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -598,6 +635,43 @@ CREATE SEQUENCE public.cookie_consents_id_seq
 --
 
 ALTER SEQUENCE public.cookie_consents_id_seq OWNED BY public.cookie_consents.id;
+
+
+--
+-- Name: denuncias; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.denuncias (
+    id bigint NOT NULL,
+    comentario_id bigint NOT NULL,
+    user_id bigint,
+    motivo character varying,
+    status character varying DEFAULT 'pendente'::character varying NOT NULL,
+    resolved_by bigint,
+    resolved_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT denuncias_status_check CHECK (((status)::text = ANY ((ARRAY['pendente'::character varying, 'resolvida'::character varying])::text[])))
+);
+
+
+--
+-- Name: denuncias_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.denuncias_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: denuncias_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.denuncias_id_seq OWNED BY public.denuncias.id;
 
 
 --
@@ -1463,6 +1537,13 @@ ALTER TABLE ONLY public.autores ALTER COLUMN id SET DEFAULT nextval('public.auto
 
 
 --
+-- Name: comentarios id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.comentarios ALTER COLUMN id SET DEFAULT nextval('public.comentarios_id_seq'::regclass);
+
+
+--
 -- Name: congressos id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1495,6 +1576,13 @@ ALTER TABLE ONLY public.convidados ALTER COLUMN id SET DEFAULT nextval('public.c
 --
 
 ALTER TABLE ONLY public.cookie_consents ALTER COLUMN id SET DEFAULT nextval('public.cookie_consents_id_seq'::regclass);
+
+
+--
+-- Name: denuncias id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.denuncias ALTER COLUMN id SET DEFAULT nextval('public.denuncias_id_seq'::regclass);
 
 
 --
@@ -1748,6 +1836,14 @@ ALTER TABLE ONLY public.autores
 
 
 --
+-- Name: comentarios comentarios_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.comentarios
+    ADD CONSTRAINT comentarios_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: congressos congressos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1785,6 +1881,14 @@ ALTER TABLE ONLY public.convidados
 
 ALTER TABLE ONLY public.cookie_consents
     ADD CONSTRAINT cookie_consents_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: denuncias denuncias_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.denuncias
+    ADD CONSTRAINT denuncias_pkey PRIMARY KEY (id);
 
 
 --
@@ -2105,6 +2209,27 @@ CREATE INDEX index_autores_on_member_id ON public.autores USING btree (member_id
 
 
 --
+-- Name: index_comentarios_on_post_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_comentarios_on_post_id ON public.comentarios USING btree (post_id);
+
+
+--
+-- Name: index_comentarios_on_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_comentarios_on_status ON public.comentarios USING btree (status);
+
+
+--
+-- Name: index_comentarios_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_comentarios_on_user_id ON public.comentarios USING btree (user_id);
+
+
+--
 -- Name: index_congressos_on_nome; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2151,6 +2276,20 @@ CREATE INDEX index_cookie_consents_on_anonymous_id ON public.cookie_consents USI
 --
 
 CREATE INDEX index_cookie_consents_on_user_id ON public.cookie_consents USING btree (user_id);
+
+
+--
+-- Name: index_denuncias_on_comentario_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_denuncias_on_comentario_id ON public.denuncias USING btree (comentario_id);
+
+
+--
+-- Name: index_denuncias_on_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_denuncias_on_status ON public.denuncias USING btree (status);
 
 
 --
@@ -2526,11 +2665,27 @@ ALTER TABLE ONLY public.acoes
 
 
 --
+-- Name: denuncias fk_rails_3dd1374548; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.denuncias
+    ADD CONSTRAINT fk_rails_3dd1374548 FOREIGN KEY (comentario_id) REFERENCES public.comentarios(id) ON DELETE CASCADE;
+
+
+--
 -- Name: contribuicoes fk_rails_4043761945; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.contribuicoes
     ADD CONSTRAINT fk_rails_4043761945 FOREIGN KEY (member_id) REFERENCES public.members(id) ON DELETE CASCADE;
+
+
+--
+-- Name: denuncias fk_rails_40b2bc54f9; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.denuncias
+    ADD CONSTRAINT fk_rails_40b2bc54f9 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
 
 
 --
@@ -2582,11 +2737,27 @@ ALTER TABLE ONLY public.posts
 
 
 --
+-- Name: comentarios fk_rails_5d4ddb7416; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.comentarios
+    ADD CONSTRAINT fk_rails_5d4ddb7416 FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE CASCADE;
+
+
+--
 -- Name: autores fk_rails_633dbf1289; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.autores
     ADD CONSTRAINT fk_rails_633dbf1289 FOREIGN KEY (member_id) REFERENCES public.members(id) ON DELETE SET NULL;
+
+
+--
+-- Name: comentarios fk_rails_644fc17ed7; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.comentarios
+    ADD CONSTRAINT fk_rails_644fc17ed7 FOREIGN KEY (moderated_by) REFERENCES public.members(id) ON DELETE SET NULL;
 
 
 --
@@ -2662,6 +2833,14 @@ ALTER TABLE ONLY public.error_logs
 
 
 --
+-- Name: comentarios fk_rails_ba3fc881e1; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.comentarios
+    ADD CONSTRAINT fk_rails_ba3fc881e1 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 -- Name: cookie_consents fk_rails_bed9808f1f; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2718,6 +2897,14 @@ ALTER TABLE ONLY public.contribuicoes
 
 
 --
+-- Name: denuncias fk_rails_e0436d9b54; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.denuncias
+    ADD CONSTRAINT fk_rails_e0436d9b54 FOREIGN KEY (resolved_by) REFERENCES public.members(id) ON DELETE SET NULL;
+
+
+--
 -- Name: mandatos fk_rails_ea23ad2fbc; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2764,6 +2951,7 @@ ALTER TABLE ONLY public.parceiros
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260709030000'),
 ('20260709020000'),
 ('20260709010000'),
 ('20260708232202'),

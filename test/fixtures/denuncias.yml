@@ -1,0 +1,8 @@
+# controle: já resolvida — prova que a aba (RF-ADM-05) filtra por pendente
+resolvida_antiga:
+  comentario: oculto_na_noticia
+  denunciante: membro_user
+  motivo: Já tratada
+  status: resolvida
+  resolvedor: diretor_cientifica
+  resolved_at: <%= 2.days.ago %>
