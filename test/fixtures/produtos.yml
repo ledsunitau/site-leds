@@ -1,0 +1,25 @@
+camiseta:
+  nome: Camiseta LEDS
+  descricao: Algodão, estampa da liga.
+  modo_venda: estoque
+  preco: 60.00
+  preco_promocional: 49.90
+  status: ativo
+  criador: membro_comum
+
+# sob demanda: a meta é o que dispara a produção (RF-LOJ-05)
+moletom:
+  nome: Moletom LEDS
+  modo_venda: sob_demanda
+  preco: 150.00
+  status: ativo
+  quantidade_alvo: 20
+  criador: membro_comum
+
+# fora da vitrine (RF-LOJ-08)
+caneca_antiga:
+  nome: Caneca antiga
+  modo_venda: estoque
+  preco: 30.00
+  status: indisponivel
+  criador: membro_comum

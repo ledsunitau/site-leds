@@ -44,6 +44,10 @@ Rails.application.routes.draw do
   resources :parceiros, only: %i[index show create update]
   resources :parceria_leads, only: :create
 
+  # Loja (RF-LOJ-01): catálogo. Ver exige login — padrão exclusivo da loja
+  # (RN-17); cadastrar/editar é de membro para cima (RN-13).
+  resources :produtos, only: %i[index show create update]
+
   # Novidades (RF-NOV): notícias/blog com fila de aprovação (RN-02) +
   # últimas notícias da landing (RF-INI-07) + histórico de versões (RF-NOV-07)
   resources :posts, only: %i[index show create update destroy] do

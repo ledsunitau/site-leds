@@ -1215,6 +1215,49 @@ ALTER SEQUENCE public.posts_id_seq OWNED BY public.posts.id;
 
 
 --
+-- Name: produtos; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.produtos (
+    id bigint NOT NULL,
+    nome character varying NOT NULL,
+    descricao text,
+    modo_venda character varying DEFAULT 'estoque'::character varying NOT NULL,
+    preco numeric(10,2) NOT NULL,
+    preco_promocional numeric(10,2),
+    status character varying DEFAULT 'ativo'::character varying NOT NULL,
+    quantidade_alvo integer,
+    created_by bigint,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT produtos_modo_venda_check CHECK (((modo_venda)::text = ANY ((ARRAY['estoque'::character varying, 'sob_demanda'::character varying])::text[]))),
+    CONSTRAINT produtos_preco_check CHECK ((preco >= (0)::numeric)),
+    CONSTRAINT produtos_preco_promocional_check CHECK (((preco_promocional IS NULL) OR (preco_promocional >= (0)::numeric))),
+    CONSTRAINT produtos_quantidade_alvo_check CHECK (((quantidade_alvo IS NULL) OR (quantidade_alvo > 0))),
+    CONSTRAINT produtos_status_check CHECK (((status)::text = ANY ((ARRAY['ativo'::character varying, 'indisponivel'::character varying])::text[])))
+);
+
+
+--
+-- Name: produtos_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.produtos_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: produtos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.produtos_id_seq OWNED BY public.produtos.id;
+
+
+--
 -- Name: projeto_tecnologias; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1422,6 +1465,41 @@ CREATE SEQUENCE public.users_id_seq
 --
 
 ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
+
+
+--
+-- Name: variantes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.variantes (
+    id bigint NOT NULL,
+    produto_id bigint NOT NULL,
+    nome character varying NOT NULL,
+    sku character varying,
+    estoque integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT variantes_estoque_check CHECK ((estoque >= 0))
+);
+
+
+--
+-- Name: variantes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.variantes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: variantes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.variantes_id_seq OWNED BY public.variantes.id;
 
 
 --
@@ -1691,6 +1769,13 @@ ALTER TABLE ONLY public.posts ALTER COLUMN id SET DEFAULT nextval('public.posts_
 
 
 --
+-- Name: produtos id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.produtos ALTER COLUMN id SET DEFAULT nextval('public.produtos_id_seq'::regclass);
+
+
+--
 -- Name: projeto_tecnologias id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1730,6 +1815,13 @@ ALTER TABLE ONLY public.temas ALTER COLUMN id SET DEFAULT nextval('public.temas_
 --
 
 ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
+
+
+--
+-- Name: variantes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.variantes ALTER COLUMN id SET DEFAULT nextval('public.variantes_id_seq'::regclass);
 
 
 --
@@ -2012,6 +2104,14 @@ ALTER TABLE ONLY public.posts
 
 
 --
+-- Name: produtos produtos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.produtos
+    ADD CONSTRAINT produtos_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: projeto_tecnologias projeto_tecnologias_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2065,6 +2165,14 @@ ALTER TABLE ONLY public.temas
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: variantes variantes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.variantes
+    ADD CONSTRAINT variantes_pkey PRIMARY KEY (id);
 
 
 --
@@ -2531,6 +2639,20 @@ CREATE INDEX index_posts_on_user_id ON public.posts USING btree (user_id);
 
 
 --
+-- Name: index_produtos_on_modo_venda; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_produtos_on_modo_venda ON public.produtos USING btree (modo_venda);
+
+
+--
+-- Name: index_produtos_on_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_produtos_on_status ON public.produtos USING btree (status);
+
+
+--
 -- Name: index_projeto_tecnologias_on_projeto_id_and_tecnologia_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2584,6 +2706,20 @@ CREATE UNIQUE INDEX index_users_on_email ON public.users USING btree (email);
 --
 
 CREATE UNIQUE INDEX index_users_on_reset_password_token ON public.users USING btree (reset_password_token);
+
+
+--
+-- Name: index_variantes_on_produto_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_variantes_on_produto_id ON public.variantes USING btree (produto_id);
+
+
+--
+-- Name: index_variantes_on_sku; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_variantes_on_sku ON public.variantes USING btree (sku) WHERE (sku IS NOT NULL);
 
 
 --
@@ -2793,6 +2929,14 @@ ALTER TABLE ONLY public.ideias
 
 
 --
+-- Name: produtos fk_rails_8563f0e618; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.produtos
+    ADD CONSTRAINT fk_rails_8563f0e618 FOREIGN KEY (created_by) REFERENCES public.members(id) ON DELETE SET NULL;
+
+
+--
 -- Name: notification_preferences fk_rails_9503aade25; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2846,6 +2990,14 @@ ALTER TABLE ONLY public.comentarios
 
 ALTER TABLE ONLY public.cookie_consents
     ADD CONSTRAINT fk_rails_bed9808f1f FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: variantes fk_rails_bfeae8e22c; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.variantes
+    ADD CONSTRAINT fk_rails_bfeae8e22c FOREIGN KEY (produto_id) REFERENCES public.produtos(id) ON DELETE CASCADE;
 
 
 --
@@ -2951,6 +3103,7 @@ ALTER TABLE ONLY public.parceiros
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260709040000'),
 ('20260709030000'),
 ('20260709020000'),
 ('20260709010000'),
