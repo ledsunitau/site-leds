@@ -49,6 +49,36 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: acao_parceiros; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.acao_parceiros (
+    id bigint NOT NULL,
+    acao_id bigint NOT NULL,
+    parceiro_id bigint NOT NULL
+);
+
+
+--
+-- Name: acao_parceiros_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.acao_parceiros_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: acao_parceiros_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.acao_parceiros_id_seq OWNED BY public.acao_parceiros.id;
+
+
+--
 -- Name: acoes; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -995,6 +1025,81 @@ ALTER SEQUENCE public.oauth_identities_id_seq OWNED BY public.oauth_identities.i
 
 
 --
+-- Name: parceiros; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.parceiros (
+    id bigint NOT NULL,
+    user_id bigint,
+    nome character varying NOT NULL,
+    descricao text,
+    site_url character varying,
+    status character varying DEFAULT 'ativo'::character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT parceiros_status_check CHECK (((status)::text = ANY ((ARRAY['ativo'::character varying, 'inativo'::character varying])::text[])))
+);
+
+
+--
+-- Name: parceiros_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.parceiros_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: parceiros_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.parceiros_id_seq OWNED BY public.parceiros.id;
+
+
+--
+-- Name: parceria_leads; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.parceria_leads (
+    id bigint NOT NULL,
+    empresa character varying NOT NULL,
+    contato_nome character varying,
+    contato_email character varying NOT NULL,
+    tipo character varying NOT NULL,
+    descricao text,
+    status character varying DEFAULT 'novo'::character varying NOT NULL,
+    parceiro_id bigint,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT parceria_leads_status_check CHECK (((status)::text = ANY ((ARRAY['novo'::character varying, 'em_analise'::character varying, 'convertido'::character varying, 'recusado'::character varying])::text[]))),
+    CONSTRAINT parceria_leads_tipo_check CHECK (((tipo)::text = ANY ((ARRAY['software'::character varying, 'pesquisa'::character varying, 'evento'::character varying, 'patrocinio_geral'::character varying])::text[])))
+);
+
+
+--
+-- Name: parceria_leads_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.parceria_leads_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: parceria_leads_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.parceria_leads_id_seq OWNED BY public.parceria_leads.id;
+
+
+--
 -- Name: posts; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1281,6 +1386,13 @@ ALTER SEQUENCE public.versions_id_seq OWNED BY public.versions.id;
 
 
 --
+-- Name: acao_parceiros id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.acao_parceiros ALTER COLUMN id SET DEFAULT nextval('public.acao_parceiros_id_seq'::regclass);
+
+
+--
 -- Name: acoes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1470,6 +1582,20 @@ ALTER TABLE ONLY public.oauth_identities ALTER COLUMN id SET DEFAULT nextval('pu
 
 
 --
+-- Name: parceiros id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.parceiros ALTER COLUMN id SET DEFAULT nextval('public.parceiros_id_seq'::regclass);
+
+
+--
+-- Name: parceria_leads id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.parceria_leads ALTER COLUMN id SET DEFAULT nextval('public.parceria_leads_id_seq'::regclass);
+
+
+--
 -- Name: posts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1523,6 +1649,14 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 --
 
 ALTER TABLE ONLY public.versions ALTER COLUMN id SET DEFAULT nextval('public.versions_id_seq'::regclass);
+
+
+--
+-- Name: acao_parceiros acao_parceiros_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.acao_parceiros
+    ADD CONSTRAINT acao_parceiros_pkey PRIMARY KEY (id);
 
 
 --
@@ -1750,6 +1884,22 @@ ALTER TABLE ONLY public.oauth_identities
 
 
 --
+-- Name: parceiros parceiros_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.parceiros
+    ADD CONSTRAINT parceiros_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: parceria_leads parceria_leads_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.parceria_leads
+    ADD CONSTRAINT parceria_leads_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: posts posts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1819,6 +1969,20 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.versions
     ADD CONSTRAINT versions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: index_acao_parceiros_on_acao_id_and_parceiro_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_acao_parceiros_on_acao_id_and_parceiro_id ON public.acao_parceiros USING btree (acao_id, parceiro_id);
+
+
+--
+-- Name: index_acao_parceiros_on_parceiro_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_acao_parceiros_on_parceiro_id ON public.acao_parceiros USING btree (parceiro_id);
 
 
 --
@@ -2172,6 +2336,34 @@ CREATE INDEX index_oauth_identities_on_user_id ON public.oauth_identities USING 
 
 
 --
+-- Name: index_parceiros_on_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_parceiros_on_status ON public.parceiros USING btree (status);
+
+
+--
+-- Name: index_parceiros_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_parceiros_on_user_id ON public.parceiros USING btree (user_id);
+
+
+--
+-- Name: index_parceria_leads_on_parceiro_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_parceria_leads_on_parceiro_id ON public.parceria_leads USING btree (parceiro_id);
+
+
+--
+-- Name: index_parceria_leads_on_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_parceria_leads_on_status ON public.parceria_leads USING btree (status);
+
+
+--
 -- Name: index_posts_on_published_at; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2350,6 +2542,14 @@ ALTER TABLE ONLY public.convidado_links
 
 
 --
+-- Name: acao_parceiros fk_rails_43cea40678; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.acao_parceiros
+    ADD CONSTRAINT fk_rails_43cea40678 FOREIGN KEY (acao_id) REFERENCES public.acoes(id) ON DELETE CASCADE;
+
+
+--
 -- Name: push_subscriptions fk_rails_43d43720fc; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2395,6 +2595,14 @@ ALTER TABLE ONLY public.autores
 
 ALTER TABLE ONLY public.projeto_tecnologias
     ADD CONSTRAINT fk_rails_6da1aaeee2 FOREIGN KEY (projeto_id) REFERENCES public.projetos(id) ON DELETE CASCADE;
+
+
+--
+-- Name: parceria_leads fk_rails_7035ff8157; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.parceria_leads
+    ADD CONSTRAINT fk_rails_7035ff8157 FOREIGN KEY (parceiro_id) REFERENCES public.parceiros(id) ON DELETE SET NULL;
 
 
 --
@@ -2459,6 +2667,14 @@ ALTER TABLE ONLY public.error_logs
 
 ALTER TABLE ONLY public.cookie_consents
     ADD CONSTRAINT fk_rails_bed9808f1f FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: acao_parceiros fk_rails_c06ff30b28; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.acao_parceiros
+    ADD CONSTRAINT fk_rails_c06ff30b28 FOREIGN KEY (parceiro_id) REFERENCES public.parceiros(id) ON DELETE CASCADE;
 
 
 --
@@ -2534,12 +2750,21 @@ ALTER TABLE ONLY public.evento_membros
 
 
 --
+-- Name: parceiros fk_rails_fa996bf0d1; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.parceiros
+    ADD CONSTRAINT fk_rails_fa996bf0d1 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 -- PostgreSQL database dump complete
 --
 
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260709020000'),
 ('20260709010000'),
 ('20260708232202'),
 ('20260708232201'),

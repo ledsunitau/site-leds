@@ -46,6 +46,12 @@ class Rack::Attack
   throttle("ideias/ip", limit: 20, period: 1.hour) do |req|
     req.ip if req.post? && normalized_path(req) == "/ideias"
   end
+
+  # Formulário público "seja um parceiro" (RF-PAR-03): sem login nenhum, é o
+  # alvo mais óbvio de spam de formulário.
+  throttle("parceria_leads/ip", limit: 10, period: 1.hour) do |req|
+    req.ip if req.post? && normalized_path(req) == "/parceria_leads"
+  end
 end
 
 Rack::Attack.enabled = !Rails.env.test?

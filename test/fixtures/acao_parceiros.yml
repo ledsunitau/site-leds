@@ -1,0 +1,9 @@
+# TechCorp apoia o hackathon (publicado) e o bot (rascunho) — o perfil público
+# do parceiro (RF-PAR-02) só pode mostrar o publicado.
+hackathon_techcorp:
+  acao: acao_hackathon
+  parceiro: tech_corp
+
+bot_techcorp:
+  acao: acao_bot
+  parceiro: tech_corp

@@ -11,6 +11,9 @@ class Acao < ApplicationRecord
   belongs_to :criador, class_name: "Member", foreign_key: :created_by, optional: true
   # idealizador (RF-ACO-07): a ação pode nascer de uma ideia aprovada
   belongs_to :ideia, optional: true, inverse_of: :acao
+  # parceiros que apoiam a ação (RF-PAR-02)
+  has_many :acao_parceiros, dependent: :destroy
+  has_many :parceiros, through: :acao_parceiros
 
   has_one_attached :thumbnail # RF-ACO-10: todo card tem thumbnail
   valida_imagem :thumbnail

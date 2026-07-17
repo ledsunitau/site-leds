@@ -11,6 +11,6 @@ class MetricasControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, body["eventos"]
     assert_equal 1, body["artigos"]
     assert_equal 2, body["noticias"]
-    assert_equal 0, body["parceiros"], "tabela chega na F2"
+    assert_equal 2, body["parceiros"], "só os ativos entram na vitrine (RF-PAR-01)"
   end
 end

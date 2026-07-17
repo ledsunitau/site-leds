@@ -1,0 +1,14 @@
+tech_corp:
+  nome: TechCorp
+  descricao: Patrocinadora do hackathon.
+  site_url: https://techcorp.example
+  status: ativo
+
+inova_labs:
+  nome: Inova Labs
+  status: ativo
+
+# fora da vitrine (RF-PAR-01) e da métrica da landing
+antigo:
+  nome: Parceiro Antigo
+  status: inativo

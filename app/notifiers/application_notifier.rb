@@ -7,16 +7,22 @@ class ApplicationNotifier < Noticed::Event
   deliver_by :email do |config|
     config.mailer = "NotificationMailer"
     config.method = :notify
-    config.if = -> { event.canal_habilitado?(recipient, :email) }
+    config.if = -> { event.entrega_externa? && event.canal_habilitado?(recipient, :email) }
   end
 
   deliver_by :web_push, class: "DeliveryMethods::WebPush" do |config|
-    config.if = -> { event.canal_habilitado?(recipient, :push) }
+    config.if = -> { event.entrega_externa? && event.canal_habilitado?(recipient, :push) }
   end
 
   deliver_by :discord_dm, class: "DeliveryMethods::DiscordDm" do |config|
-    config.if = -> { event.canal_habilitado?(recipient, :discord) }
+    config.if = -> { event.entrega_externa? && event.canal_habilitado?(recipient, :discord) }
   end
+
+  # Notifier disparado por endpoint ANÔNIMO sobrescreve para false: mandar
+  # e-mail/push/DM com texto de quem não se autenticou transforma o nosso
+  # pipeline confiável num amplificador de spam e phishing. Esses ficam só no
+  # registro in-app (o centro/dashboard, que é onde a gestão vai olhar).
+  def entrega_externa? = true
 
   def categoria = self.class::CATEGORIA
 

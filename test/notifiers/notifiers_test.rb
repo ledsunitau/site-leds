@@ -5,6 +5,32 @@ class NotifiersTest < ActiveSupport::TestCase
 
   setup { ActionMailer::Base.deliveries.clear }
 
+  # Invariante: se um notifier entrega fora do app, a categoria dele TEM que
+  # estar registrada — senão habilitado? não acha a linha e falha ABERTO, e o
+  # opt-out do usuário some em silêncio (RF-NOT-06).
+  test "toda categoria de notifier com entrega externa está em CATEGORIAS" do
+    Rails.application.eager_load!
+
+    ApplicationNotifier.descendants.each do |notifier|
+      next unless notifier.new.entrega_externa?
+
+      assert_includes NotificationPreference::CATEGORIAS, notifier::CATEGORIA,
+                      "#{notifier}::CATEGORIA não está em NotificationPreference::CATEGORIAS"
+    end
+  end
+
+  test "notifier in-app-only não entrega em canal externo (gatilho anônimo)" do
+    ActionMailer::Base.deliveries.clear
+    lead = ParceriaLead.create!(empresa: "ACME", contato_email: "c@acme.example", tipo: "software")
+
+    perform_enqueued_jobs do
+      ParceriaLeadNotifier.with(record: lead).deliver([ users(:diretor) ])
+    end
+
+    assert users(:diretor).notifications.any?, "o registro in-app é gravado"
+    assert_empty ActionMailer::Base.deliveries, "mas nada sai por e-mail"
+  end
+
   test "deliver grava uma notificação in-app por destinatário" do
     destinatarios = [ users(:ana), users(:diretor) ]
 
