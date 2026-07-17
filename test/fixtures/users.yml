@@ -40,6 +40,13 @@ escritor_user:
   role: escritor
   encrypted_password: <%= Devise::Encryptor.digest(User, "senha-segura-123") %>
 
+# compra na loja, mas não cadastra produto (matriz de permissões)
+parceiro_user:
+  email: parceiro@example.com
+  name: Pedro Parceiro
+  role: parceiro
+  encrypted_password: <%= Devise::Encryptor.digest(User, "senha-segura-123") %>
+
 # role de membro SEM registro Member (promovido antes do perfil existir)
 membro_sem_perfil:
   email: sem-perfil@example.com

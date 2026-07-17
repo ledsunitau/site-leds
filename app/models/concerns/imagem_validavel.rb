@@ -1,5 +1,12 @@
-# Regras de upload de imagem pública (fotos, thumbnails, ícones):
-# só formatos web, tamanho limitado — todo anexo aqui é servido público.
+# Regras de upload de imagem (fotos, thumbnails, ícones, imagem de produto):
+# só formatos web, tamanho limitado.
+#
+# ATENÇÃO ao servir: a URL sai por rails_blob_path (FotoUrl), rota do Active
+# Storage que NÃO passa pelo Devise. O signed_id não é adivinhável, mas também
+# não expira — quem receber o link lê o arquivo sem sessão. Isso é indiferente
+# para o que já é público (membro, post, parceiro), mas a loja exige login para
+# LER (RN-17): o JSON está protegido, o byte da imagem não. Se isso incomodar,
+# a alavanca é urls_expire_in / entrega autenticada, na branch de deploy (R2).
 #
 #   include ImagemValidavel
 #   valida_imagem :thumbnail

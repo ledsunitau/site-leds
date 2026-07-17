@@ -1,0 +1,17 @@
+camiseta_m:
+  produto: camiseta
+  nome: M
+  sku: CAM-M
+  estoque: 10
+
+camiseta_g:
+  produto: camiseta
+  nome: G
+  sku: CAM-G
+  estoque: 0
+
+# sem SKU: permitido (o índice único é parcial)
+moletom_unico:
+  produto: moletom
+  nome: Único
+  estoque: 0
