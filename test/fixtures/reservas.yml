@@ -1,0 +1,14 @@
+ana_moletom:
+  user: ana
+  produto: moletom
+  variante: moletom_unico
+  quantidade: 1
+  status: ativa
+
+# controle p/ o trigger: convertida NÃO pode ser tocada quando o produto some
+# (o trigger só cancela status='ativa'); e o dono dela não é notificado
+membro_convertida:
+  user: membro_user
+  produto: moletom
+  quantidade: 1
+  status: convertida

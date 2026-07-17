@@ -25,6 +25,9 @@ class User < ApplicationRecord
   # espelham o ON DELETE SET NULL: comentário/denúncia sobrevivem ao autor
   has_many :comentarios, dependent: :nullify, inverse_of: :autor
   has_many :denuncias, dependent: :nullify, inverse_of: :denunciante
+  # loja: um carrinho por usuário; reservas (ambos cascade no banco)
+  has_one :carrinho, dependent: :destroy
+  has_many :reservas, dependent: :destroy
   has_one_attached :foto
 
   # Papel de ACESSO (autorização via Pundit). O cargo detalhado e histórico do

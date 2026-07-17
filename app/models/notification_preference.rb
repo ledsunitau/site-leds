@@ -19,7 +19,7 @@ class NotificationPreference < ApplicationRecord
   # Categorias reais (= CATEGORIA dos notifiers). Lista fechada: barra texto
   # livre (criação ilimitada) e o no-op silencioso de "moderação" ≠ "moderacao".
   # Cada branch nova que adiciona um notifier registra sua categoria aqui.
-  CATEGORIAS = %w[moderacao publicacao ideias].freeze
+  CATEGORIAS = %w[moderacao publicacao ideias loja].freeze
   validates :categoria, inclusion: { in: CATEGORIAS }
   validates :canal, uniqueness: { scope: %i[user_id categoria] }
 
