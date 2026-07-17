@@ -9,7 +9,7 @@ class MetricasController < ApplicationController
         eventos: publicadas["Evento"] || 0,
         artigos: publicadas["Artigo"] || 0,
         noticias: Post.publicados.noticia.count,
-        parceiros: 0 # tabela chega na F2 (feature/parceiros) — esperado
+        parceiros: Parceiro.ativos.count # a vitrine (RF-PAR-01) são os ativos
       }
     end
 

@@ -39,6 +39,11 @@ Rails.application.routes.draw do
     end
   end
 
+  # Parceiros (RF-PAR): vitrine pública + área do parceiro; o formulário
+  # "seja um parceiro" (RF-PAR-03) é público e só cria lead.
+  resources :parceiros, only: %i[index show create update]
+  resources :parceria_leads, only: :create
+
   # Novidades (RF-NOV): notícias/blog com fila de aprovação (RN-02) +
   # últimas notícias da landing (RF-INI-07) + histórico de versões (RF-NOV-07)
   resources :posts, only: %i[index show create update destroy] do
@@ -84,6 +89,13 @@ Rails.application.routes.draw do
     resources :approvals, only: :index
     resources :audits, only: :index
     resource :metrics, only: :show
+    # RF-PAR-04: triagem dos leads de parceria (destroy = eliminação LGPD)
+    resources :parceria_leads, only: %i[index destroy] do
+      member do
+        post :converter
+        post :recusar
+      end
+    end
   end
   mount MissionControl::Jobs::Engine, at: "/admin/jobs"
 

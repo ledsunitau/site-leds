@@ -53,6 +53,7 @@ class AcoesController < ApplicationController
     acao = nil
     ActiveRecord::Base.transaction do
       acao = Acao.create!(acao_params.merge(detalhe: montar_detalhe(tipo), criador: criador))
+      atualiza_parceiros(acao)
     end
 
     render json: acao_json(acao, completo: true), status: :created
@@ -66,6 +67,7 @@ class AcoesController < ApplicationController
     ActiveRecord::Base.transaction do
       acao.update!(acao_params)
       atualizar_detalhe(acao)
+      atualiza_parceiros(acao)
     end
 
     render json: acao_json(acao, completo: true)
@@ -135,6 +137,13 @@ class AcoesController < ApplicationController
 
   def detalhe_params(tipo)
     params.require(:acao).permit(tipo => CAMPOS_DETALHE.fetch(tipo)).fetch(tipo, {})
+  end
+
+  # RF-PAR-02: parceiros que apoiam a ação. Junção auditada (RNF-09) — o
+  # diff-writer registra cada inclusão/remoção no PaperTrail. Vive no nível da
+  # AÇÃO (não do detalhe), por isso fora de atualiza_colecoes.
+  def atualiza_parceiros(acao)
+    substitui_juncao_auditada(acao.acao_parceiros, :parceiro_id, ids_do_payload(:parceiro_ids))
   end
 
   # ---- montagem/atualização por tipo ----
@@ -275,7 +284,7 @@ class AcoesController < ApplicationController
   # ---- JSON ----
 
   def acao_json(acao, completo: false)
-    {
+    json = {
       id: acao.id,
       tipo: acao.detalhe_type,
       titulo: acao.titulo,
@@ -284,6 +293,14 @@ class AcoesController < ApplicationController
       thumbnail_url: FotoUrl.para(acao.thumbnail),
       detalhe: detalhe_json(acao, completo: completo)
     }
+    if completo
+      json[:ideia_id] = acao.ideia_id # idealizador (RF-ACO-07)
+      # só ativos: "inativo" tira o parceiro do site público em TODOS os
+      # caminhos (vitrine, métrica, perfil e aqui) — senão desativar só o
+      # esconde da lista e a marca dele segue publicada em cada ação apoiada
+      json[:parceiros] = acao.parceiros.ativos.map(&:card_json) # RF-PAR-02
+    end
+    json
   end
 
   # Card por tipo vive nos models (Projeto/Evento/Artigo#card_json); aqui só
