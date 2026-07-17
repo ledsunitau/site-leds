@@ -1,0 +1,5 @@
+ana_camiseta:
+  carrinho: carrinho_da_ana
+  produto: camiseta
+  variante: camiseta_m
+  quantidade: 2

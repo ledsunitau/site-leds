@@ -48,6 +48,19 @@ Rails.application.routes.draw do
   # (RN-17); cadastrar/editar é de membro para cima (RN-13).
   resources :produtos, only: %i[index show create update]
 
+  # Carrinho (RF-LOJ-02) e reservas sob demanda (RF-LOJ-05/06) — do próprio
+  # usuário logado. Rotas de item explícitas: "itens" singulariza mal
+  # ("iten"), e o resource singular procuraria CarrinhosController.
+  get "carrinho", to: "carrinho#show", as: :carrinho
+  scope "carrinho", controller: "itens_carrinho", as: "carrinho" do
+    post "itens", action: :create, as: :itens
+    patch "itens/:id", action: :update, as: :item
+    delete "itens/:id", action: :destroy
+  end
+  resources :reservas, only: %i[index create] do
+    member { post :cancelar }
+  end
+
   # Novidades (RF-NOV): notícias/blog com fila de aprovação (RN-02) +
   # últimas notícias da landing (RF-INI-07) + histórico de versões (RF-NOV-07)
   resources :posts, only: %i[index show create update destroy] do

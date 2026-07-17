@@ -1,0 +1,4 @@
+# label distinto de users(:ana): o Rails deriva o id do fixture do LABEL, então
+# um carrinho chamado "ana" teria o mesmo id do user "ana" (confunde find por id)
+carrinho_da_ana:
+  user: ana

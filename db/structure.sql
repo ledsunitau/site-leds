@@ -44,6 +44,24 @@ END;
 $$;
 
 
+--
+-- Name: trg_produto_indisponivel(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.trg_produto_indisponivel() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF NEW.status = 'indisponivel' AND OLD.status IS DISTINCT FROM 'indisponivel' THEN
+    DELETE FROM itens_carrinho WHERE produto_id = NEW.id;
+    UPDATE reservas SET status = 'cancelada', updated_at = now()
+     WHERE produto_id = NEW.id AND status = 'ativa';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -431,6 +449,37 @@ CREATE SEQUENCE public.autores_id_seq
 --
 
 ALTER SEQUENCE public.autores_id_seq OWNED BY public.autores.id;
+
+
+--
+-- Name: carrinhos; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.carrinhos (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: carrinhos_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.carrinhos_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: carrinhos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.carrinhos_id_seq OWNED BY public.carrinhos.id;
 
 
 --
@@ -885,6 +934,41 @@ CREATE SEQUENCE public.ideias_id_seq
 --
 
 ALTER SEQUENCE public.ideias_id_seq OWNED BY public.ideias.id;
+
+
+--
+-- Name: itens_carrinho; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.itens_carrinho (
+    id bigint NOT NULL,
+    carrinho_id bigint NOT NULL,
+    produto_id bigint NOT NULL,
+    variante_id bigint,
+    quantidade integer DEFAULT 1 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT itens_carrinho_quantidade_check CHECK ((quantidade > 0))
+);
+
+
+--
+-- Name: itens_carrinho_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.itens_carrinho_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: itens_carrinho_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.itens_carrinho_id_seq OWNED BY public.itens_carrinho.id;
 
 
 --
@@ -1359,6 +1443,44 @@ ALTER SEQUENCE public.push_subscriptions_id_seq OWNED BY public.push_subscriptio
 
 
 --
+-- Name: reservas; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.reservas (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    produto_id bigint NOT NULL,
+    variante_id bigint,
+    quantidade integer DEFAULT 1 NOT NULL,
+    status character varying DEFAULT 'ativa'::character varying NOT NULL,
+    pedido_id bigint,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT reservas_quantidade_check CHECK ((quantidade > 0)),
+    CONSTRAINT reservas_status_check CHECK (((status)::text = ANY ((ARRAY['ativa'::character varying, 'cancelada'::character varying, 'convertida'::character varying])::text[])))
+);
+
+
+--
+-- Name: reservas_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.reservas_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: reservas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.reservas_id_seq OWNED BY public.reservas.id;
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1615,6 +1737,13 @@ ALTER TABLE ONLY public.autores ALTER COLUMN id SET DEFAULT nextval('public.auto
 
 
 --
+-- Name: carrinhos id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.carrinhos ALTER COLUMN id SET DEFAULT nextval('public.carrinhos_id_seq'::regclass);
+
+
+--
 -- Name: comentarios id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1706,6 +1835,13 @@ ALTER TABLE ONLY public.ideias ALTER COLUMN id SET DEFAULT nextval('public.ideia
 
 
 --
+-- Name: itens_carrinho id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.itens_carrinho ALTER COLUMN id SET DEFAULT nextval('public.itens_carrinho_id_seq'::regclass);
+
+
+--
 -- Name: mandatos id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1794,6 +1930,13 @@ ALTER TABLE ONLY public.projetos ALTER COLUMN id SET DEFAULT nextval('public.pro
 --
 
 ALTER TABLE ONLY public.push_subscriptions ALTER COLUMN id SET DEFAULT nextval('public.push_subscriptions_id_seq'::regclass);
+
+
+--
+-- Name: reservas id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.reservas ALTER COLUMN id SET DEFAULT nextval('public.reservas_id_seq'::regclass);
 
 
 --
@@ -1928,6 +2071,14 @@ ALTER TABLE ONLY public.autores
 
 
 --
+-- Name: carrinhos carrinhos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.carrinhos
+    ADD CONSTRAINT carrinhos_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: comentarios comentarios_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2032,6 +2183,14 @@ ALTER TABLE ONLY public.ideias
 
 
 --
+-- Name: itens_carrinho itens_carrinho_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.itens_carrinho
+    ADD CONSTRAINT itens_carrinho_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: mandatos mandatos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2133,6 +2292,14 @@ ALTER TABLE ONLY public.projetos
 
 ALTER TABLE ONLY public.push_subscriptions
     ADD CONSTRAINT push_subscriptions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: reservas reservas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.reservas
+    ADD CONSTRAINT reservas_pkey PRIMARY KEY (id);
 
 
 --
@@ -2317,6 +2484,13 @@ CREATE INDEX index_autores_on_member_id ON public.autores USING btree (member_id
 
 
 --
+-- Name: index_carrinhos_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_carrinhos_on_user_id ON public.carrinhos USING btree (user_id);
+
+
+--
 -- Name: index_comentarios_on_post_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2482,6 +2656,34 @@ CREATE INDEX index_ideias_on_tipo ON public.ideias USING btree (tipo);
 --
 
 CREATE INDEX index_ideias_on_user_id ON public.ideias USING btree (user_id);
+
+
+--
+-- Name: index_itens_carrinho_on_carrinho_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_itens_carrinho_on_carrinho_id ON public.itens_carrinho USING btree (carrinho_id);
+
+
+--
+-- Name: index_itens_carrinho_on_produto_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_itens_carrinho_on_produto_id ON public.itens_carrinho USING btree (produto_id);
+
+
+--
+-- Name: index_itens_carrinho_on_variante_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_itens_carrinho_on_variante_id ON public.itens_carrinho USING btree (variante_id);
+
+
+--
+-- Name: index_itenscarr_on_carr_prod_var; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_itenscarr_on_carr_prod_var ON public.itens_carrinho USING btree (carrinho_id, produto_id, variante_id);
 
 
 --
@@ -2681,6 +2883,34 @@ CREATE INDEX index_push_subscriptions_on_user_id ON public.push_subscriptions US
 
 
 --
+-- Name: index_reservas_on_pedido_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_reservas_on_pedido_id ON public.reservas USING btree (pedido_id);
+
+
+--
+-- Name: index_reservas_on_produto_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_reservas_on_produto_status ON public.reservas USING btree (produto_id, status);
+
+
+--
+-- Name: index_reservas_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_reservas_on_user_id ON public.reservas USING btree (user_id);
+
+
+--
+-- Name: index_reservas_on_variante_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_reservas_on_variante_id ON public.reservas USING btree (variante_id);
+
+
+--
 -- Name: index_tecnologias_on_nome; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2734,6 +2964,21 @@ CREATE INDEX index_versions_on_item_type_and_item_id ON public.versions USING bt
 --
 
 CREATE TRIGGER artigo_temas_max BEFORE INSERT ON public.artigo_temas FOR EACH ROW EXECUTE FUNCTION public.trg_artigo_temas_max();
+
+
+--
+-- Name: produtos produto_indisponivel_after; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER produto_indisponivel_after AFTER UPDATE OF status ON public.produtos FOR EACH ROW EXECUTE FUNCTION public.trg_produto_indisponivel();
+
+
+--
+-- Name: reservas fk_rails_07332f38c1; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.reservas
+    ADD CONSTRAINT fk_rails_07332f38c1 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -2793,6 +3038,14 @@ ALTER TABLE ONLY public.artigo_temas
 
 
 --
+-- Name: reservas fk_rails_3684009d8d; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.reservas
+    ADD CONSTRAINT fk_rails_3684009d8d FOREIGN KEY (produto_id) REFERENCES public.produtos(id) ON DELETE RESTRICT;
+
+
+--
 -- Name: acoes fk_rails_38f7189c12; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2806,6 +3059,14 @@ ALTER TABLE ONLY public.acoes
 
 ALTER TABLE ONLY public.denuncias
     ADD CONSTRAINT fk_rails_3dd1374548 FOREIGN KEY (comentario_id) REFERENCES public.comentarios(id) ON DELETE CASCADE;
+
+
+--
+-- Name: itens_carrinho fk_rails_401249fe28; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.itens_carrinho
+    ADD CONSTRAINT fk_rails_401249fe28 FOREIGN KEY (variante_id) REFERENCES public.variantes(id) ON DELETE SET NULL;
 
 
 --
@@ -2854,6 +3115,14 @@ ALTER TABLE ONLY public.push_subscriptions
 
 ALTER TABLE ONLY public.evento_membros
     ADD CONSTRAINT fk_rails_4aff658e44 FOREIGN KEY (evento_id) REFERENCES public.eventos(id) ON DELETE CASCADE;
+
+
+--
+-- Name: itens_carrinho fk_rails_5442124134; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.itens_carrinho
+    ADD CONSTRAINT fk_rails_5442124134 FOREIGN KEY (produto_id) REFERENCES public.produtos(id) ON DELETE CASCADE;
 
 
 --
@@ -2913,6 +3182,14 @@ ALTER TABLE ONLY public.parceria_leads
 
 
 --
+-- Name: carrinhos fk_rails_73de8bf3f2; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.carrinhos
+    ADD CONSTRAINT fk_rails_73de8bf3f2 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: apresentacoes fk_rails_792f2a0778; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2929,11 +3206,27 @@ ALTER TABLE ONLY public.ideias
 
 
 --
+-- Name: reservas fk_rails_7eac5e645e; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.reservas
+    ADD CONSTRAINT fk_rails_7eac5e645e FOREIGN KEY (variante_id) REFERENCES public.variantes(id) ON DELETE SET NULL;
+
+
+--
 -- Name: produtos fk_rails_8563f0e618; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.produtos
     ADD CONSTRAINT fk_rails_8563f0e618 FOREIGN KEY (created_by) REFERENCES public.members(id) ON DELETE SET NULL;
+
+
+--
+-- Name: itens_carrinho fk_rails_91c14758da; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.itens_carrinho
+    ADD CONSTRAINT fk_rails_91c14758da FOREIGN KEY (carrinho_id) REFERENCES public.carrinhos(id) ON DELETE CASCADE;
 
 
 --
@@ -3103,6 +3396,7 @@ ALTER TABLE ONLY public.parceiros
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260709050000'),
 ('20260709040000'),
 ('20260709030000'),
 ('20260709020000'),
