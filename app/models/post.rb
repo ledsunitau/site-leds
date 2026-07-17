@@ -20,6 +20,9 @@ class Post < ApplicationRecord
   has_many :noticed_events, as: :record, dependent: :destroy,
                             class_name: "Noticed::Event", inverse_of: :record
 
+  # RF-NOV-08: comentários do post (cascade no banco; destroy leva junto)
+  has_many :comentarios, dependent: :destroy
+
   has_rich_text :corpo
   has_one_attached :thumbnail
   valida_imagem :thumbnail

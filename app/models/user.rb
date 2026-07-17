@@ -22,6 +22,9 @@ class User < ApplicationRecord
   has_many :ideias, dependent: :nullify, inverse_of: :autor
   # conta vinculada ao parceiro (RF-PAR-05); o parceiro sobrevive à conta
   has_one :parceiro, dependent: :nullify, inverse_of: :conta
+  # espelham o ON DELETE SET NULL: comentário/denúncia sobrevivem ao autor
+  has_many :comentarios, dependent: :nullify, inverse_of: :autor
+  has_many :denuncias, dependent: :nullify, inverse_of: :denunciante
   has_one_attached :foto
 
   # Papel de ACESSO (autorização via Pundit). O cargo detalhado e histórico do
