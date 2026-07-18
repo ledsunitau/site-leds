@@ -58,8 +58,22 @@ Rails.application.routes.draw do
     delete "itens/:id", action: :destroy
   end
   resources :reservas, only: %i[index create] do
-    member { post :cancelar }
+    member do
+      post :cancelar
+      post :pagar # RF-LOJ-07: converte a reserva num pedido a pagar
+    end
   end
+
+  # Checkout de estoque (RF-LOJ-04) → pedido + pagamento (Mercado Pago).
+  post "checkout", to: "checkout#create"
+  resources :pedidos, only: %i[index show] do
+    member do
+      post :pagar   # reinicia o pagamento (nova tentativa)
+      post :cancelar
+    end
+  end
+  # Webhook do gateway (RF-LOJ-12): público, sem sessão
+  post "pagamentos/webhook", to: "pagamentos#webhook"
 
   # Novidades (RF-NOV): notícias/blog com fila de aprovação (RN-02) +
   # últimas notícias da landing (RF-INI-07) + histórico de versões (RF-NOV-07)

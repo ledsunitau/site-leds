@@ -18,3 +18,7 @@ production:
   prune_error_logs:
     command: "ErrorLog.where(occurred_at: ...90.days.ago).in_batches.delete_all"
     schedule: every day at 4am
+  # RF-LOJ-04: pedido não pago em 1h libera o estoque retido (cancelamento).
+  expirar_pedidos:
+    class: ExpirarPedidosJob
+    schedule: every 15 minutes

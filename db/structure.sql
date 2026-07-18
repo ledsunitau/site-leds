@@ -755,6 +755,44 @@ ALTER SEQUENCE public.diretorias_id_seq OWNED BY public.diretorias.id;
 
 
 --
+-- Name: enderecos; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.enderecos (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    cep character varying(9) NOT NULL,
+    logradouro character varying NOT NULL,
+    numero character varying,
+    complemento character varying,
+    bairro character varying,
+    cidade character varying NOT NULL,
+    uf character varying(2) NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: enderecos_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.enderecos_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: enderecos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.enderecos_id_seq OWNED BY public.enderecos.id;
+
+
+--
 -- Name: error_logs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -972,6 +1010,43 @@ ALTER SEQUENCE public.itens_carrinho_id_seq OWNED BY public.itens_carrinho.id;
 
 
 --
+-- Name: itens_pedido; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.itens_pedido (
+    id bigint NOT NULL,
+    pedido_id bigint NOT NULL,
+    produto_id bigint NOT NULL,
+    variante_id bigint,
+    quantidade integer NOT NULL,
+    preco_unitario numeric(10,2) NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT itens_pedido_preco_check CHECK ((preco_unitario >= (0)::numeric)),
+    CONSTRAINT itens_pedido_quantidade_check CHECK ((quantidade > 0))
+);
+
+
+--
+-- Name: itens_pedido_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.itens_pedido_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: itens_pedido_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.itens_pedido_id_seq OWNED BY public.itens_pedido.id;
+
+
+--
 -- Name: mandatos; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1183,6 +1258,43 @@ ALTER SEQUENCE public.oauth_identities_id_seq OWNED BY public.oauth_identities.i
 
 
 --
+-- Name: pagamentos; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.pagamentos (
+    id bigint NOT NULL,
+    pedido_id bigint NOT NULL,
+    gateway character varying NOT NULL,
+    gateway_ref character varying,
+    status character varying DEFAULT 'pendente'::character varying NOT NULL,
+    valor numeric(10,2) NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT pagamentos_status_check CHECK (((status)::text = ANY ((ARRAY['pendente'::character varying, 'aprovado'::character varying, 'recusado'::character varying, 'estornado'::character varying])::text[]))),
+    CONSTRAINT pagamentos_valor_check CHECK ((valor >= (0)::numeric))
+);
+
+
+--
+-- Name: pagamentos_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.pagamentos_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: pagamentos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.pagamentos_id_seq OWNED BY public.pagamentos.id;
+
+
+--
 -- Name: parceiros; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1255,6 +1367,52 @@ CREATE SEQUENCE public.parceria_leads_id_seq
 --
 
 ALTER SEQUENCE public.parceria_leads_id_seq OWNED BY public.parceria_leads.id;
+
+
+--
+-- Name: pedidos; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.pedidos (
+    id bigint NOT NULL,
+    user_id bigint,
+    status character varying DEFAULT 'aguardando_pagamento'::character varying NOT NULL,
+    tipo_entrega character varying NOT NULL,
+    endereco_id bigint,
+    frete_valor numeric(10,2),
+    transportadora character varying,
+    servico_frete character varying,
+    prazo_estimado integer,
+    melhor_envio_ref character varying,
+    rastreamento_codigo character varying,
+    total numeric(10,2) DEFAULT 0.0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT pedidos_envio_endereco_check CHECK ((((tipo_entrega)::text <> 'envio'::text) OR (endereco_id IS NOT NULL))),
+    CONSTRAINT pedidos_frete_valor_check CHECK (((frete_valor IS NULL) OR (frete_valor >= (0)::numeric))),
+    CONSTRAINT pedidos_status_check CHECK (((status)::text = ANY ((ARRAY['aguardando_pagamento'::character varying, 'pago'::character varying, 'em_producao'::character varying, 'enviado'::character varying, 'entregue'::character varying, 'cancelado'::character varying])::text[]))),
+    CONSTRAINT pedidos_tipo_entrega_check CHECK (((tipo_entrega)::text = ANY ((ARRAY['retirada'::character varying, 'envio'::character varying])::text[]))),
+    CONSTRAINT pedidos_total_check CHECK ((total >= (0)::numeric))
+);
+
+
+--
+-- Name: pedidos_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.pedidos_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: pedidos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.pedidos_id_seq OWNED BY public.pedidos.id;
 
 
 --
@@ -1800,6 +1958,13 @@ ALTER TABLE ONLY public.diretorias ALTER COLUMN id SET DEFAULT nextval('public.d
 
 
 --
+-- Name: enderecos id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.enderecos ALTER COLUMN id SET DEFAULT nextval('public.enderecos_id_seq'::regclass);
+
+
+--
 -- Name: error_logs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1839,6 +2004,13 @@ ALTER TABLE ONLY public.ideias ALTER COLUMN id SET DEFAULT nextval('public.ideia
 --
 
 ALTER TABLE ONLY public.itens_carrinho ALTER COLUMN id SET DEFAULT nextval('public.itens_carrinho_id_seq'::regclass);
+
+
+--
+-- Name: itens_pedido id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.itens_pedido ALTER COLUMN id SET DEFAULT nextval('public.itens_pedido_id_seq'::regclass);
 
 
 --
@@ -1884,6 +2056,13 @@ ALTER TABLE ONLY public.oauth_identities ALTER COLUMN id SET DEFAULT nextval('pu
 
 
 --
+-- Name: pagamentos id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pagamentos ALTER COLUMN id SET DEFAULT nextval('public.pagamentos_id_seq'::regclass);
+
+
+--
 -- Name: parceiros id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1895,6 +2074,13 @@ ALTER TABLE ONLY public.parceiros ALTER COLUMN id SET DEFAULT nextval('public.pa
 --
 
 ALTER TABLE ONLY public.parceria_leads ALTER COLUMN id SET DEFAULT nextval('public.parceria_leads_id_seq'::regclass);
+
+
+--
+-- Name: pedidos id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pedidos ALTER COLUMN id SET DEFAULT nextval('public.pedidos_id_seq'::regclass);
 
 
 --
@@ -2143,6 +2329,14 @@ ALTER TABLE ONLY public.diretorias
 
 
 --
+-- Name: enderecos enderecos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.enderecos
+    ADD CONSTRAINT enderecos_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: error_logs error_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2188,6 +2382,14 @@ ALTER TABLE ONLY public.ideias
 
 ALTER TABLE ONLY public.itens_carrinho
     ADD CONSTRAINT itens_carrinho_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: itens_pedido itens_pedido_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.itens_pedido
+    ADD CONSTRAINT itens_pedido_pkey PRIMARY KEY (id);
 
 
 --
@@ -2239,6 +2441,14 @@ ALTER TABLE ONLY public.oauth_identities
 
 
 --
+-- Name: pagamentos pagamentos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pagamentos
+    ADD CONSTRAINT pagamentos_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: parceiros parceiros_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2252,6 +2462,14 @@ ALTER TABLE ONLY public.parceiros
 
 ALTER TABLE ONLY public.parceria_leads
     ADD CONSTRAINT parceria_leads_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: pedidos pedidos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pedidos
+    ADD CONSTRAINT pedidos_pkey PRIMARY KEY (id);
 
 
 --
@@ -2582,6 +2800,13 @@ CREATE UNIQUE INDEX index_diretorias_on_nome ON public.diretorias USING btree (n
 
 
 --
+-- Name: index_enderecos_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_enderecos_on_user_id ON public.enderecos USING btree (user_id);
+
+
+--
 -- Name: index_error_logs_on_occurred_at; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2677,6 +2902,27 @@ CREATE INDEX index_itens_carrinho_on_produto_id ON public.itens_carrinho USING b
 --
 
 CREATE INDEX index_itens_carrinho_on_variante_id ON public.itens_carrinho USING btree (variante_id);
+
+
+--
+-- Name: index_itens_pedido_on_pedido_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_itens_pedido_on_pedido_id ON public.itens_pedido USING btree (pedido_id);
+
+
+--
+-- Name: index_itens_pedido_on_produto_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_itens_pedido_on_produto_id ON public.itens_pedido USING btree (produto_id);
+
+
+--
+-- Name: index_itens_pedido_on_variante_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_itens_pedido_on_variante_id ON public.itens_pedido USING btree (variante_id);
 
 
 --
@@ -2785,6 +3031,20 @@ CREATE INDEX index_oauth_identities_on_user_id ON public.oauth_identities USING 
 
 
 --
+-- Name: index_pagamentos_on_pedido_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_pagamentos_on_pedido_id ON public.pagamentos USING btree (pedido_id);
+
+
+--
+-- Name: index_pagamentos_on_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_pagamentos_on_status ON public.pagamentos USING btree (status);
+
+
+--
 -- Name: index_parceiros_on_status; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2810,6 +3070,27 @@ CREATE INDEX index_parceria_leads_on_parceiro_id ON public.parceria_leads USING 
 --
 
 CREATE INDEX index_parceria_leads_on_status ON public.parceria_leads USING btree (status);
+
+
+--
+-- Name: index_pedidos_on_endereco_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_pedidos_on_endereco_id ON public.pedidos USING btree (endereco_id);
+
+
+--
+-- Name: index_pedidos_on_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_pedidos_on_status ON public.pedidos USING btree (status);
+
+
+--
+-- Name: index_pedidos_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_pedidos_on_user_id ON public.pedidos USING btree (user_id);
 
 
 --
@@ -3014,6 +3295,14 @@ ALTER TABLE ONLY public.autores
 
 
 --
+-- Name: enderecos fk_rails_21a6c355e1; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.enderecos
+    ADD CONSTRAINT fk_rails_21a6c355e1 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: members fk_rails_2e88fb7ce9; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3083,6 +3372,14 @@ ALTER TABLE ONLY public.contribuicoes
 
 ALTER TABLE ONLY public.denuncias
     ADD CONSTRAINT fk_rails_40b2bc54f9 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: pagamentos fk_rails_4246cb635a; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pagamentos
+    ADD CONSTRAINT fk_rails_4246cb635a FOREIGN KEY (pedido_id) REFERENCES public.pedidos(id) ON DELETE CASCADE;
 
 
 --
@@ -3214,6 +3511,14 @@ ALTER TABLE ONLY public.reservas
 
 
 --
+-- Name: pedidos fk_rails_829dc15662; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pedidos
+    ADD CONSTRAINT fk_rails_829dc15662 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 -- Name: produtos fk_rails_8563f0e618; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3254,6 +3559,14 @@ ALTER TABLE ONLY public.projeto_tecnologias
 
 
 --
+-- Name: pedidos fk_rails_9c57b5070f; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pedidos
+    ADD CONSTRAINT fk_rails_9c57b5070f FOREIGN KEY (endereco_id) REFERENCES public.enderecos(id) ON DELETE SET NULL;
+
+
+--
 -- Name: ideias fk_rails_a21b374619; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3267,6 +3580,14 @@ ALTER TABLE ONLY public.ideias
 
 ALTER TABLE ONLY public.error_logs
     ADD CONSTRAINT fk_rails_a23f9ccaf8 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: itens_pedido fk_rails_af79b49747; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.itens_pedido
+    ADD CONSTRAINT fk_rails_af79b49747 FOREIGN KEY (produto_id) REFERENCES public.produtos(id) ON DELETE RESTRICT;
 
 
 --
@@ -3342,6 +3663,22 @@ ALTER TABLE ONLY public.contribuicoes
 
 
 --
+-- Name: reservas fk_rails_cfa6766c51; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.reservas
+    ADD CONSTRAINT fk_rails_cfa6766c51 FOREIGN KEY (pedido_id) REFERENCES public.pedidos(id) ON DELETE SET NULL;
+
+
+--
+-- Name: itens_pedido fk_rails_d4b5223da3; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.itens_pedido
+    ADD CONSTRAINT fk_rails_d4b5223da3 FOREIGN KEY (variante_id) REFERENCES public.variantes(id) ON DELETE SET NULL;
+
+
+--
 -- Name: denuncias fk_rails_e0436d9b54; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3390,12 +3727,21 @@ ALTER TABLE ONLY public.parceiros
 
 
 --
+-- Name: itens_pedido fk_rails_fd634cdfe2; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.itens_pedido
+    ADD CONSTRAINT fk_rails_fd634cdfe2 FOREIGN KEY (pedido_id) REFERENCES public.pedidos(id) ON DELETE CASCADE;
+
+
+--
 -- PostgreSQL database dump complete
 --
 
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260709060000'),
 ('20260709050000'),
 ('20260709040000'),
 ('20260709030000'),

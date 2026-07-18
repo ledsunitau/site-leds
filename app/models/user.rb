@@ -28,6 +28,9 @@ class User < ApplicationRecord
   # loja: um carrinho por usuário; reservas (ambos cascade no banco)
   has_one :carrinho, dependent: :destroy
   has_many :reservas, dependent: :destroy
+  has_many :enderecos, dependent: :destroy
+  # o pedido sobrevive à conta apagada (ON DELETE SET NULL) — histórico de venda
+  has_many :pedidos, dependent: :nullify, inverse_of: :comprador
   has_one_attached :foto
 
   # Papel de ACESSO (autorização via Pundit). O cargo detalhado e histórico do

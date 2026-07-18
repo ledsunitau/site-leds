@@ -2,21 +2,20 @@
 # validade, cancelável. Só produto sob_demanda e ativo pode ser reservado
 # (regra de negócio na aplicação, modelagem C9).
 #
-# PENDENTE (branch do checkout/pagamento): RF-LOJ-05/07 — quando as reservas
-# ATIVAS de um produto atingem produto.quantidade_alvo, um JOB avisa os
-# reservantes para pagar; quem paga tem a reserva CONVERTIDA num pedido
-# (pedido_id preenchido). O disparo e a conversão vivem lá porque dependem de
-# pedidos/pagamentos. Aqui só existem os estados e a criação/cancelamento.
+# RF-LOJ-07: quando as reservas ATIVAS de um produto atingem quantidade_alvo, o
+# disparo de produção avisa os reservantes para pagar (DisparoProducaoJob). Quem
+# paga tem a reserva CONVERTIDA num pedido (Checkout.da_reserva → Pedido#marcar_pago!).
 class Reserva < ApplicationRecord
   include VarianteCoerente # variante tem de existir e ser DESTE produto
 
   belongs_to :user
   belongs_to :produto
   belongs_to :variante, optional: true
+  belongs_to :pedido, optional: true # preenchido na conversão (sob demanda paga)
 
   STATUSES = %w[ativa cancelada convertida].freeze
   enum :status, STATUSES.index_by(&:itself), validate: true
-  # transições só pelo fluxo (cancelar!); a conversão chega no checkout
+  # transições só pelo fluxo (cancelar!/marcar_convertida!)
   private(*STATUSES.map { |s| :"#{s}!" })
 
   validates :quantidade, numericality: { greater_than: 0 }
@@ -25,6 +24,11 @@ class Reserva < ApplicationRecord
   # ajustar quantidade, não empilhar linha (bounda o abuso e a demanda inflada).
   # App-level (o DDL não declara único) — janela de corrida vira duplicata, não dano.
   validate :sem_reserva_ativa_duplicada, on: :create
+
+  # RF-LOJ-05/07: cruzou a meta agora → dispara a produção (avisa os reservantes
+  # para pagar). Só no create que cruza a meta; creates seguintes com o total já
+  # >= meta não re-notificam.
+  after_create_commit :talvez_disparar_producao, if: :ativa?
 
   # RF-LOJ-06/RN-10: cancelável enquanto ativa (antes do disparo). O registro
   # fica (soft), vira 'cancelada' — histórico de demanda se preserva. with_lock
@@ -40,6 +44,16 @@ class Reserva < ApplicationRecord
     end
   end
 
+  # Pagamento aprovado do pedido converte a reserva (chamado por Pedido#marcar_pago!).
+  # with_lock trava ESTA linha: sem ele, um cancelar! simultâneo (que trava a
+  # reserva) e esta conversão passariam ambos no guard lido em memória e o último
+  # UPDATE venceria — deixando reserva convertida cancelada, ou vice-versa.
+  def marcar_convertida!
+    with_lock do
+      update!(status: "convertida") if ativa?
+    end
+  end
+
   def card_json
     {
       id: id,
@@ -52,6 +66,21 @@ class Reserva < ApplicationRecord
   end
 
   private
+
+  def talvez_disparar_producao
+    meta = produto.quantidade_alvo
+    return if meta.nil?
+
+    # conta UNIDADES (uma reserva pode ser de várias), não linhas. Dispara só ao
+    # CRUZAR a meta (esta reserva levou de <meta para >=meta); creates seguintes
+    # com o total já >= meta não re-notificam. Lock serializa concorrentes.
+    # ponytail: cruzamento simultâneo exato pode notificar 2x (raro); upgrade =
+    # flag 'producao_disparada' persistida no produto.
+    produto.with_lock do
+      unidades = produto.reservas.ativa.sum(:quantidade)
+      DisparoProducaoJob.perform_later(produto.id) if unidades >= meta && unidades - quantidade < meta
+    end
+  end
 
   def produto_reservável
     return if produto.nil?
