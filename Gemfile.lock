@@ -115,7 +115,7 @@ GEM
       railties (>= 6.1)
     drb (2.2.3)
     ed25519 (1.4.0)
-    erb (6.0.4)
+    erb (6.0.5)
     erubi (1.13.1)
     et-orbi (1.4.0)
       tzinfo
@@ -148,7 +148,7 @@ GEM
     jbuilder (2.15.1)
       actionview (>= 7.0.0)
       activesupport (>= 7.0.0)
-    json (2.20.0)
+    json (2.21.1)
     jwt (3.2.0)
       base64
     kamal (2.12.0)
@@ -368,7 +368,7 @@ GEM
     snaky_hash (2.0.6)
       hashie (>= 0.1.0, < 6)
       version_gem (>= 1.1.8, < 3)
-    solid_cable (4.0.0)
+    solid_cable (4.0.1)
       actioncable (>= 7.2)
       activejob (>= 7.2)
       activerecord (>= 7.2)
