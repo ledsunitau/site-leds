@@ -13,6 +13,8 @@ class Produto < ApplicationRecord
   has_many :variantes, dependent: :destroy
   has_many :itens_carrinho, class_name: "ItemCarrinho", dependent: :destroy
   has_many :reservas, dependent: :restrict_with_exception # DDL: ON DELETE RESTRICT
+  # DDL: itens_pedido.produto_id é ON DELETE RESTRICT (histórico de venda protege o produto)
+  has_many :itens_pedido, class_name: "ItemPedido", dependent: :restrict_with_exception
 
   # desvio documentado: o DDL não tem coluna de imagem — é Active Storage,
   # como tecnologias/temas (a modelagem lista "imagem de produto")
@@ -60,6 +62,12 @@ class Produto < ApplicationRecord
   # itens_pedido (snapshot), não daqui.
   def preco_atual = preco_promocional || preco
 
+  # usuários com reserva ativa neste produto (distintos) — alvo das notificações
+  # de produção (disparo) e de indisponibilidade.
+  def reservantes_ativos
+    reservas.ativa.includes(:user).map(&:user).uniq
+  end
+
   def card_json
     {
       id: id,
@@ -87,7 +95,7 @@ class Produto < ApplicationRecord
 
   # ANTES do trigger cancelar: quem tem reserva ativa neste produto.
   def capturar_reservantes_afetados
-    @reservantes_afetados = reservas.ativa.includes(:user).map(&:user).uniq
+    @reservantes_afetados = reservantes_ativos
   end
 
   def notificar_reservantes

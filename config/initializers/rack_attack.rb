@@ -63,6 +63,13 @@ class Rack::Attack
   throttle("denuncias/ip", limit: 20, period: 1.hour) do |req|
     req.ip if req.post? && normalized_path(req).match?(%r{\A/comentarios/\d+/denuncias\z})
   end
+
+  # Webhook do gateway (RF-LOJ-12): público, sem sessão. Cada POST pode virar uma
+  # consulta ao MP — teto por IP corta amplificação/DoS. Folgado porque o MP
+  # reenvia os legítimos (e reentrega os que estourarem o teto).
+  throttle("pagamentos_webhook/ip", limit: 120, period: 1.minute) do |req|
+    req.ip if req.post? && normalized_path(req) == "/pagamentos/webhook"
+  end
 end
 
 Rack::Attack.enabled = !Rails.env.test?

@@ -22,4 +22,20 @@ class ReservasController < ApplicationController
     reserva.cancelar!
     render json: reserva.card_json
   end
+
+  # RF-LOJ-07: pagar a reserva (após o disparo de produção) — cria o pedido e
+  # devolve a URL de pagamento. A reserva só vira 'convertida' quando o
+  # pagamento é aprovado (webhook).
+  def pagar
+    reserva = current_user.reservas.find(params[:id])
+    pedido = Checkout.da_reserva(reserva)
+    init_point = Pagamentos.iniciar(pedido)
+
+    render json: { pedido: pedido.card_json, pagamento_url: init_point }, status: :created
+  rescue Checkout::Erro => e
+    render json: { errors: [ e.message ] }, status: :unprocessable_entity
+  rescue MercadoPago::ErroGateway
+    render json: { errors: [ "Pagamento indisponível no momento. Tente novamente." ] },
+           status: :service_unavailable
+  end
 end
