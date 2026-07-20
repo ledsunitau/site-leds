@@ -1,0 +1,331 @@
+<%# Página inicial (container "INÍCIO" do Figma). Página única.
+    Números e destaques vêm do banco (@metricas, @acoes, @posts); com o banco
+    vazio, caem em zero e em estados "nada por enquanto". %>
+<% content_for :title, "LEDS — Liga Acadêmica de Estrutura de Dados e Soluções" %>
+
+<%
+  nav_links = [
+    ["INÍCIO",    "#inicio"],
+    ["AÇÕES",     "#acoes"],
+    ["MEMBROS",   "#membros"],
+    ["NOVIDADES", "#novidades"],
+    ["LOJA",      "#"], # placeholder até a página da Loja existir
+  ]
+  tech = ["MARATONAS", "GRUPO DE ESTUDOS", "PESQUISAS", "PALESTRAS", "WORKSHOPS", "SISTEMAS", "OPEN SOURCE"]
+  pillars = [
+    { accent: "var(--leds-red)",   icon: "{ }", title: "Mentoria de estudos", desc: "Grupos de estudo, materiais exclusivos, listas de problemas, competições, desafios e muito mais." },
+    { accent: "var(--leds-green)", icon: "</>", title: "Projetos reais",      desc: "Membros que constroem soluções práticas focadas em resolver problemas reais da comunidade." },
+    { accent: "var(--leds-blue)",  icon: "◎",   title: "Comunidade",          desc: "Mentorias, eventos, palestras e networking. Um espaço aberto para trocar experiências e crescer junto." },
+  ]
+  # Grafo do hero: árvore binária decorativa (nós ocos com anel colorido).
+  hero_nodes = [
+    [260, 70, 20, "var(--leds-blue)",  "29,132,245"],
+    [140, 160, 16, "var(--leds-red)",   "248,74,84"],
+    [385, 160, 16, "var(--leds-green)", "0,197,91"],
+    [80,  280, 13, "var(--leds-green)", "0,197,91"],
+    [210, 270, 14, "var(--leds-blue)",  "29,132,245"],
+    [330, 270, 14, "var(--leds-red)",   "248,74,84"],
+    [455, 280, 13, "var(--leds-blue)",  "29,132,245"],
+    [150, 390, 12, "var(--leds-red)",   "248,74,84"],
+    [285, 385, 13, "var(--leds-green)", "0,197,91"],
+    [405, 390, 12, "var(--leds-green)", "0,197,91"],
+  ]
+  hero_links = [[260,70,140,160],[260,70,385,160],[140,160,80,280],[140,160,210,270],[385,160,330,270],[385,160,455,280],[210,270,150,390],[210,270,285,385],[330,270,285,385],[330,270,405,390]]
+
+  member_legend = [
+    ["Presidente", "var(--leds-red)"], ["Vice-presidente", "var(--leds-blue)"],
+    ["Diretoria", "var(--leds-green)"], ["Membro", "var(--text-subtle)"], ["Orientador", "var(--leds-yellow)"],
+  ]
+  # Cores dos labels/bordas são por ORDEM do card (não pelo tipo).
+  cores_acoes = ["var(--leds-green)", "var(--leds-blue)", "var(--leds-red)"]
+  cores_novidades = ["var(--leds-blue)", "var(--leds-green)", "var(--leds-red)"]
+%>
+
+<div class="page-bg">
+  <span class="blob blob-red"></span>
+  <span class="blob blob-blue"></span>
+  <span class="blob blob-green"></span>
+</div>
+
+<div class="page" data-controller="nav">
+  <%# ---- Navbar ---- %>
+  <div class="nav-fixed">
+    <nav class="navbar">
+      <a href="#inicio" class="logo" aria-label="LEDS — início">
+        <span class="logo-mark">
+          <span class="logo-dots"><span></span><span></span></span>
+          <svg width="22" height="18" viewBox="0 0 22 18" style="border-radius:2px;display:block">
+            <defs>
+              <linearGradient id="leds-tri" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="15%" stop-color="rgb(0,197,91)" />
+                <stop offset="49.52%" stop-color="rgb(29,132,245)" />
+                <stop offset="85%" stop-color="rgb(248,74,84)" />
+              </linearGradient>
+            </defs>
+            <path d="M 18.434 0 L 3.566 0 C 2.004 0 1.045 1.71 1.86 3.043 L 9.293 15.207 C 10.073 16.484 11.927 16.484 12.707 15.207 L 20.14 3.043 C 20.955 1.71 19.996 0 18.434 0 Z" fill="url(#leds-tri)" />
+          </svg>
+        </span>
+        <span class="logo-word">LEDS</span>
+      </a>
+
+      <button class="nav-toggle" type="button" aria-label="Abrir menu" aria-expanded="false"
+              data-action="nav#toggle" data-nav-target="button">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <line x1="3" y1="7" x2="21" y2="7" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="17" x2="21" y2="17" />
+        </svg>
+      </button>
+
+      <div class="nav-links" data-nav-target="menu">
+        <% nav_links.each do |label, href| %>
+          <a href="<%= href %>" class="<%= 'active' if label == 'INÍCIO' %>" data-action="nav#close"><%= label %></a>
+        <% end %>
+      </div>
+    </nav>
+  </div>
+
+  <main class="content">
+    <%# ---- Hero ---- %>
+    <section id="inicio" class="wrap hero">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <h1 class="leds-hero">Estruturando<br>dados em <span class="grad-text">soluções</span><br>reais.</h1>
+          <p class="leds-lead hero-lead">A Liga Acadêmica de Estrutura de Dados e Soluções conecta estudantes que querem ir além da teoria — algoritmos, projetos práticos e uma comunidade que constrói junto.</p>
+          <div class="btn-row" style="padding:8px 0">
+            <a href="#membros" class="btn btn-primary">Participe da comunidade →</a>
+            <a href="#contato" class="btn btn-secondary">Seja parceiro</a>
+          </div>
+          <div class="stats">
+            <div class="stat"><span class="stat-value"><%= @metricas[:membros] %><% if @metricas[:membros].positive? %><span style="color:var(--leds-red)">+</span><% end %></span><span class="stat-label">membros ativos</span></div>
+            <div class="stat-divider"></div>
+            <div class="stat"><span class="stat-value"><%= @metricas[:projetos] %><% if @metricas[:projetos].positive? %><span style="color:var(--leds-green)">+</span><% end %></span><span class="stat-label">projetos entregues</span></div>
+            <div class="stat-divider"></div>
+            <div class="stat"><span class="stat-value"><%= @metricas[:eventos] %><% if @metricas[:eventos].positive? %><span style="color:var(--leds-blue)">+</span><% end %></span><span class="stat-label">eventos participados</span></div>
+          </div>
+        </div>
+
+        <div class="hero-graph hero-graph-wrap">
+          <span class="glass"></span>
+          <svg class="graph-svg graph-float" viewBox="0 0 520 480" style="max-width:520px" fill="none" stroke-linecap="round" role="img" aria-label="Árvore de dados">
+            <g class="graph-links" stroke="rgba(255,255,255,.18)" stroke-width="1.4" stroke-dasharray="5 7">
+              <% hero_links.each do |x1,y1,x2,y2| %><line x1="<%= x1 %>" y1="<%= y1 %>" x2="<%= x2 %>" y2="<%= y2 %>" /><% end %>
+            </g>
+            <g>
+              <% hero_nodes.each_with_index do |(cx,cy,r,color,rgb), i| %>
+                <circle class="graph-node" cx="<%= cx %>" cy="<%= cy %>" r="<%= r %>" fill="#0d0e10" stroke="<%= color %>" stroke-width="2.5" style="filter:drop-shadow(0 0 14px rgba(<%= rgb %>,.85)); animation-delay:<%= (i * 0.3).round(1) %>s" />
+              <% end %>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <%# ---- Faixa de áreas ---- %>
+    <div class="tech-strip">
+      <div class="wrap">
+        <% tech.each_with_index do |t, i| %>
+          <span class="tech-item"><%= t %></span>
+          <% unless i == tech.length - 1 %><span class="tech-sep">/</span><% end %>
+        <% end %>
+      </div>
+    </div>
+
+    <%# ---- Sobre a liga + pilares ---- %>
+    <section class="wrap section">
+      <span class="eyebrow green">// sobre a liga</span>
+      <div class="two-col">
+        <h2 class="leds-h1">Teoria e prática<br>integradas.</h2>
+        <div class="stack">
+          <p class="leds-body">A LEDS nasceu para aproximar a universidade dos desafios reais da computação. Reunimos estudantes para transformar fundamentos acadêmicos em soluções concretas, desenvolver projetos para a comunidade e empresas e criar um ambiente onde aprender, pesquisar e inovar fazem parte do mesmo processo.</p>
+          <p class="leds-body">Também incentivamos a investigação de novas tecnologias, a realização de pesquisas e a divulgação do conhecimento produzido por nossos membros.</p>
+        </div>
+      </div>
+      <h3 class="leds-h1" style="margin:56px 0 24px;font-size:30px">Nossos pilares</h3>
+      <div class="cards-3">
+        <% pillars.each do |p| %>
+          <div class="feature-card" style="--accent:<%= p[:accent] %>">
+            <span class="feature-icon"><%= p[:icon] %></span>
+            <h3><%= p[:title] %></h3>
+            <p><%= p[:desc] %></p>
+          </div>
+        <% end %>
+      </div>
+    </section>
+
+    <%# ---- Ações realizadas (do banco) ---- %>
+    <section id="acoes" class="wrap section">
+      <div class="section-head">
+        <span class="eyebrow blue">// ações da liga</span>
+        <div class="title-row"><h2 class="leds-h2">Ações realizadas</h2></div>
+      </div>
+      <% if @acoes.any? %>
+        <div class="cards-3" style="margin:24px 0">
+          <% @acoes.each_with_index do |a, i| %>
+            <% cat = a.detalhe_type.downcase %>
+            <% cor = cores_acoes[i % cores_acoes.size] %>
+            <article class="action-card" style="--accent:<%= cor %>">
+              <div class="action-media" style="background-image:url('<%= card_image_url(a) %>')"></div>
+              <div class="action-body">
+                <div class="meta-row">
+                  <span class="tag outline" style="--tag-color:<%= cor %>"><%= cat %></span>
+                  <span class="meta-mono"><%= mes_ano(a.created_at) %></span>
+                </div>
+                <h3><%= a.titulo %></h3>
+                <p><%= truncate(a.descricao.to_s, length: 150) %></p>
+              </div>
+            </article>
+          <% end %>
+        </div>
+        <div class="btn-end" style="margin-top:24px"><a href="#" class="btn btn-primary">Veja mais →</a></div>
+      <% else %>
+        <div class="empty-state" style="margin-top:24px">
+          <span class="empty-mono">// nada por aqui ainda</span>
+          <p>As ações da liga aparecem aqui assim que forem publicadas.</p>
+        </div>
+      <% end %>
+    </section>
+
+    <%# ---- Rede de membros ---- %>
+    <section id="membros" class="wrap section">
+      <div class="section-head">
+        <span class="eyebrow red">// quem faz a liga</span>
+        <div class="title-row"><h2 class="leds-h2">Rede de membros</h2></div>
+      </div>
+      <p class="leds-body-sm" style="margin:6px 0 18px">Explore os membros nos cards abaixo.</p>
+      <% rede = rede_de_membros(@grafo) %>
+      <div class="graph-panel">
+        <% if rede %>
+          <svg class="graph-svg" viewBox="0 0 680 470" style="max-width:680px" fill="none" stroke-linecap="round" role="img" aria-label="Rede de membros da LEDS">
+            <defs>
+              <% rede[:nodes].each do |n| %>
+                <pattern id="av-<%= n[:id] %>" patternContentUnits="objectBoundingBox" width="1" height="1">
+                  <image href="<%= n[:foto_url] %>" width="1" height="1" preserveAspectRatio="xMidYMid slice" />
+                </pattern>
+              <% end %>
+            </defs>
+            <g stroke="rgba(255,255,255,.16)" stroke-width="1.4">
+              <% rede[:edges].each do |x1,y1,x2,y2| %><line x1="<%= x1 %>" y1="<%= y1 %>" x2="<%= x2 %>" y2="<%= y2 %>" /><% end %>
+            </g>
+            <% rede[:nodes].each_with_index do |n, i| %>
+              <% s = [] %>
+              <% if n[:glow] %><% s << "filter:drop-shadow(0 0 12px rgba(#{n[:glow]},.75))" << "animation-delay:#{(i * 0.3).round(1)}s" %><% end %>
+              <circle class="<%= 'graph-node' if n[:glow] %>" cx="<%= n[:x] %>" cy="<%= n[:y] %>" r="<%= n[:r] %>" fill="url(#av-<%= n[:id] %>)" stroke="<%= n[:color] %>" stroke-width="<%= n[:cargo] == 'membro' ? 2 : 3 %>" style="<%= s.join('; ') %>">
+                <title><%= n[:name] %> — <%= n[:cargo].capitalize %></title>
+              </circle>
+            <% end %>
+          </svg>
+        <% else %>
+          <div class="empty-state">
+            <span class="empty-mono">// sem membros ainda</span>
+            <p>A rede aparece aqui quando houver mandatos cadastrados na gestão vigente.</p>
+          </div>
+        <% end %>
+        <div class="graph-legend">
+          <% member_legend.each do |label, color| %>
+            <span><span class="legend-dot" style="background:<%= color %>"></span><%= label %></span>
+          <% end %>
+        </div>
+      </div>
+      <div class="btn-end" style="margin-top:18px"><a href="#" class="btn btn-primary">Veja mais →</a></div>
+    </section>
+
+    <%# ---- Notícias & blog (do banco) ---- %>
+    <section id="novidades" class="wrap section">
+      <div class="section-head">
+        <span class="eyebrow green">// novidades</span>
+        <div class="title-row"><h2 class="leds-h2">Notícias &amp; blog</h2></div>
+      </div>
+      <% if @posts.any? %>
+        <% destaques = @posts.first(3); resto = @posts.drop(3) %>
+        <div class="cards-3" style="margin:24px 0">
+          <% destaques.each_with_index do |p, i| %>
+            <article class="news-card">
+              <div class="news-media" style="background-image:url('<%= card_image_url(p) %>')">
+                <span class="tag solid" style="--tag-color:<%= cores_novidades[i % cores_novidades.size] %>"><%= p.noticia? ? "Notícia" : "Blog" %></span>
+              </div>
+              <div class="news-body">
+                <p><%= p.caller.presence || p.titulo %></p>
+              </div>
+            </article>
+          <% end %>
+        </div>
+        <% if resto.any? %>
+          <div class="news-list">
+            <% resto.each_with_index do |p, i| %>
+              <a class="news-row" href="#">
+                <span class="tag outline" style="--tag-color:<%= cores_novidades[i % cores_novidades.size] %>"><%= p.noticia? ? "Notícia" : "Blog" %></span>
+                <span class="meta-mono row-date"><%= data_por_extenso(p.published_at) %></span>
+                <span class="row-title"><%= p.titulo %></span>
+                <span class="row-arrow">→</span>
+              </a>
+            <% end %>
+          </div>
+        <% end %>
+        <div class="btn-end" style="margin-top:24px"><a href="#" class="btn btn-primary">Veja mais →</a></div>
+      <% else %>
+        <div class="empty-state" style="margin-top:24px">
+          <span class="empty-mono">// nada por aqui ainda</span>
+          <p>Notícias e posts do blog aparecem aqui assim que forem publicados.</p>
+        </div>
+      <% end %>
+    </section>
+
+    <%# ---- Vamos conversar ---- %>
+    <section id="contato" class="wrap" style="padding-bottom:80px">
+      <div class="cta-panel">
+        <span class="cta-blob red"></span>
+        <span class="cta-blob blue"></span>
+        <div class="cta-inner">
+          <div class="cta-copy">
+            <div class="cta-dots">
+              <span style="background:var(--leds-red)"></span>
+              <span style="background:var(--leds-green)"></span>
+              <span style="background:var(--leds-blue)"></span>
+            </div>
+            <h2 class="leds-h2" style="font-size:38px">Vamos conversar</h2>
+            <p class="leds-body">Tem uma proposta para compartilhar? Escolha uma das opções ao lado e envie suas informações. Entraremos em contato em breve.</p>
+          </div>
+          <div class="cta-options">
+            <button class="cta-option" type="button" style="--accent:var(--leds-red)">Sugestão de eventos/palestras</button>
+            <button class="cta-option" type="button" style="--accent:var(--leds-green)">Ideias de projetos/pesquisas</button>
+            <button class="cta-option" type="button" style="--accent:var(--leds-blue)">Seja um parceiro</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <%# ---- Footer ---- %>
+  <footer class="site-footer">
+    <div class="footer-brand">
+      <span class="logo">
+        <span class="logo-mark">
+          <span class="logo-dots"><span></span><span></span></span>
+          <svg width="22" height="18" viewBox="0 0 22 18" style="border-radius:2px;display:block">
+            <path d="M 18.434 0 L 3.566 0 C 2.004 0 1.045 1.71 1.86 3.043 L 9.293 15.207 C 10.073 16.484 11.927 16.484 12.707 15.207 L 20.14 3.043 C 20.955 1.71 19.996 0 18.434 0 Z" fill="url(#leds-tri)" />
+          </svg>
+        </span>
+        <span class="logo-word">LEDS</span>
+      </span>
+      <p>Liga Acadêmica de Estrutura de Dados e Soluções. Estruturando dados em soluções reais.</p>
+    </div>
+    <div class="footer-col">
+      <span class="footer-col-title">NAVEGAÇÃO</span>
+      <div class="items">
+        <a href="#inicio">Início</a><a href="#acoes">Ações</a><a href="#membros">Membros</a><a href="#novidades">Novidades</a><a href="#">Loja</a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <span class="footer-col-title">INFORMAÇÕES</span>
+      <div class="items">
+        <span>Universidade de Taubaté</span><span>R. Daniel Daneli, 100, Taubaté,</span><span>São Paulo 12060-440, BR</span><span>leds.unitau@gmail.com</span>
+      </div>
+    </div>
+    <div class="footer-col">
+      <span class="footer-col-title">REDES</span>
+      <div class="items">
+        <a href="#">Instagram</a><a href="#">LinkedIn</a><a href="#">GitHub</a><a href="#">Comunidade</a>
+      </div>
+    </div>
+  </footer>
+  <div class="footer-copy"><div class="bar">© 2026 LEDS · Liga Acadêmica de Estrutura de Dados e Soluções</div></div>
+</div>
