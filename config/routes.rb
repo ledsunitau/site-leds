@@ -64,7 +64,11 @@ Rails.application.routes.draw do
     end
   end
 
-  # Checkout de estoque (RF-LOJ-04) → pedido + pagamento (Mercado Pago).
+  # Endereços de entrega do usuário (RF-LOJ-04) e cotação de frete (RF-LOJ-11).
+  resources :enderecos, only: %i[index create update destroy]
+  post "frete/cotar", to: "fretes#cotar"
+
+  # Checkout de estoque (RF-LOJ-04) → pedido + pagamento (Mercado Pago) + frete.
   post "checkout", to: "checkout#create"
   resources :pedidos, only: %i[index show] do
     member do
@@ -138,6 +142,14 @@ Rails.application.routes.draw do
     # RF-ADM-05: aba de denúncias
     resources :denuncias, only: :index do
       member { post :resolver }
+    end
+    # RF-LOJ-04: acompanhamento e transições de fulfillment dos pedidos
+    resources :pedidos, only: :index do
+      member do
+        post :em_producao
+        post :enviar
+        post :entregar
+      end
     end
   end
   mount MissionControl::Jobs::Engine, at: "/admin/jobs"

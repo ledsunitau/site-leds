@@ -16,6 +16,12 @@ class Variante < ApplicationRecord
   validates :nome, presence: true
   validates :estoque, numericality: { greater_than_or_equal_to: 0 }
   validates :sku, uniqueness: true, allow_nil: true
+  # peso (kg) e dimensões (cm) para a cotação de frete (RF-LOJ-11). Opcionais no
+  # geral (sob demanda / retirada não usam); exigidos só na hora do envio.
+  validates :peso, :altura, :largura, :comprimento,
+            numericality: { greater_than: 0 }, allow_nil: true
+
+  def dimensoes_para_frete? = [ peso, altura, largura, comprimento ].all?(&:present?)
 
   def card_json
     { id: id, nome: nome, sku: sku, estoque: estoque }

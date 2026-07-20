@@ -62,10 +62,15 @@ module MercadoPago
     req["Content-Type"] = "application/json"
     req.body = corpo.to_json if corpo
 
-    resposta = Net::HTTP.start("api.mercadopago.com", 443, use_ssl: true) { |http| http.request(req) }
+    resposta = Net::HTTP.start("api.mercadopago.com", 443, use_ssl: true, open_timeout: 5, read_timeout: 15) do |http|
+      http.request(req)
+    end
     raise ErroGateway, "MP respondeu #{resposta.code}" unless resposta.is_a?(Net::HTTPSuccess)
 
     JSON.parse(resposta.body)
+  rescue Net::OpenTimeout, Net::ReadTimeout, SocketError, SystemCallError => e
+    # sem timeout, um gateway travado penduraria o worker/conexão indefinidamente
+    raise ErroGateway, "Falha de rede com o Mercado Pago (#{e.class})"
   end
   private_class_method :requisitar
 

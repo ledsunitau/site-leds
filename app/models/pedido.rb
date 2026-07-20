@@ -32,35 +32,41 @@ class Pedido < ApplicationRecord
 
   scope :em_aberto, -> { aguardando_pagamento }
 
-  # pagamento aprovado → avisa o comprador (RF-LOJ-04)
+  # pagamento aprovado → avisa o comprador (RF-LOJ-04); e, se for ENVIO, compra a
+  # etiqueta em background (RF-LOJ-11). Enviado/entregue avisam o comprador.
   after_update_commit :notificar_pago, if: -> { saved_change_to_status? && pago? }
+  after_update_commit :agendar_etiqueta, if: -> { saved_change_to_status? && pago? && envio? }
+  after_update_commit :notificar_enviado, if: -> { saved_change_to_status? && enviado? }
+  after_update_commit :notificar_entregue, if: -> { saved_change_to_status? && entregue? }
 
-  # Pagamento aprovado confirma a compra (RF-LOJ-07). with_lock: dois webhooks
-  # do mesmo pagamento (o gateway reenvia) não devem pagar duas vezes nem
-  # reprocessar. Idempotente: se já pago, não faz nada.
+  # Pagamento aprovado confirma a compra (RF-LOJ-07): aguardando_pagamento → pago.
+  # Sob demanda: a reserva vira 'convertida'. Idempotente e travado (transicionar!):
+  # dois webhooks do mesmo pagamento não pagam duas vezes.
   def marcar_pago!
-    with_lock do
-      return if pago?
-      unless aguardando_pagamento?
-        errors.add(:status, "só pedido aguardando pagamento vira pago")
-        raise ActiveRecord::RecordInvalid.new(self)
-      end
-      update!(status: "pago")
-      reserva&.marcar_convertida! # sob demanda: a reserva vira 'convertida'
+    transicionar!("pago", de: %w[aguardando_pagamento]) { reserva&.marcar_convertida! }
+  end
+
+  # Cancelável enquanto não pago (o cliente desiste). Devolve o estoque reservado.
+  def cancelar!
+    transicionar!("cancelado", de: %w[aguardando_pagamento]) { itens.each(&:devolver_estoque!) }
+  end
+
+  # Fulfillment (RF-LOJ-04, tracking). em_producao é manual (gestão prepara);
+  # enviado vem da etiqueta (EtiquetaJob) ou de envio manual da gestão; entregue
+  # vem do rastreio (RastreioUpdateJob) ou de confirmação manual da gestão.
+  def marcar_em_producao!
+    transicionar!("em_producao", de: %w[pago])
+  end
+
+  def marcar_enviado!(codigo, ref: nil)
+    transicionar!("enviado", de: %w[pago em_producao]) do
+      self.rastreamento_codigo = codigo
+      self.melhor_envio_ref = ref if ref
     end
   end
 
-  # Cancelável enquanto não pago (o cliente desiste antes de pagar). Devolve o
-  # estoque reservado no checkout de estoque.
-  def cancelar!
-    with_lock do
-      unless aguardando_pagamento?
-        errors.add(:status, "só pedido aguardando pagamento pode ser cancelado")
-        raise ActiveRecord::RecordInvalid.new(self)
-      end
-      itens.each { |item| item.devolver_estoque! }
-      update!(status: "cancelado")
-    end
+  def marcar_entregue!
+    transicionar!("entregue", de: %w[enviado])
   end
 
   def card_json
@@ -69,6 +75,12 @@ class Pedido < ApplicationRecord
       status: status,
       tipo_entrega: tipo_entrega,
       total: total,
+      frete_valor: frete_valor,
+      transportadora: transportadora,
+      servico_frete: servico_frete,
+      prazo_estimado: prazo_estimado,
+      rastreamento_codigo: rastreamento_codigo,
+      endereco: endereco&.card_json,
       itens: itens.map(&:card_json),
       criado_em: created_at
     }
@@ -76,11 +88,37 @@ class Pedido < ApplicationRecord
 
   private
 
+  # Transição de status idempotente e travada: no-op se já no destino, erra se a
+  # origem não permite. O bloco ajusta campos extras (código de rastreio etc.).
+  def transicionar!(destino, de:)
+    with_lock do
+      return if status == destino
+      unless de.include?(status)
+        errors.add(:status, "transição inválida de #{status} para #{destino}")
+        raise ActiveRecord::RecordInvalid.new(self)
+      end
+      yield if block_given?
+      update!(status: destino)
+    end
+  end
+
   def envio_exige_endereco
     errors.add(:endereco, "é obrigatório para envio") if envio? && endereco_id.nil?
   end
 
   def notificar_pago
     PedidoPagoNotifier.with(record: self).deliver(comprador) if comprador
+  end
+
+  def agendar_etiqueta
+    EtiquetaJob.perform_later(id)
+  end
+
+  def notificar_enviado
+    PedidoEnviadoNotifier.with(record: self).deliver(comprador) if comprador
+  end
+
+  def notificar_entregue
+    PedidoEntregueNotifier.with(record: self).deliver(comprador) if comprador
   end
 end

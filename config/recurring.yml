@@ -22,3 +22,7 @@ production:
   expirar_pedidos:
     class: ExpirarPedidosJob
     schedule: every 15 minutes
+  # RF-LOJ-11: atualiza o rastreio dos pedidos enviados (→ entregue).
+  rastreio_update:
+    class: RastreioUpdateJob
+    schedule: every hour

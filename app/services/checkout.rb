@@ -11,21 +11,44 @@ module Checkout
   module_function
 
   # Estoque: carrinho → pedido. Congela o preço (snapshot), baixa o estoque com
-  # lock (RN: "só compra quando há saldo") e esvazia o carrinho.
-  # ADIADO (branch do frete): tipo_entrega 'envio' + endereço + frete. Aqui só retirada.
-  def do_carrinho(user)
+  # lock (RN: "só compra quando há saldo") e esvazia o carrinho. entrega escolhe
+  # retirada (padrão) ou envio com frete cotado no servidor (RF-LOJ-04/11).
+  def do_carrinho(user, entrega: {})
     carrinho = user.carrinho
     raise Vazio, "Carrinho vazio." if carrinho.nil? || carrinho.itens.empty?
 
+    # cota o frete ANTES da transação: é chamada externa (lenta) e não pode
+    # segurar a transação/lock de estoque aberta esperando o gateway.
+    atributos = atributos_entrega(user, carrinho, entrega)
+
     Pedido.transaction do
-      pedido = Pedido.create!(comprador: user, tipo_entrega: "retirada", status: "aguardando_pagamento")
+      pedido = Pedido.create!(comprador: user, status: "aguardando_pagamento", **atributos)
       total = carrinho.itens.includes(:produto, :variante).sum do |item|
         adicionar_item!(pedido, item.produto, item.variante, item.quantidade, baixar_estoque: true)
       end
-      pedido.update!(total: total)
+      pedido.update!(total: total + (pedido.frete_valor || 0))
       carrinho.itens.destroy_all
       pedido
     end
+  end
+
+  # Retirada (padrão) ou envio. No envio RE-COTA no servidor e usa o preço
+  # autoritativo do gateway — nunca o frete_valor que o cliente mandaria (senão
+  # dava para pagar frete R$0). A opção escolhida vem por servico_id da cotação.
+  def atributos_entrega(user, carrinho, entrega)
+    return { tipo_entrega: "retirada" } unless entrega[:tipo_entrega].to_s == "envio"
+
+    endereco = user.enderecos.find_by(id: entrega[:endereco_id])
+    raise Indisponivel, "Endereço de entrega inválido." if endereco.nil?
+
+    opcao = Frete.cotar(endereco.cep, carrinho.itens.includes(:variante))
+                 .find { |o| o[:servico_id].to_s == entrega[:servico_id].to_s }
+    raise Indisponivel, "Opção de frete inválida ou indisponível." if opcao.nil?
+
+    {
+      tipo_entrega: "envio", endereco: endereco, transportadora: opcao[:transportadora],
+      servico_frete: opcao[:servico_id].to_s, frete_valor: opcao[:preco], prazo_estimado: opcao[:prazo]
+    }
   end
 
   # Sob demanda: reserva → pedido. Não baixa estoque (é feito sob demanda); a
