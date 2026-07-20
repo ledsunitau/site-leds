@@ -25,8 +25,9 @@ class Denuncia < ApplicationRecord
   # repetido vira N itens na aba). Validação própria em vez de `uniqueness:`
   # para a mensagem sair em prosa pt-BR — full_messages prefixaria o nome do
   # atributo ("User já está em uso") numa API que responde em português.
-  # ponytail: app-level (o DDL não declara índice único aqui) — sobra uma
-  # janela de corrida em POSTs concorrentes; vira duplicata na aba, não dano.
+  # Respaldada por índice PARCIAL único (user_id, comentario_id) WHERE user_id
+  # IS NOT NULL: a validação dá a mensagem amigável, o índice fecha a corrida de
+  # POSTs concorrentes (RecordNotUnique → 422). Anonimizadas (user_id NULL) convivem.
   validate :nao_denunciar_duas_vezes, on: :create
 
   scope :pendentes, -> { pendente }

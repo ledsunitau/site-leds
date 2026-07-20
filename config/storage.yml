@@ -6,6 +6,23 @@ local:
   service: Disk
   root: <%= Rails.root.join("storage") %>
 
+# Cloudflare R2 (S3-compatível) — Active Storage em produção (RNF-13). Credenciais
+# via ENV, injetadas pelo Kamal (.kamal/secrets). endpoint =
+# https://<account_id>.r2.cloudflarestorage.com ; region "auto".
+r2:
+  service: S3
+  access_key_id: <%= ENV["R2_ACCESS_KEY_ID"] %>
+  secret_access_key: <%= ENV["R2_SECRET_ACCESS_KEY"] %>
+  endpoint: <%= ENV["R2_ENDPOINT"] %>
+  bucket: <%= ENV["R2_BUCKET"] %>
+  region: auto
+  # R2 ignora ACL do S3; o Active Storage serve por URL assinada/redirect via app.
+  force_path_style: true
+  # aws-sdk-s3 recente manda checksum CRC32 por padrão, que o R2 rejeita; só
+  # calcula/valida quando a operação exige (upload segue funcionando).
+  request_checksum_calculation: when_required
+  response_checksum_validation: when_required
+
 # Use bin/rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
 # amazon:
 #   service: S3

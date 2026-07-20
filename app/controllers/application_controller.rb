@@ -19,6 +19,15 @@ class ApplicationController < ActionController::Base
     render_invalido(e.record)
   end
 
+  # Corrida em índice único: dois creates concorrentes passam a validação
+  # app-level (leram antes do outro inserir) e colidem no banco. Vira 422 amigável
+  # em vez de 500. O caso comum (não-concorrente) já é pego pela validação com a
+  # mensagem específica; aqui é o backstop raro da corrida.
+  rescue_from ActiveRecord::RecordNotUnique do
+    render json: { errors: [ "Registro duplicado: já existe um igual." ] },
+           status: :unprocessable_entity
+  end
+
   # O sanitizer padrão do Devise só permite email/senha; sem isto o `name`
   # (NOT NULL) é descartado e nenhum cadastro por e-mail/senha funciona.
   before_action :configure_permitted_parameters, if: :devise_controller?

@@ -12,6 +12,23 @@ class AcaoTest < ActiveSupport::TestCase
     assert_raises(ActiveRecord::RecordNotUnique) { duplicada.save!(validate: false) }
   end
 
+  # Índice parcial único (ideia_id WHERE ideia_id IS NOT NULL): uma ideia vira no
+  # máx. uma ação (RF-ACO-07). save(validate: false) simula a corrida que fura a
+  # validação app-level.
+  test "uma ideia só vira uma ação (único no banco)" do
+    ideia = Ideia.create!(titulo: "Ideia teste", tipo: "projeto", status: "aprovada")
+    Acao.new(titulo: "A1", detalhe: Projeto.new, ideia: ideia).save!(validate: false)
+    dup = Acao.new(titulo: "A2", detalhe: Projeto.new, ideia: ideia)
+    assert_raises(ActiveRecord::RecordNotUnique) { dup.save!(validate: false) }
+  end
+
+  test "ações sem idealizador (ideia_id nil) convivem" do
+    assert_nothing_raised do
+      Acao.new(titulo: "N1", detalhe: Projeto.new).save!(validate: false)
+      Acao.new(titulo: "N2", detalhe: Projeto.new).save!(validate: false)
+    end
+  end
+
   test "status fora da lista é rejeitado" do
     acao = Acao.new(titulo: "X", detalhe: Projeto.new, status: "aprovadissima")
     assert_not acao.valid?

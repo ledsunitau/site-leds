@@ -40,6 +40,10 @@ gem "thruster", require: false
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem "image_processing", "~> 2.0"
 
+# Backend S3-compatível do Active Storage em produção — Cloudflare R2 (RNF-13,
+# feature/deploy-producao). Só carregado quando o serviço :r2 é usado.
+gem "aws-sdk-s3", require: false
+
 # Autenticação: e-mail/senha + OAuth Google e Discord (RF-AUT-01..07)
 gem "devise"
 gem "devise-i18n"

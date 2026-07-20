@@ -21,17 +21,15 @@ Rails.application.configure do
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
   # config.asset_host = "http://assets.example.com"
 
-  # Store uploaded files on the local file system (see config/storage.yml for options).
-  config.active_storage.service = :local
+  # Uploads no Cloudflare R2 (RNF-13). Ver config/storage.yml (serviço :r2).
+  config.active_storage.service = :r2
 
-  # Assume all access to the app is happening through a SSL-terminating reverse proxy.
-  # config.assume_ssl = true
+  # Acesso via proxy SSL do Kamal (Let's Encrypt) atrás do Cloudflare (modo Full).
+  config.assume_ssl = true
+  config.force_ssl = true
 
-  # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  # config.force_ssl = true
-
-  # Skip http-to-https redirect for the default health check endpoint.
-  # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
+  # Não redireciona o health check /up para https (o load balancer bate em http).
+  config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
 
   # Log to STDOUT with the current request id as a default log tag.
   config.log_tags = [ :request_id ]
@@ -57,8 +55,10 @@ Rails.application.configure do
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
   # config.action_mailer.raise_delivery_errors = false
 
-  # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: ENV.fetch("APP_HOST", "example.com") }
+  # Set host to be used by links generated in mailer templates. protocol https:
+  # sem ele os links do Devise (reset de senha) sairiam http:// (força-ssl até
+  # redireciona, mas alguns clientes quebram o token no redirect).
+  config.action_mailer.default_url_options = { host: ENV.fetch("APP_HOST", "example.com"), protocol: "https" }
 
   # SMTP por env: provedor definido na fase de deploy (feature/deploy-producao);
   # necessário desde já para a recuperação de senha do Devise (RF-AUT-04).
@@ -82,12 +82,9 @@ Rails.application.configure do
   # Only use :id for inspections in production.
   config.active_record.attributes_for_inspect = [ :id ]
 
-  # Enable DNS rebinding protection and other `Host` header attacks.
-  # config.hosts = [
-  #   "example.com",     # Allow requests from example.com
-  #   /.*\.example\.com/ # Allow requests from subdomains like `www.example.com`
-  # ]
-  #
-  # Skip DNS rebinding protection for the default health check endpoint.
-  # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+  # Proteção contra DNS rebinding / Host header: só o domínio da app (APP_HOST).
+  # Vazio (APP_HOST não setado) mantém o comportamento default do Rails.
+  config.hosts << ENV["APP_HOST"] if ENV["APP_HOST"].present?
+  # O health check /up é batido por IP pelo load balancer — isenta do check de host.
+  config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 end
