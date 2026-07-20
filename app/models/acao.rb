@@ -23,12 +23,10 @@ class Acao < ApplicationRecord
   enum :status, STATUSES.index_by(&:itself), validate: true
 
   validates :titulo, presence: true
-  # uma ideia vira no MÁXIMO uma ação (modelagem C3). ATENÇÃO: diferente de
-  # detalhe_id (que TEM índice unique no DDL), o index_acoes_on_ideia é
-  # não-unique por decisão do DDL — então esta unicidade é SÓ app-level e tem
-  # janela de corrida (dois creates concorrentes com o mesmo ideia_id passam).
-  # ponytail: app-level por autoridade do DDL; virar índice parcial unique é
-  # decisão do dono do schema (levantado na entrega da branch).
+  # uma ideia vira no MÁXIMO uma ação (modelagem C3). Respaldada por índice
+  # PARCIAL único (index_acoes_on_ideia_id WHERE ideia_id IS NOT NULL): a
+  # validação dá a mensagem amigável no caso comum, o índice fecha a corrida de
+  # creates concorrentes (RecordNotUnique → 422 no ApplicationController).
   validates :ideia_id, uniqueness: true, allow_nil: true
   validate :ideia_deve_estar_aprovada, if: :ideia_id?
   # o idealizador é fixado na criação (RF-ACO-07) — não se re-aponta depois

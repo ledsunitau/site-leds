@@ -2601,7 +2601,7 @@ CREATE UNIQUE INDEX index_acoes_on_detalhe_type_and_detalhe_id ON public.acoes U
 -- Name: index_acoes_on_ideia_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_acoes_on_ideia_id ON public.acoes USING btree (ideia_id);
+CREATE UNIQUE INDEX index_acoes_on_ideia_id ON public.acoes USING btree (ideia_id) WHERE (ideia_id IS NOT NULL);
 
 
 --
@@ -2798,6 +2798,13 @@ CREATE INDEX index_denuncias_on_comentario_id ON public.denuncias USING btree (c
 --
 
 CREATE INDEX index_denuncias_on_status ON public.denuncias USING btree (status);
+
+
+--
+-- Name: index_denuncias_unicas_por_denunciante; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_denuncias_unicas_por_denunciante ON public.denuncias USING btree (user_id, comentario_id) WHERE (user_id IS NOT NULL);
 
 
 --
@@ -3749,6 +3756,7 @@ ALTER TABLE ONLY public.itens_pedido
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260709080000'),
 ('20260709070000'),
 ('20260709060000'),
 ('20260709050000'),

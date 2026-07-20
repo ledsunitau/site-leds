@@ -1,14 +1,16 @@
 # PostgreSQL (RNF-02). Toda conexão é dirigida por env vars — no dev/CI os
 # defaults abaixo casam com o serviço `db` do docker-compose e com o service
 # container do GitHub Actions; em produção o Kamal injeta os valores.
+# .presence: uma env var VAZIA (ex.: linha em branco no .env) conta como
+# não-configurada e cai no default — senão "" viraria host/usuário vazio.
 default: &default
   adapter: postgresql
   encoding: unicode
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-  host: <%= ENV.fetch("DB_HOST") { "localhost" } %>
-  port: <%= ENV.fetch("DB_PORT") { 5432 } %>
-  username: <%= ENV.fetch("POSTGRES_USER") { "postgres" } %>
-  password: <%= ENV.fetch("POSTGRES_PASSWORD") { "postgres" } %>
+  host: <%= ENV["DB_HOST"].presence || "localhost" %>
+  port: <%= ENV["DB_PORT"].presence || 5432 %>
+  username: <%= ENV["POSTGRES_USER"].presence || "postgres" %>
+  password: <%= ENV["POSTGRES_PASSWORD"].presence || "postgres" %>
 
 development:
   <<: *default
