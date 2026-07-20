@@ -70,6 +70,19 @@ class Rack::Attack
   throttle("pagamentos_webhook/ip", limit: 120, period: 1.minute) do |req|
     req.ip if req.post? && normalized_path(req) == "/pagamentos/webhook"
   end
+
+  # Cotação de frete (RF-LOJ-11): cada POST pode chamar a API do Melhor Envio
+  # (cota limitada, §7.3). O cache já corta a maioria; o throttle protege contra
+  # varredura de CEPs que fura o cache.
+  throttle("frete_cotar/ip", limit: 30, period: 1.minute) do |req|
+    req.ip if req.post? && normalized_path(req) == "/frete/cotar"
+  end
+
+  # Checkout de envio também re-cota no Melhor Envio (varrer CEPs aqui furaria o
+  # limite acima). Mesmo teto anti-cota na rota de checkout.
+  throttle("checkout/ip", limit: 30, period: 1.minute) do |req|
+    req.ip if req.post? && normalized_path(req) == "/checkout"
+  end
 end
 
 Rack::Attack.enabled = !Rails.env.test?

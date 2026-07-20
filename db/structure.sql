@@ -1759,7 +1759,15 @@ CREATE TABLE public.variantes (
     estoque integer DEFAULT 0 NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT variantes_estoque_check CHECK ((estoque >= 0))
+    peso numeric(8,3),
+    altura numeric(8,2),
+    largura numeric(8,2),
+    comprimento numeric(8,2),
+    CONSTRAINT variantes_altura_check CHECK (((altura IS NULL) OR (altura > (0)::numeric))),
+    CONSTRAINT variantes_comprimento_check CHECK (((comprimento IS NULL) OR (comprimento > (0)::numeric))),
+    CONSTRAINT variantes_estoque_check CHECK ((estoque >= 0)),
+    CONSTRAINT variantes_largura_check CHECK (((largura IS NULL) OR (largura > (0)::numeric))),
+    CONSTRAINT variantes_peso_check CHECK (((peso IS NULL) OR (peso > (0)::numeric)))
 );
 
 
@@ -3741,6 +3749,7 @@ ALTER TABLE ONLY public.itens_pedido
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260709070000'),
 ('20260709060000'),
 ('20260709050000'),
 ('20260709040000'),

@@ -3,6 +3,10 @@ camiseta_m:
   nome: M
   sku: CAM-M
   estoque: 10
+  peso: 0.3
+  altura: 4
+  largura: 30
+  comprimento: 40
 
 camiseta_g:
   produto: camiseta
@@ -15,3 +19,7 @@ moletom_unico:
   produto: moletom
   nome: Único
   estoque: 0
+  peso: 0.6
+  altura: 6
+  largura: 35
+  comprimento: 45
