@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="400" height="240">
+  <defs>
+    <linearGradient id="ph-tri" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="15%" stop-color="rgb(0,197,91)"/>
+      <stop offset="49.52%" stop-color="rgb(29,132,245)"/>
+      <stop offset="85%" stop-color="rgb(248,74,84)"/>
+    </linearGradient>
+    <radialGradient id="ph-glow" cx="50%" cy="42%" r="60%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.06)"/>
+      <stop offset="70%" stop-color="rgba(255,255,255,0)"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="240" fill="#101114"/>
+  <rect width="400" height="240" fill="url(#ph-glow)"/>
+
+  <!-- Logo LEDS na proporção real (Logo.jsx): bolinhas d=15 gap=18, triângulo 22x18 -->
+  <g transform="translate(200 100) scale(1.9)" opacity="0.92">
+    <g transform="translate(-24 -19)">
+      <circle cx="7.5" cy="9" r="7.5" fill="#fff"/>
+      <circle cx="40.5" cy="9" r="7.5" fill="#fff"/>
+      <g transform="translate(13 20)">
+        <path d="M 18.434 0 L 3.566 0 C 2.004 0 1.045 1.71 1.86 3.043 L 9.293 15.207 C 10.073 16.484 11.927 16.484 12.707 15.207 L 20.14 3.043 C 20.955 1.71 19.996 0 18.434 0 Z" fill="url(#ph-tri)"/>
+      </g>
+    </g>
+  </g>
+
+  <text x="200" y="190" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13" letter-spacing="3" fill="#6e6e76">LEDS</text>
+</svg>
