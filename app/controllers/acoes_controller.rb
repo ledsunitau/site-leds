@@ -15,15 +15,9 @@ class AcoesController < ApplicationController
   def index
     authorize Acao
 
+    # JSON é o formato PADRÃO (contrato da API — testes e consumidores chamam
+    # sem Accept). A página HTML só sai quando o browser pede text/html.
     respond_to do |format|
-      # Página pública server-rendered: todas as publicadas; filtro/busca é no
-      # cliente (Stimulus). ponytail: N+1 nas assocs do detalhe (techs/membros/
-      # temas) — ok com poucas ações; pré-carrega por tipo se a lista crescer.
-      format.html do
-        @acoes = Acao.publicadas.includes(:detalhe, thumbnail_attachment: :blob)
-                     .order(created_at: :desc)
-      end
-
       format.json do
         acoes = Acao.includes(:detalhe, thumbnail_attachment: :blob).order(created_at: :desc)
         acoes = acoes.where(detalhe_type: filtro(:tipo)) if filtro(:tipo)
@@ -36,6 +30,14 @@ class AcoesController < ApplicationController
         acoes = acoes.to_a
         preload_temas_dos_artigos(acoes)
         render json: { acoes: acoes.map { |a| acao_json(a) } }
+      end
+
+      # Página pública server-rendered: todas as publicadas; filtro/busca é no
+      # cliente (Stimulus). ponytail: N+1 nas assocs do detalhe (techs/membros/
+      # temas) — ok com poucas ações; pré-carrega por tipo se a lista crescer.
+      format.html do
+        @acoes = Acao.publicadas.includes(:detalhe, thumbnail_attachment: :blob)
+                     .order(created_at: :desc)
       end
     end
   end

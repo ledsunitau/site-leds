@@ -4,23 +4,23 @@ class AcoesControllerTest < ActionDispatch::IntegrationTest
   PUBLICADAS = %i[acao_site acao_hackathon acao_artigo].freeze
 
   test "index público lista só publicadas, com filtro por tipo" do
-    get acoes_path
+    get acoes_path, as: :json
     ids = response.parsed_body["acoes"].map { |a| a["id"] }
     assert_equal PUBLICADAS.map { |f| acoes(f).id }.sort, ids.sort
 
-    get acoes_path(tipo: "Projeto")
+    get acoes_path(tipo: "Projeto"), as: :json
     assert_equal [ acoes(:acao_site).id ], response.parsed_body["acoes"].map { |a| a["id"] }
   end
 
   test "filtro de status é ignorado para anônimos" do
-    get acoes_path(status: "rascunho")
+    get acoes_path(status: "rascunho"), as: :json
     ids = response.parsed_body["acoes"].map { |a| a["id"] }
     assert_equal PUBLICADAS.map { |f| acoes(f).id }.sort, ids.sort
   end
 
   test "membro vê rascunhos com filtro de status" do
     sign_in users(:membro_user)
-    get acoes_path(status: "rascunho")
+    get acoes_path(status: "rascunho"), as: :json
     ids = response.parsed_body["acoes"].map { |a| a["id"] }
     assert_equal [ acoes(:acao_bot).id ], ids
   end
