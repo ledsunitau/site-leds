@@ -1,0 +1,13 @@
+<%# Flash global (discreto): toasts no topo, auto-somem e podem ser fechados.
+    Cobre mensagens do Devise e de qualquer redirect (ex.: falha de OAuth). %>
+<% if flash.any? { |_, msg| msg.present? } %>
+  <div class="flash-stack" data-controller="flash">
+    <% flash.each do |type, msg| %>
+      <% next if msg.blank? %>
+      <div class="flash-toast <%= type.to_s == "alert" ? "alert" : "notice" %>" data-flash-target="toast" role="status">
+        <span><%= msg %></span>
+        <button type="button" class="flash-close" data-action="flash#close" aria-label="Fechar">&times;</button>
+      </div>
+    <% end %>
+  </div>
+<% end %>

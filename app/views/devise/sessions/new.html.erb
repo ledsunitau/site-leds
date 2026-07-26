@@ -1,0 +1,40 @@
+<%# Entrar (Devise sessions#new) — não está no Figma; segue o design system. %>
+<% content_for :title, "Entrar — LEDS" %>
+
+<%= render "shared/page_bg" %>
+
+<div class="auth-page">
+  <%= render "devise/shared/brand" %>
+
+  <div class="auth-card">
+    <%= render "devise/shared/tabs", active: :login %>
+    <h1 class="auth-title">Bem-vindo de volta</h1>
+    <p class="auth-sub">Entre para participar da comunidade LEDS.</p>
+
+    <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
+      <label class="auth-field">
+        <span>E-mail</span>
+        <%= f.email_field :email, autofocus: true, autocomplete: "email", placeholder: "voce@exemplo.com" %>
+      </label>
+
+      <%= render "devise/shared/password_field", f: f, field: :password, label: "Senha",
+            autocomplete: "current-password", placeholder: "••••••••" %>
+
+      <div class="auth-row">
+        <% if devise_mapping.rememberable? %>
+          <label class="auth-check">
+            <%= f.check_box :remember_me %>
+            <span>Lembrar de mim</span>
+          </label>
+        <% end %>
+        <a class="auth-link" href="<%= new_password_path(resource_name) %>">Esqueci a senha</a>
+      </div>
+
+      <%= f.submit "Entrar", class: "btn btn-primary auth-submit" %>
+    <% end %>
+
+    <%= render "devise/shared/oauth" %>
+
+    <p class="auth-foot">Ainda não tem conta? <a href="<%= new_user_registration_path %>">Criar conta</a></p>
+  </div>
+</div>

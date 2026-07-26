@@ -7,17 +7,29 @@ class PostsController < ApplicationController
   def index
     authorize Post
 
-    posts = base_scope
-    posts = posts.where(tipo: filtro(:tipo)) if filtro(:tipo)
-    # público vê publicados; a gestão filtra por status para operar a fila de
-    # aprovação (mesmo idioma do índice de ações)
-    posts = if policy(Post).aprovar? && filtro(:status)
-      posts.where(status: filtro(:status)).order(updated_at: :desc)
-    else
-      posts.publicados.order(published_at: :desc)
-    end
+    # JSON é o contrato da API (default); a página HTML (carrossel + grid) só
+    # sai quando o browser pede text/html — mesmo padrão de Ações/Membros.
+    respond_to do |format|
+      format.json do
+        posts = base_scope
+        posts = posts.where(tipo: filtro(:tipo)) if filtro(:tipo)
+        # público vê publicados; a gestão filtra por status para operar a fila de
+        # aprovação (mesmo idioma do índice de ações)
+        posts = if policy(Post).aprovar? && filtro(:status)
+          posts.where(status: filtro(:status)).order(updated_at: :desc)
+        else
+          posts.publicados.order(published_at: :desc)
+        end
+        render json: { posts: paginar(posts).map { |p| post_json(p) } }
+      end
 
-    render json: { posts: paginar(posts).map { |p| post_json(p) } }
+      # Página pública: todos os publicados (filtro por tipo + busca + paginação
+      # são no cliente/Stimulus). Carrossel = 3 mais recentes.
+      format.html do
+        @posts = base_scope.publicados.order(published_at: :desc).to_a
+        @carrossel = @posts.first(3)
+      end
+    end
   end
 
   # Posts do próprio autor, em qualquer status (rascunhos, rejeitados…).
@@ -46,7 +58,17 @@ class PostsController < ApplicationController
     post = Post.find(params[:id])
     authorize post
 
-    render json: post_json(post, completo: true)
+    respond_to do |format|
+      format.json { render json: post_json(post, completo: true) }
+      # Página da novidade: banner + autor/data + título + corpo + relacionadas
+      # (mesmo tipo, mais recentes; cai em quaisquer publicados se não houver).
+      format.html do
+        @post = post
+        relacionadas = base_scope.publicados.where.not(id: post.id)
+        @relacionadas = relacionadas.where(tipo: post.tipo).order(published_at: :desc).limit(3).to_a
+        @relacionadas = relacionadas.order(published_at: :desc).limit(3).to_a if @relacionadas.empty?
+      end
+    end
   end
 
   def create

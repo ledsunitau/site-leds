@@ -1,0 +1,14 @@
+<%# Banner de consentimento de cookies (RNF-04/05, RN-14). Aparece só se o
+    visitante ainda não decidiu (flag no localStorage). "Aceitar" libera
+    analytics; "Só essenciais" recusa. Ambos gravam a decisão em /consents. %>
+<div class="cookie-banner" data-controller="cookies" data-cookies-url-value="<%= consents_path %>" hidden>
+  <div class="cookie-text">
+    <strong>Cookies &amp; privacidade</strong>
+    <p>Usamos cookies essenciais para o site funcionar e, com sua permissão, cookies de
+       analytics para entender o uso e melhorar a experiência. Você pode mudar de ideia depois.</p>
+  </div>
+  <div class="cookie-actions">
+    <button type="button" class="btn btn-secondary" data-action="cookies#recusar">Só essenciais</button>
+    <button type="button" class="btn btn-primary" data-action="cookies#aceitar">Aceitar analytics</button>
+  </div>
+</div>

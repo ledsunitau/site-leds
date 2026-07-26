@@ -1,0 +1,10 @@
+<%# Erros de validação do recurso (ex.: e-mail já usado, senha curta). %>
+<% if resource.errors.any? %>
+  <div class="auth-flash alert">
+    <ul class="auth-errors">
+      <% resource.errors.full_messages.each do |mensagem| %>
+        <li><%= mensagem %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>

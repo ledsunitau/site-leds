@@ -1,0 +1,26 @@
+<%# Esqueci a senha (Devise passwords#new) — envia instruções por e-mail. %>
+<% content_for :title, "Recuperar senha — LEDS" %>
+
+<%= render "shared/page_bg" %>
+
+<div class="auth-page">
+  <%= render "devise/shared/brand" %>
+
+  <div class="auth-card">
+    <h1 class="auth-title">Recuperar senha</h1>
+    <p class="auth-sub">Informe seu e-mail e enviaremos as instruções para redefinir a senha.</p>
+
+    <%= render "devise/shared/errors", resource: resource %>
+
+    <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :post }) do |f| %>
+      <label class="auth-field">
+        <span>E-mail</span>
+        <%= f.email_field :email, autofocus: true, autocomplete: "email", placeholder: "voce@exemplo.com" %>
+      </label>
+
+      <%= f.submit "Enviar instruções", class: "btn btn-primary auth-submit" %>
+    <% end %>
+
+    <p class="auth-foot"><a href="<%= new_user_session_path %>">← Voltar para Entrar</a></p>
+  </div>
+</div>

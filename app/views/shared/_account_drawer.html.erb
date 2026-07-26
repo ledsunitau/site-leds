@@ -1,0 +1,50 @@
+<%# Menu lateral da conta. Renderizado no <body> (fora da navbar). O root é
+    fixo/clipado, então o painel nunca alarga a página. Local `user`. %>
+<div class="drawer-root" data-drawer-target="root">
+  <div class="drawer-overlay" data-action="click->drawer#close"></div>
+
+  <aside class="drawer" role="dialog" aria-modal="true" aria-label="Minha conta">
+    <div class="drawer-top">
+      <span class="eyebrow faint">// minha conta</span>
+      <button type="button" class="drawer-close" data-action="drawer#close" aria-label="Fechar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="drawer-user">
+      <span class="drawer-avatar"><%= render "shared/avatar", user: user %></span>
+      <div class="drawer-id">
+        <span class="drawer-name"><%= user.name %></span>
+        <span class="drawer-email"><%= user.email %></span>
+      </div>
+      <span class="drawer-role"><%= papel_label(user.role) %></span>
+    </div>
+
+    <% if user.oauth_identities.any? %>
+      <div class="drawer-section">
+        <span class="drawer-section-title">Contas vinculadas</span>
+        <div class="drawer-contas">
+          <% user.oauth_identities.each do |identidade| %>
+            <span class="drawer-conta">
+              <%= identidade.provider.capitalize %><% if identidade.username.present? %> · <%= identidade.username %><% end %>
+            </span>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <nav class="drawer-nav">
+      <span class="drawer-section-title">Atalhos</span>
+      <a href="<%= acoes_path %>" data-action="drawer#close">Ações</a>
+      <a href="<%= members_path %>" data-action="drawer#close">Membros</a>
+      <a href="<%= posts_path %>" data-action="drawer#close">Novidades</a>
+      <span class="drawer-soon">Meu perfil <em>em breve</em></span>
+    </nav>
+
+    <div class="drawer-foot">
+      <%= button_to "Sair da conta", destroy_user_session_path, method: :delete, class: "btn btn-secondary drawer-logout" %>
+    </div>
+  </aside>
+</div>

@@ -1,0 +1,82 @@
+<%# Página de Novidades (Layers NOVIDADES do Figma). Tudo do banco (@posts).
+    Carrossel = 3 mais recentes; filtro por tipo + busca + paginação são no
+    cliente (Stimulus novidades/carrossel). %>
+<% content_for :title, "Novidades — LEDS" %>
+
+<%= render "shared/page_bg" %>
+
+<div class="page" data-controller="novidades">
+  <%= render "shared/navbar", active: "NOVIDADES" %>
+
+  <main class="content wrap novidades-page">
+    <h1 class="leds-h1" style="margin:8px 0 22px">Novidades</h1>
+
+    <%# ---- Carrossel dos 3 mais recentes ---- %>
+    <% if @carrossel.any? %>
+      <div class="novidades-carrossel" data-controller="carrossel">
+        <div class="carrossel-viewport" data-carrossel-target="viewport"
+             data-action="pointerdown->carrossel#dragStart pointermove->carrossel#dragMove pointerup->carrossel#dragEnd pointercancel->carrossel#dragEnd click->carrossel#onClick dragstart->carrossel#noNativeDrag">
+          <div class="carrossel-track" data-carrossel-target="track">
+            <% @carrossel.each do |p| %>
+              <a class="carrossel-slide" href="<%= post_path(p) %>" draggable="false" data-carrossel-target="slide">
+                <div class="carrossel-media" style="background-image:url('<%= card_image_url(p) %>')">
+                  <span class="tag solid" style="--tag-color:var(--cat-<%= p.tipo %>)"><%= p.noticia? ? "Notícia" : "Blog" %></span>
+                </div>
+                <div class="carrossel-info">
+                  <p class="carrossel-titulo"><%= p.caller.presence || p.titulo %></p>
+                  <div class="carrossel-meta">
+                    <span><%= p.autor&.name || "LEDS" %></span>
+                    <span class="meta-mono"><%= data_por_extenso(p.published_at) %></span>
+                  </div>
+                </div>
+              </a>
+            <% end %>
+          </div>
+        </div>
+        <% if @carrossel.size > 1 %>
+          <div class="carrossel-dots">
+            <% @carrossel.each_with_index do |_, i| %>
+              <button type="button" class="carrossel-dot <%= 'active' if i.zero? %>" data-index="<%= i %>"
+                      data-carrossel-target="dot" data-action="carrossel#goTo" aria-label="Ir para o slide <%= i + 1 %>"></button>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# ---- Filtro ---- %>
+    <div class="novidades-toolbar">
+      <div class="chips">
+        <% [["todos", "Todos"], ["noticia", "Notícias"], ["blog", "Blog"]].each_with_index do |(val, label), i| %>
+          <button type="button" class="chip <%= 'active' if i.zero? %>" data-tipo="<%= val %>"
+                  data-novidades-target="chip" data-action="novidades#filtrar"><%= label %></button>
+        <% end %>
+        <button type="button" class="chip chip-lupa" aria-label="Pesquisar" data-action="novidades#toggleBusca">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7" /><line x1="16.5" y1="16.5" x2="21" y2="21" />
+          </svg>
+        </button>
+        <input type="search" class="acoes-busca" placeholder="Pesquisar por título…" hidden
+               data-novidades-target="busca" data-action="input->novidades#buscar">
+      </div>
+    </div>
+
+    <%# ---- Grid de novidades ---- %>
+    <div class="novidades-grid">
+      <% @posts.each do |p| %>
+        <%= render "posts/card", post: p, filtravel: true %>
+      <% end %>
+    </div>
+
+    <p class="acoes-empty" data-novidades-target="empty" hidden>Nenhuma novidade encontrada.</p>
+    <div class="novidades-paginacao" data-novidades-target="paginacao"></div>
+    <% if @posts.empty? %>
+      <div class="empty-state" style="margin-top:24px">
+        <span class="empty-mono">// nada por aqui ainda</span>
+        <p>As notícias e posts do blog aparecem aqui assim que forem publicados.</p>
+      </div>
+    <% end %>
+  </main>
+
+  <%= render "shared/footer" %>
+</div>

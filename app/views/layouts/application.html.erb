@@ -23,7 +23,12 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
+  <body data-controller="drawer">
+    <%= render "shared/flash" %>
     <%= yield %>
+    <% if user_signed_in? %>
+      <%= render "shared/account_drawer", user: current_user %>
+    <% end %>
+    <%= render "shared/cookie_banner" %>
   </body>
 </html>
