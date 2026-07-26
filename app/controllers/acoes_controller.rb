@@ -15,18 +15,31 @@ class AcoesController < ApplicationController
   def index
     authorize Acao
 
-    acoes = Acao.includes(:detalhe, thumbnail_attachment: :blob).order(created_at: :desc)
-    acoes = acoes.where(detalhe_type: filtro(:tipo)) if filtro(:tipo)
-    # público vê só publicadas; membros+ podem filtrar por status (rascunhos etc.)
-    acoes = if policy(Acao).create? && filtro(:status)
-      acoes.where(status: filtro(:status))
-    else
-      acoes.publicadas
-    end
+    # JSON é o formato PADRÃO (contrato da API — testes e consumidores chamam
+    # sem Accept). A página HTML só sai quando o browser pede text/html.
+    respond_to do |format|
+      format.json do
+        acoes = Acao.includes(:detalhe, thumbnail_attachment: :blob).order(created_at: :desc)
+        acoes = acoes.where(detalhe_type: filtro(:tipo)) if filtro(:tipo)
+        # público vê só publicadas; membros+ podem filtrar por status (rascunhos etc.)
+        acoes = if policy(Acao).create? && filtro(:status)
+          acoes.where(status: filtro(:status))
+        else
+          acoes.publicadas
+        end
+        acoes = acoes.to_a
+        preload_temas_dos_artigos(acoes)
+        render json: { acoes: acoes.map { |a| acao_json(a) } }
+      end
 
-    acoes = acoes.to_a
-    preload_temas_dos_artigos(acoes)
-    render json: { acoes: acoes.map { |a| acao_json(a) } }
+      # Página pública server-rendered: todas as publicadas; filtro/busca é no
+      # cliente (Stimulus). ponytail: N+1 nas assocs do detalhe (techs/membros/
+      # temas) — ok com poucas ações; pré-carrega por tipo se a lista crescer.
+      format.html do
+        @acoes = Acao.publicadas.includes(:detalhe, thumbnail_attachment: :blob)
+                     .order(created_at: :desc)
+      end
+    end
   end
 
   def show

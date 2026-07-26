@@ -4,15 +4,15 @@ require "test_helper"
 # vivem em acoes_controller_test.rb.
 class AcoesEventosArtigosTest < ActionDispatch::IntegrationTest
   test "filtro por tipo retorna eventos e artigos" do
-    get acoes_path(tipo: "Evento")
+    get acoes_path(tipo: "Evento"), as: :json
     assert_equal [ acoes(:acao_hackathon).id ], response.parsed_body["acoes"].map { |a| a["id"] }
 
-    get acoes_path(tipo: "Artigo")
+    get acoes_path(tipo: "Artigo"), as: :json
     assert_equal [ acoes(:acao_artigo).id ], response.parsed_body["acoes"].map { |a| a["id"] }
   end
 
   test "card de artigo já traz os ícones/nomes dos temas" do
-    get acoes_path(tipo: "Artigo")
+    get acoes_path(tipo: "Artigo"), as: :json
 
     temas = response.parsed_body["acoes"].first["detalhe"]["temas"]
     assert_equal [ "Estruturas de Dados" ], temas.map { |t| t["nome"] }

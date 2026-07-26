@@ -435,3 +435,99 @@ h1, h2, h3, p { margin: 0; }
   .cta-options { min-width: 0; width: 100%; }
   .site-footer { flex-direction: column; }
 }
+
+/* =====================================================================
+   Página de Ações
+   ===================================================================== */
+.acoes-page { padding-top: 40px; padding-bottom: 80px; }
+
+/* ---- Filtros + busca ---- */
+.acoes-toolbar { margin-bottom: 26px; }
+.chips { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.chip {
+  font-family: var(--font-mono); font-size: 13px; padding: 8px 16px; line-height: 1;
+  border-radius: var(--radius-pill); background: transparent; color: var(--text-nav);
+  border: 1px solid var(--border-strong); cursor: pointer; transition: color .18s ease, background .18s ease, border-color .18s ease;
+}
+.chip:hover:not(.active) { border-color: rgba(255,255,255,.32); color: var(--text-strong); }
+.chip.active { background: var(--surface-invert); color: var(--text-on-invert); border-color: transparent; font-weight: 600; }
+.chip-lupa { display: inline-flex; align-items: center; justify-content: center; padding: 8px 11px; color: var(--text-nav); }
+.chip-lupa:hover { color: var(--text-strong); }
+.acoes-busca {
+  font-family: var(--font-display); font-size: 14px; padding: 9px 16px;
+  border-radius: var(--radius-pill); background: var(--surface-chip);
+  border: 1px solid var(--border-strong); color: var(--text-strong); min-width: 220px;
+}
+.acoes-busca::placeholder { color: var(--text-faint); }
+.acoes-busca:focus { outline: none; border-color: rgba(255,255,255,.4); }
+
+/* ---- Card horizontal ---- */
+.acoes-list { display: flex; flex-direction: column; gap: 18px; }
+.acao-card {
+  display: grid; grid-template-columns: 240px 1fr;
+  /* translúcido: deixa a cor dos blobs do fundo transparecer sutilmente */
+  background: rgba(16, 17, 20, 0.58); border-radius: var(--radius-card);
+  box-shadow: inset 0 0 0 1px var(--border-hair);
+}
+.acao-card[hidden] { display: none; }
+.acao-media {
+  position: relative; background-color: #111; background-size: cover; background-position: center; min-height: 200px;
+  /* card não tem mais overflow:hidden (por causa do popover), então a mídia
+     arredonda os próprios cantos da esquerda */
+  border-radius: var(--radius-card) 0 0 var(--radius-card);
+}
+.acao-media .tag { position: absolute; top: 14px; left: 14px; }
+.acao-body { display: flex; flex-direction: column; gap: 12px; padding: 22px 26px 24px; min-width: 0; }
+.acao-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.acao-titulo { font-size: 20px; font-weight: 700; line-height: 1.25; color: var(--text-strong); }
+.acao-desc { font-size: 14.5px; line-height: 1.6; color: var(--text-muted); max-width: 660px; }
+.acao-bottom { margin-top: auto; padding-top: 8px; display: flex; align-items: center; justify-content: flex-end; gap: 16px; flex-wrap: wrap; }
+.acao-data { white-space: nowrap; }
+
+/* ---- Participantes (avatares lado a lado + "+N" com popover no hover) ---- */
+.participantes { display: flex; align-items: center; gap: 8px; }
+.pavatar {
+  width: 34px; height: 34px; border-radius: 50%; background-size: cover; background-position: center;
+  background-color: #26272c; box-shadow: 0 0 0 2px var(--ring, var(--border-strong));
+}
+.pmore {
+  display: inline-flex; align-items: center; justify-content: center; position: relative; cursor: default;
+  width: 34px; height: 34px; border-radius: 50%;
+  font-family: var(--font-mono); font-size: 12px; color: var(--text-primary);
+  background: rgba(255,255,255,.08); box-shadow: 0 0 0 2px var(--border-strong);
+}
+/* ponte invisível: mantém o :hover ao mover o mouse do "+" para o popover */
+.pmore::after { content: ""; position: absolute; left: -8px; right: -8px; bottom: 100%; height: 12px; }
+.ppop {
+  position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%);
+  display: none; flex-direction: column; gap: 5px; padding: 10px 14px; z-index: 6;
+  background: rgb(20,21,24); border: 1px solid var(--border-hair); border-radius: 10px; white-space: nowrap;
+  font-family: var(--font-display); font-size: 13px; color: var(--text-primary); box-shadow: 0 12px 30px rgba(0,0,0,.5);
+}
+.pmore:hover .ppop, .pmore:focus .ppop { display: flex; }
+
+/* ---- Tecnologias / local ---- */
+.tech-row { display: flex; align-items: center; justify-content: flex-end; gap: 14px; flex-wrap: wrap; }
+.tech-ico { width: 26px; height: 26px; object-fit: contain; }
+.tech-pill {
+  font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
+  padding: 5px 9px; border-radius: var(--radius-tag); color: var(--text-subtle);
+  background: var(--surface-chip); box-shadow: inset 0 0 0 1px var(--border-hair);
+}
+.tech-more { font-family: var(--font-mono); font-size: 13px; color: var(--text-subtle); }
+.acao-local {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-mono); font-size: 13px; color: var(--text-subtle); transition: color .18s ease;
+}
+.acao-local:hover { color: var(--text-strong); }
+.acao-local svg { color: var(--leds-red); flex-shrink: 0; }
+
+/* ---- Vazio / fim ---- */
+.acoes-empty, .acoes-end { text-align: center; color: var(--text-faint); font-size: 14px; padding: 26px 0 0; }
+.acoes-end { margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--border-hair); }
+
+@media (max-width: 720px) {
+  .acao-card { grid-template-columns: 1fr; }
+  .acao-media { min-height: 180px; border-radius: var(--radius-card) var(--radius-card) 0 0; }
+  .acao-desc { max-width: none; }
+}
