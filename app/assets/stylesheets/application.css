@@ -66,7 +66,10 @@
 
 /* ---- Reset básico ---- */
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+/* scrollbar-gutter: reserva SEMPRE o espaço da barra de rolagem vertical, então
+   a largura do conteúdo não muda quando uma vista precisa de scroll e a outra
+   não (ex.: rede ⇄ genograma). Vale para o site todo. */
+html { scroll-behavior: smooth; scrollbar-gutter: stable; }
 body {
   margin: 0;
   background: var(--surface-page);
@@ -89,7 +92,9 @@ h1, h2, h3, p { margin: 0; }
 
 /* Coluna de altura cheia: garante que o footer alcance o rodapé da viewport. */
 .page { position: relative; z-index: 1; display: flex; flex-direction: column; min-height: 100vh; }
-.content { flex: 1 0 auto; }
+/* min-width:0: conteúdo largo (ex.: tabela do genograma) rola dentro da sua
+   caixa em vez de esticar o main e alargar a página inteira. */
+.content { flex: 1 0 auto; min-width: 0; }
 
 /* ---- Wrapper / seções ---- */
 .wrap { max-width: var(--content-max); margin: 0 auto; padding: 0 40px; }
@@ -441,6 +446,17 @@ h1, h2, h3, p { margin: 0; }
    ===================================================================== */
 .acoes-page { padding-top: 40px; padding-bottom: 80px; }
 
+/* Aviso de filtro por membro ("Mais ações" no card do membro). */
+.acoes-membro-filtro {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  margin: 0 0 22px; padding: 12px 18px; border-radius: var(--radius-card);
+  background: var(--surface-chip); box-shadow: inset 0 0 0 1px var(--border-hair);
+  font-size: 14px; color: var(--text-muted);
+}
+.acoes-membro-filtro strong { color: var(--text-strong); }
+.acoes-membro-filtro a { font-family: var(--font-mono); font-size: 13px; color: var(--text-lead); }
+.acoes-membro-filtro a:hover { color: var(--text-strong); }
+
 /* ---- Filtros + busca ---- */
 .acoes-toolbar { margin-bottom: 26px; }
 .chips { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
@@ -530,4 +546,103 @@ h1, h2, h3, p { margin: 0; }
   .acao-card { grid-template-columns: 1fr; }
   .acao-media { min-height: 180px; border-radius: var(--radius-card) var(--radius-card) 0 0; }
   .acao-desc { max-width: none; }
+}
+
+/* =====================================================================
+   Página de Membros
+   ===================================================================== */
+/* width:100% (até o max-width do .wrap): sem isso, o margin:0 auto do .wrap faz
+   o main encolher pra largura do CONTEÚDO (grafo estreito vs. tabela larga),
+   mudando a largura ao trocar rede ⇄ genograma. Fixa a largura, cards não
+   esticam/encolhem. */
+.membros-page { width: 100%; padding-top: 40px; padding-bottom: 80px; }
+
+/* ---- Toggle Rede de membros / Genograma ---- */
+.membros-toggle { display: grid; grid-template-columns: 1fr 1px 1fr; align-items: center; margin: 18px 0 20px; }
+.membros-tab {
+  background: none; border: none; cursor: pointer; padding: 6px 0;
+  font-family: var(--font-display); font-size: 26px; font-weight: 700;
+  color: var(--text-faint); transition: color .18s ease;
+}
+.membros-tab:first-child { text-align: left; }
+.membros-tab:last-child { text-align: right; }
+.membros-tab.active { color: var(--text-strong); }
+.membros-tab:hover:not(.active) { color: var(--text-muted); }
+.membros-toggle-sep { width: 1px; height: 40px; background: var(--border-strong); margin: 0 auto; }
+/* Altura fixa das vistas: trocar rede ⇄ genograma não pode mexer no layout. */
+/* Altura FIXA (não só mínima): as duas vistas ocupam exatamente o mesmo
+   espaço, então trocar rede ⇄ genograma nunca muda a altura da página. */
+.membros-vista { height: 562px; display: flex; flex-direction: column; }
+.membros-vista[hidden] { display: none; } /* classe com display vence [hidden]: reafirma */
+.membros-vista > .graph-panel { flex: 1; min-height: 0; }
+
+/* ---- Filtros ---- */
+.membros-toolbar { margin: 26px 0 22px; }
+
+/* ---- Cards ---- */
+.membros-list { display: flex; flex-direction: column; gap: 22px; }
+.membro-card[hidden] { display: none; }
+.membro-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 18px;
+  padding: 15px 22px; background: var(--surface-card-alt);
+  /* Figma: só a borda esquerda na cor de acento; o resto é a borda neutra. */
+  border: 1px solid var(--border-faint); border-left: 3px solid var(--accent);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+}
+.membro-nome { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--text-strong); min-width: 0; }
+.membro-cargo {
+  font-family: var(--font-mono); font-size: 12px; color: var(--text-subtle); white-space: nowrap;
+  padding: 6px 12px; border: 1px solid var(--border-faint); border-radius: var(--radius-pill);
+}
+.membro-body {
+  display: grid; grid-template-columns: 300px 1fr; overflow: hidden;
+  background: var(--surface-card-alt);
+  border: 1px solid var(--border-faint); border-top: none;
+  border-radius: 0 0 var(--radius-card) var(--radius-card);
+}
+.membro-foto { background-color: #dedede; background-size: cover; background-position: center; min-height: 360px; }
+.membro-info { display: flex; flex-direction: column; gap: 14px; padding: 20px 26px 22px; min-width: 0; }
+.membro-desc { font-size: 14px; line-height: 1.6; color: var(--text-muted); text-align: justify; }
+.membro-acoes-titulo { display: block; font-weight: 600; font-size: 15px; color: var(--text-strong); margin-bottom: 6px; }
+.membro-acoes ul { list-style: disc; padding-left: 20px; display: flex; flex-direction: column; gap: 2px; }
+.membro-acoes li { font-size: 14px; color: var(--text-muted); }
+.membro-mais { display: inline-block; margin-top: 6px; font-size: 14px; color: var(--text-strong); }
+.membro-vazio { font-size: 14px; color: var(--text-faint); }
+.membro-skills { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.membro-skills-label { font-weight: 600; font-size: 15px; color: var(--text-strong); flex-shrink: 0; }
+.membro-skills-row { display: flex; align-items: center; justify-content: flex-end; gap: 12px; flex-wrap: wrap; }
+.membro-skills-row .tech-ico { width: 26px; height: 26px; }
+.membro-links { margin-top: auto; padding-top: 6px; display: flex; justify-content: space-between; gap: 20px; }
+.membro-links a { font-family: var(--font-mono); font-size: 14px; color: var(--text-lead); transition: color .18s ease; }
+.membro-links a:hover { color: var(--text-strong); }
+
+/* ---- Genograma (grafo guiado pelos anos) ---- */
+.genograma-grafo { flex: 1; display: flex; gap: 6px; min-height: 460px; min-width: 0; }
+.gen-ano-axis { position: relative; width: 42px; flex-shrink: 0; }
+.gen-ano {
+  position: absolute; right: 4px; transform: translateY(-50%);
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-subtle);
+}
+.gen-plot { position: relative; flex: 1; min-width: 0; }
+.gen-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.gen-grid { stroke: var(--border-hair); stroke-width: 1; stroke-dasharray: 3 7; }
+.gen-edge { fill: none; stroke-linecap: round; }
+.gen-edge-sucessao { stroke: var(--leds-green); stroke-width: 2.5; }
+.gen-edge-linhagem { stroke: var(--text-subtle); stroke-width: 1.6; stroke-dasharray: 2 5; opacity: .7; }
+.gen-box {
+  position: absolute; transform: translate(-50%, -50%); z-index: 2; max-width: 128px;
+  padding: 5px 10px; border-radius: 8px; text-align: center; white-space: normal; line-height: 1.2;
+  font-size: 12px; color: var(--text-primary);
+  background: var(--surface-card-alt); border: 1px solid var(--border-faint);
+}
+.gen-presidente { border-color: var(--leds-red); color: var(--text-strong); font-weight: 600; }
+.gen-diretor { border-color: var(--leds-green); }
+.gen-leg-line { width: 20px; height: 0; border-top: 2.5px solid var(--leds-green); }
+.gen-leg-line.linhagem { border-top: 2px dashed var(--text-subtle); }
+
+@media (max-width: 720px) {
+  .membro-body { grid-template-columns: 1fr; }
+  .membro-foto { min-height: 240px; }
+  .membros-tab { font-size: 20px; }
+  .membro-links { gap: 22px; }
 }

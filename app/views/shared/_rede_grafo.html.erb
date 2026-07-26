@@ -1,0 +1,41 @@
+<%# Grafo conexo da rede de membros (RF-GRA). Local `rede`: payload já
+    posicionado por rede_de_membros(@grafo). Mesma renderização SVG da landing
+    (nós com foto + anel colorido por cargo), num painel maior. %>
+<% legenda = [
+     ["Presidente", "var(--leds-red)"], ["Vice-presidente", "var(--leds-blue)"],
+     ["Diretoria", "var(--leds-green)"], ["Membro", "var(--text-subtle)"],
+     ["Orientador", "var(--leds-yellow)"],
+   ] %>
+<div class="graph-panel">
+  <% if rede %>
+    <svg class="graph-svg" viewBox="0 0 680 470" style="max-width:680px" fill="none" stroke-linecap="round" role="img" aria-label="Rede de membros da LEDS">
+      <defs>
+        <% rede[:nodes].each do |n| %>
+          <pattern id="mav-<%= n[:id] %>" patternContentUnits="objectBoundingBox" width="1" height="1">
+            <image href="<%= n[:foto_url] %>" width="1" height="1" preserveAspectRatio="xMidYMid slice" />
+          </pattern>
+        <% end %>
+      </defs>
+      <g stroke="rgba(255,255,255,.16)" stroke-width="1.4">
+        <% rede[:edges].each do |x1, y1, x2, y2| %><line x1="<%= x1 %>" y1="<%= y1 %>" x2="<%= x2 %>" y2="<%= y2 %>" /><% end %>
+      </g>
+      <% rede[:nodes].each_with_index do |n, i| %>
+        <% s = [] %>
+        <% if n[:glow] %><% s << "filter:drop-shadow(0 0 12px rgba(#{n[:glow]},.75))" << "animation-delay:#{(i * 0.3).round(1)}s" %><% end %>
+        <circle class="<%= 'graph-node' if n[:glow] %>" cx="<%= n[:x] %>" cy="<%= n[:y] %>" r="<%= n[:r] %>" fill="url(#mav-<%= n[:id] %>)" stroke="<%= n[:color] %>" stroke-width="<%= n[:cargo] == 'membro' ? 2 : 3 %>" style="<%= s.join('; ') %>">
+          <title><%= n[:name] %> — <%= n[:cargo].capitalize %></title>
+        </circle>
+      <% end %>
+    </svg>
+  <% else %>
+    <div class="empty-state">
+      <span class="empty-mono">// sem membros ainda</span>
+      <p>A rede aparece aqui quando houver mandatos cadastrados na gestão vigente.</p>
+    </div>
+  <% end %>
+  <div class="graph-legend">
+    <% legenda.each do |label, color| %>
+      <span><span class="legend-dot" style="background:<%= color %>"></span><%= label %></span>
+    <% end %>
+  </div>
+</div>

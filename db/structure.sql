@@ -1082,6 +1082,38 @@ ALTER SEQUENCE public.mandatos_id_seq OWNED BY public.mandatos.id;
 
 
 --
+-- Name: member_tecnologias; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.member_tecnologias (
+    id bigint NOT NULL,
+    member_id bigint NOT NULL,
+    tecnologia_id bigint NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: member_tecnologias_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.member_tecnologias_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: member_tecnologias_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.member_tecnologias_id_seq OWNED BY public.member_tecnologias.id;
+
+
+--
 -- Name: members; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1093,6 +1125,9 @@ CREATE TABLE public.members (
     bio text,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    github_url character varying,
+    linkedin_url character varying,
+    lattes_url character varying,
     CONSTRAINT members_padrinho_check CHECK (((padrinho_id IS NULL) OR (padrinho_id <> id)))
 );
 
@@ -2029,6 +2064,13 @@ ALTER TABLE ONLY public.mandatos ALTER COLUMN id SET DEFAULT nextval('public.man
 
 
 --
+-- Name: member_tecnologias id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.member_tecnologias ALTER COLUMN id SET DEFAULT nextval('public.member_tecnologias_id_seq'::regclass);
+
+
+--
 -- Name: members id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2406,6 +2448,14 @@ ALTER TABLE ONLY public.itens_pedido
 
 ALTER TABLE ONLY public.mandatos
     ADD CONSTRAINT mandatos_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: member_tecnologias member_tecnologias_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.member_tecnologias
+    ADD CONSTRAINT member_tecnologias_pkey PRIMARY KEY (id);
 
 
 --
@@ -2976,6 +3026,27 @@ CREATE UNIQUE INDEX index_mandatos_on_member_id_and_gestao_id ON public.mandatos
 
 
 --
+-- Name: index_member_tecnologias_on_member_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_member_tecnologias_on_member_id ON public.member_tecnologias USING btree (member_id);
+
+
+--
+-- Name: index_member_tecnologias_on_member_id_and_tecnologia_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_member_tecnologias_on_member_id_and_tecnologia_id ON public.member_tecnologias USING btree (member_id, tecnologia_id);
+
+
+--
+-- Name: index_member_tecnologias_on_tecnologia_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_member_tecnologias_on_tecnologia_id ON public.member_tecnologias USING btree (tecnologia_id);
+
+
+--
 -- Name: index_members_on_padrinho_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3438,6 +3509,14 @@ ALTER TABLE ONLY public.itens_carrinho
 
 
 --
+-- Name: member_tecnologias fk_rails_54985ec687; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.member_tecnologias
+    ADD CONSTRAINT fk_rails_54985ec687 FOREIGN KEY (member_id) REFERENCES public.members(id) ON DELETE CASCADE;
+
+
+--
 -- Name: analytics_events fk_rails_5b319ff5df; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3459,6 +3538,14 @@ ALTER TABLE ONLY public.posts
 
 ALTER TABLE ONLY public.comentarios
     ADD CONSTRAINT fk_rails_5d4ddb7416 FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: member_tecnologias fk_rails_5e4ca4fcce; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.member_tecnologias
+    ADD CONSTRAINT fk_rails_5e4ca4fcce FOREIGN KEY (tecnologia_id) REFERENCES public.tecnologias(id) ON DELETE CASCADE;
 
 
 --
@@ -3756,6 +3843,7 @@ ALTER TABLE ONLY public.itens_pedido
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260726120000'),
 ('20260709080000'),
 ('20260709070000'),
 ('20260709060000'),
