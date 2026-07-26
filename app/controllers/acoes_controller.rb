@@ -15,18 +15,29 @@ class AcoesController < ApplicationController
   def index
     authorize Acao
 
-    acoes = Acao.includes(:detalhe, thumbnail_attachment: :blob).order(created_at: :desc)
-    acoes = acoes.where(detalhe_type: filtro(:tipo)) if filtro(:tipo)
-    # público vê só publicadas; membros+ podem filtrar por status (rascunhos etc.)
-    acoes = if policy(Acao).create? && filtro(:status)
-      acoes.where(status: filtro(:status))
-    else
-      acoes.publicadas
-    end
+    respond_to do |format|
+      # Página pública server-rendered: todas as publicadas; filtro/busca é no
+      # cliente (Stimulus). ponytail: N+1 nas assocs do detalhe (techs/membros/
+      # temas) — ok com poucas ações; pré-carrega por tipo se a lista crescer.
+      format.html do
+        @acoes = Acao.publicadas.includes(:detalhe, thumbnail_attachment: :blob)
+                     .order(created_at: :desc)
+      end
 
-    acoes = acoes.to_a
-    preload_temas_dos_artigos(acoes)
-    render json: { acoes: acoes.map { |a| acao_json(a) } }
+      format.json do
+        acoes = Acao.includes(:detalhe, thumbnail_attachment: :blob).order(created_at: :desc)
+        acoes = acoes.where(detalhe_type: filtro(:tipo)) if filtro(:tipo)
+        # público vê só publicadas; membros+ podem filtrar por status (rascunhos etc.)
+        acoes = if policy(Acao).create? && filtro(:status)
+          acoes.where(status: filtro(:status))
+        else
+          acoes.publicadas
+        end
+        acoes = acoes.to_a
+        preload_temas_dos_artigos(acoes)
+        render json: { acoes: acoes.map { |a| acao_json(a) } }
+      end
+    end
   end
 
   def show

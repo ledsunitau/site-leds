@@ -1,0 +1,36 @@
+<%# Navbar compartilhada. local `active`: rótulo do link ativo (ex.: "AÇÕES"). %>
+<% active = local_assigns.fetch(:active, "INÍCIO") %>
+<% links = [["INÍCIO", root_path], ["AÇÕES", acoes_path], ["MEMBROS", "#"], ["NOVIDADES", "#"], ["LOJA", "#"]] %>
+<div class="nav-fixed" data-controller="nav">
+  <nav class="navbar">
+    <a href="<%= root_path %>" class="logo" aria-label="LEDS — início">
+      <span class="logo-mark">
+        <span class="logo-dots"><span></span><span></span></span>
+        <svg width="22" height="18" viewBox="0 0 22 18" style="border-radius:2px;display:block">
+          <defs>
+            <linearGradient id="leds-tri" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="15%" stop-color="rgb(0,197,91)" />
+              <stop offset="49.52%" stop-color="rgb(29,132,245)" />
+              <stop offset="85%" stop-color="rgb(248,74,84)" />
+            </linearGradient>
+          </defs>
+          <path d="M 18.434 0 L 3.566 0 C 2.004 0 1.045 1.71 1.86 3.043 L 9.293 15.207 C 10.073 16.484 11.927 16.484 12.707 15.207 L 20.14 3.043 C 20.955 1.71 19.996 0 18.434 0 Z" fill="url(#leds-tri)" />
+        </svg>
+      </span>
+      <span class="logo-word">LEDS</span>
+    </a>
+
+    <button class="nav-toggle" type="button" aria-label="Abrir menu" aria-expanded="false"
+            data-action="nav#toggle" data-nav-target="button">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <line x1="3" y1="7" x2="21" y2="7" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="17" x2="21" y2="17" />
+      </svg>
+    </button>
+
+    <div class="nav-links" data-nav-target="menu">
+      <% links.each do |label, href| %>
+        <a href="<%= href %>" class="<%= 'active' if label == active %>" data-action="nav#close"><%= label %></a>
+      <% end %>
+    </div>
+  </nav>
+</div>

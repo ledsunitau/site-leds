@@ -4,13 +4,6 @@
 <% content_for :title, "LEDS — Liga Acadêmica de Estrutura de Dados e Soluções" %>
 
 <%
-  nav_links = [
-    ["INÍCIO",    "#inicio"],
-    ["AÇÕES",     "#acoes"],
-    ["MEMBROS",   "#membros"],
-    ["NOVIDADES", "#novidades"],
-    ["LOJA",      "#"], # placeholder até a página da Loja existir
-  ]
   tech = ["MARATONAS", "GRUPO DE ESTUDOS", "PESQUISAS", "PALESTRAS", "WORKSHOPS", "SISTEMAS", "OPEN SOURCE"]
   pillars = [
     { accent: "var(--leds-red)",   icon: "{ }", title: "Mentoria de estudos", desc: "Grupos de estudo, materiais exclusivos, listas de problemas, competições, desafios e muito mais." },
@@ -41,47 +34,10 @@
   cores_novidades = ["var(--leds-blue)", "var(--leds-green)", "var(--leds-red)"]
 %>
 
-<div class="page-bg">
-  <span class="blob blob-red"></span>
-  <span class="blob blob-blue"></span>
-  <span class="blob blob-green"></span>
-</div>
+<%= render "shared/page_bg" %>
 
-<div class="page" data-controller="nav">
-  <%# ---- Navbar ---- %>
-  <div class="nav-fixed">
-    <nav class="navbar">
-      <a href="#inicio" class="logo" aria-label="LEDS — início">
-        <span class="logo-mark">
-          <span class="logo-dots"><span></span><span></span></span>
-          <svg width="22" height="18" viewBox="0 0 22 18" style="border-radius:2px;display:block">
-            <defs>
-              <linearGradient id="leds-tri" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="15%" stop-color="rgb(0,197,91)" />
-                <stop offset="49.52%" stop-color="rgb(29,132,245)" />
-                <stop offset="85%" stop-color="rgb(248,74,84)" />
-              </linearGradient>
-            </defs>
-            <path d="M 18.434 0 L 3.566 0 C 2.004 0 1.045 1.71 1.86 3.043 L 9.293 15.207 C 10.073 16.484 11.927 16.484 12.707 15.207 L 20.14 3.043 C 20.955 1.71 19.996 0 18.434 0 Z" fill="url(#leds-tri)" />
-          </svg>
-        </span>
-        <span class="logo-word">LEDS</span>
-      </a>
-
-      <button class="nav-toggle" type="button" aria-label="Abrir menu" aria-expanded="false"
-              data-action="nav#toggle" data-nav-target="button">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <line x1="3" y1="7" x2="21" y2="7" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="17" x2="21" y2="17" />
-        </svg>
-      </button>
-
-      <div class="nav-links" data-nav-target="menu">
-        <% nav_links.each do |label, href| %>
-          <a href="<%= href %>" class="<%= 'active' if label == 'INÍCIO' %>" data-action="nav#close"><%= label %></a>
-        <% end %>
-      </div>
-    </nav>
-  </div>
+<div class="page">
+  <%= render "shared/navbar", active: "INÍCIO" %>
 
   <main class="content">
     <%# ---- Hero ---- %>
@@ -175,7 +131,7 @@
             </article>
           <% end %>
         </div>
-        <div class="btn-end" style="margin-top:24px"><a href="#" class="btn btn-primary">Veja mais →</a></div>
+        <div class="btn-end" style="margin-top:24px"><a href="<%= acoes_path %>" class="btn btn-primary">Veja mais →</a></div>
       <% else %>
         <div class="empty-state" style="margin-top:24px">
           <span class="empty-mono">// nada por aqui ainda</span>
@@ -294,38 +250,5 @@
     </section>
   </main>
 
-  <%# ---- Footer ---- %>
-  <footer class="site-footer">
-    <div class="footer-brand">
-      <span class="logo">
-        <span class="logo-mark">
-          <span class="logo-dots"><span></span><span></span></span>
-          <svg width="22" height="18" viewBox="0 0 22 18" style="border-radius:2px;display:block">
-            <path d="M 18.434 0 L 3.566 0 C 2.004 0 1.045 1.71 1.86 3.043 L 9.293 15.207 C 10.073 16.484 11.927 16.484 12.707 15.207 L 20.14 3.043 C 20.955 1.71 19.996 0 18.434 0 Z" fill="url(#leds-tri)" />
-          </svg>
-        </span>
-        <span class="logo-word">LEDS</span>
-      </span>
-      <p>Liga Acadêmica de Estrutura de Dados e Soluções. Estruturando dados em soluções reais.</p>
-    </div>
-    <div class="footer-col">
-      <span class="footer-col-title">NAVEGAÇÃO</span>
-      <div class="items">
-        <a href="#inicio">Início</a><a href="#acoes">Ações</a><a href="#membros">Membros</a><a href="#novidades">Novidades</a><a href="#">Loja</a>
-      </div>
-    </div>
-    <div class="footer-col">
-      <span class="footer-col-title">INFORMAÇÕES</span>
-      <div class="items">
-        <span>Universidade de Taubaté</span><span>R. Daniel Daneli, 100, Taubaté,</span><span>São Paulo 12060-440, BR</span><span>leds.unitau@gmail.com</span>
-      </div>
-    </div>
-    <div class="footer-col">
-      <span class="footer-col-title">REDES</span>
-      <div class="items">
-        <a href="#">Instagram</a><a href="#">LinkedIn</a><a href="#">GitHub</a><a href="#">Comunidade</a>
-      </div>
-    </div>
-  </footer>
-  <div class="footer-copy"><div class="bar">© 2026 LEDS · Liga Acadêmica de Estrutura de Dados e Soluções</div></div>
+  <%= render "shared/footer" %>
 </div>

@@ -1,0 +1,85 @@
+<%# Página de Ações (Layers AÇÕES do Figma). Tudo vem do banco (@acoes).
+    Filtro por tipo + busca por nome são no cliente (Stimulus acoes). %>
+<% content_for :title, "Ações — LEDS" %>
+
+<%= render "shared/page_bg" %>
+
+<div class="page" data-controller="acoes">
+  <%= render "shared/navbar", active: "AÇÕES" %>
+
+  <main class="content wrap acoes-page">
+    <h1 class="leds-h1" style="margin:8px 0 22px">Ações</h1>
+
+    <%# ---- Filtros + busca ---- %>
+    <div class="acoes-toolbar">
+      <div class="chips">
+        <% [["todos", "Todos"], ["Artigo", "Artigos"], ["Evento", "Eventos"], ["Projeto", "Projetos"]].each_with_index do |(val, label), i| %>
+          <button type="button" class="chip <%= 'active' if i.zero? %>" data-tipo="<%= val %>"
+                  data-acoes-target="chip" data-action="acoes#filtrar"><%= label %></button>
+        <% end %>
+        <button type="button" class="chip chip-lupa" aria-label="Pesquisar" data-action="acoes#toggleBusca">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7" /><line x1="16.5" y1="16.5" x2="21" y2="21" />
+          </svg>
+        </button>
+        <input type="search" class="acoes-busca" placeholder="Pesquisar por nome…" hidden
+               data-acoes-target="busca" data-action="input->acoes#buscar">
+      </div>
+    </div>
+
+    <%# ---- Lista de ações ---- %>
+    <div class="acoes-list" data-acoes-target="list">
+      <% @acoes.each do |a| %>
+        <% cat = a.detalhe_type.downcase %>
+        <% parts = participantes_da_acao(a) %>
+        <article class="acao-card" data-acoes-target="card" data-tipo="<%= a.detalhe_type %>" data-nome="<%= a.titulo.downcase %>">
+          <div class="acao-media" style="background-image:url('<%= card_image_url(a) %>')">
+            <span class="tag solid" style="--tag-color:var(--cat-<%= cat %>)"><%= cat.upcase %></span>
+          </div>
+
+          <div class="acao-body">
+            <div class="acao-top">
+              <div class="participantes">
+                <% ring = ["var(--leds-green)", "var(--leds-red)", "var(--leds-blue)"] %>
+                <% parts.first(3).each_with_index do |p, j| %>
+                  <span class="pavatar" style="--ring:<%= ring[j % ring.size] %>; background-image:url('<%= p[:foto] %>')" title="<%= p[:nome] %>"></span>
+                <% end %>
+                <% if parts.size > 3 %>
+                  <span class="pavatar pmore" tabindex="0">+<%= parts.size - 3 %>
+                    <span class="ppop"><% parts.drop(3).each do |p| %><span><%= p[:nome] %></span><% end %></span>
+                  </span>
+                <% end %>
+              </div>
+              <span class="meta-mono acao-data"><%= data_da_acao(a) %></span>
+            </div>
+
+            <h3 class="acao-titulo"><%= a.titulo %></h3>
+            <p class="acao-desc"><%= a.descricao %></p>
+
+            <div class="acao-bottom">
+              <% if a.evento? %>
+                <a class="acao-local" href="<%= maps_url(a.detalhe.local) %>" target="_blank" rel="noopener">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M12 21s-7-6.3-7-11a7 7 0 1 1 14 0c0 4.7-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" />
+                  </svg>
+                  <span><%= a.detalhe.local %></span>
+                </a>
+              <% else %>
+                <% itens = a.projeto? ? a.detalhe.tecnologias.to_a : a.detalhe.temas.to_a %>
+                <div class="tech-row">
+                  <% itens.first(5).each do |t| %><%= icone_ou_pill(t) %><% end %>
+                  <% if itens.size > 5 %><span class="tech-more" title="<%= itens.drop(5).map(&:nome).join(', ') %>">+<%= itens.size - 5 %></span><% end %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </article>
+      <% end %>
+    </div>
+
+    <p class="acoes-empty" data-acoes-target="empty" hidden>Nenhuma ação encontrada.</p>
+    <p class="acoes-end" data-acoes-target="end">Não há mais ações para carregar.</p>
+  </main>
+
+  <%= render "shared/footer" %>
+</div>
