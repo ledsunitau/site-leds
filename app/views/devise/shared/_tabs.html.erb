@@ -1,0 +1,5 @@
+<%# Alterna entre Entrar e Criar conta. Local `active`: :login ou :signup. %>
+<div class="auth-tabs">
+  <a class="auth-tab <%= "active" if active == :login %>" href="<%= new_user_session_path %>">Entrar</a>
+  <a class="auth-tab <%= "active" if active == :signup %>" href="<%= new_user_registration_path %>">Criar conta</a>
+</div>

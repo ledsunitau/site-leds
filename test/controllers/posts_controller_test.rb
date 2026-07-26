@@ -4,33 +4,33 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
   include ActiveJob::TestHelper
 
   test "index público lista só publicados, mais recente primeiro, com filtro por tipo" do
-    get posts_path
+    get posts_path, as: :json
     ids = response.parsed_body["posts"].map { |p| p["id"] }
     assert_equal [ posts(:blog_publicado), posts(:noticia_publicada), posts(:noticia_antiga) ].map(&:id), ids
 
-    get posts_path(tipo: "blog")
+    get posts_path(tipo: "blog"), as: :json
     assert_equal [ posts(:blog_publicado).id ], response.parsed_body["posts"].map { |p| p["id"] }
   end
 
   test "filtro de status é ignorado para quem não aprova; gestão vê a fila de aprovação" do
-    get posts_path(status: "em_aprovacao")
+    get posts_path(status: "em_aprovacao"), as: :json
     assert_equal 3, response.parsed_body["posts"].size, "anônimo segue vendo só publicados"
 
     sign_in users(:diretor)
-    get posts_path(status: "em_aprovacao")
+    get posts_path(status: "em_aprovacao"), as: :json
     assert_equal [ posts(:blog_em_aprovacao).id ], response.parsed_body["posts"].map { |p| p["id"] }
   end
 
   test "index é paginado (página fora do alcance vem vazia)" do
-    get posts_path(pagina: "2")
+    get posts_path(pagina: "2"), as: :json
     assert_equal [], response.parsed_body["posts"]
 
-    get posts_path(pagina: "-3")
+    get posts_path(pagina: "-3"), as: :json
     assert_equal 3, response.parsed_body["posts"].size, "página inválida cai na primeira"
   end
 
   test "show de publicado é público e traz o corpo rico" do
-    get post_path(posts(:noticia_publicada))
+    get post_path(posts(:noticia_publicada)), as: :json
 
     body = response.parsed_body
     assert_equal "publicado", body["status"]
@@ -39,19 +39,19 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "show de rascunho: 403 para anônimo e não-dono; ok para dono e gestão" do
-    get post_path(posts(:rascunho_do_membro))
+    get post_path(posts(:rascunho_do_membro)), as: :json
     assert_response :forbidden
 
     sign_in users(:escritor_user)
-    get post_path(posts(:rascunho_do_membro))
+    get post_path(posts(:rascunho_do_membro)), as: :json
     assert_response :forbidden
 
     sign_in users(:membro_user)
-    get post_path(posts(:rascunho_do_membro))
+    get post_path(posts(:rascunho_do_membro)), as: :json
     assert_response :success
 
     sign_in users(:diretor)
-    get post_path(posts(:rascunho_do_membro))
+    get post_path(posts(:rascunho_do_membro)), as: :json
     assert_response :success
   end
 
@@ -167,7 +167,7 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     assert_nil editado.approved_at
     assert editado.published_at.present?, "primeira publicação é preservada"
 
-    get posts_path
+    get posts_path, as: :json
     assert_not_includes response.parsed_body["posts"].map { |p| p["id"] }, editado.id
   end
 

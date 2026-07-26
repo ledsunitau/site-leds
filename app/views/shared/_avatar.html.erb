@@ -1,0 +1,6 @@
+<%# Avatar do usuário: foto se houver, senão as iniciais. Local `user`. %>
+<% if user.foto.attached? %>
+  <img class="avatar-img" src="<%= FotoUrl.para(user.foto) %>" alt="<%= user.name %>">
+<% else %>
+  <span class="avatar-initials"><%= iniciais(user.name) %></span>
+<% end %>

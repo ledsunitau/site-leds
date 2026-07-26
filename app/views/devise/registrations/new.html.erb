@@ -1,0 +1,41 @@
+<%# Criar conta (Devise registrations#new) — segue o design system. O campo
+    nome é obrigatório no model User (validates :name). %>
+<% content_for :title, "Criar conta — LEDS" %>
+
+<%= render "shared/page_bg" %>
+
+<div class="auth-page">
+  <%= render "devise/shared/brand" %>
+
+  <div class="auth-card">
+    <%= render "devise/shared/tabs", active: :signup %>
+    <h1 class="auth-title">Participe da comunidade</h1>
+    <p class="auth-sub">Crie sua conta para acompanhar a liga de perto.</p>
+
+    <%= render "devise/shared/errors", resource: resource %>
+
+    <%= form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f| %>
+      <label class="auth-field">
+        <span>Nome</span>
+        <%= f.text_field :name, autofocus: true, autocomplete: "name", placeholder: "Seu nome" %>
+      </label>
+
+      <label class="auth-field">
+        <span>E-mail</span>
+        <%= f.email_field :email, autocomplete: "email", placeholder: "voce@exemplo.com" %>
+      </label>
+
+      <%= render "devise/shared/password_field", f: f, field: :password, label: "Senha",
+            autocomplete: "new-password", placeholder: "Mínimo de #{Devise.password_length.min} caracteres" %>
+
+      <%= render "devise/shared/password_field", f: f, field: :password_confirmation, label: "Confirmar senha",
+            autocomplete: "new-password", placeholder: "Repita a senha" %>
+
+      <%= f.submit "Criar conta", class: "btn btn-primary auth-submit" %>
+    <% end %>
+
+    <%= render "devise/shared/oauth" %>
+
+    <p class="auth-foot">Já tem conta? <a href="<%= new_user_session_path %>">Entrar</a></p>
+  </div>
+</div>

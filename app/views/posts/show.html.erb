@@ -1,0 +1,50 @@
+<%# Página de uma novidade (não está no Figma — segue o padrão do projeto):
+    banner + autor/data + título + corpo (Action Text) + relacionadas. %>
+<% content_for :title, "#{@post.titulo} — LEDS" %>
+
+<%= render "shared/page_bg" %>
+
+<div class="page">
+  <%= render "shared/navbar", active: "NOVIDADES" %>
+
+  <main class="content novidade-artigo">
+    <div class="wrap">
+      <a class="voltar-link" href="<%= posts_path %>">← Voltar para Novidades</a>
+    </div>
+
+    <div class="wrap">
+      <div class="artigo-banner" style="background-image:url('<%= card_image_url(@post) %>')">
+        <span class="tag solid" style="--tag-color:var(--cat-<%= @post.tipo %>)"><%= @post.noticia? ? "Notícia" : "Blog" %></span>
+      </div>
+    </div>
+
+    <article class="wrap artigo-conteudo">
+      <div class="artigo-meta">
+        <span class="artigo-autor"><%= @post.autor&.name || "LEDS" %></span>
+        <span class="meta-mono"><%= data_por_extenso(@post.published_at) %></span>
+      </div>
+      <h1 class="artigo-titulo"><%= @post.titulo %></h1>
+      <%# chamada (mesma vitrine do card) — pra reconhecer que é a novidade certa %>
+      <% if @post.caller.present? %>
+        <p class="artigo-chamada" style="--accent:var(--cat-<%= @post.tipo %>)"><%= @post.caller %></p>
+      <% end %>
+      <% if @post.subtitulo.present? && @post.subtitulo != @post.caller %>
+        <p class="artigo-subtitulo"><%= @post.subtitulo %></p>
+      <% end %>
+      <div class="artigo-corpo"><%= @post.corpo %></div>
+    </article>
+
+    <% if @relacionadas.any? %>
+      <section class="wrap artigo-relacionadas">
+        <div class="section-head"><h2 class="leds-h2">Veja também</h2></div>
+        <div class="novidades-grid tres">
+          <% @relacionadas.each do |p| %>
+            <%= render "posts/card", post: p %>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+  </main>
+
+  <%= render "shared/footer" %>
+</div>

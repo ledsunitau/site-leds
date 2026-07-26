@@ -61,7 +61,7 @@ class CapturaDeErrosTest < ActionDispatch::IntegrationTest
 
   test "?pagina gigante não vira 500 nem error_log (clamp do offset)" do
     assert_no_difference "ErrorLog.count" do
-      get posts_path(pagina: "99999999999999999999")
+      get posts_path(pagina: "99999999999999999999"), as: :json
     end
     assert_response :success
     assert_equal [], response.parsed_body["posts"]

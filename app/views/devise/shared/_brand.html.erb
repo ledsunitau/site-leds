@@ -1,0 +1,17 @@
+<%# Marca LEDS no topo do card de autenticação (mesmo logo da navbar). %>
+<a href="<%= root_path %>" class="logo auth-logo" aria-label="LEDS — início">
+  <span class="logo-mark">
+    <span class="logo-dots"><span></span><span></span></span>
+    <svg width="26" height="21" viewBox="0 0 22 18" style="border-radius:2px;display:block">
+      <defs>
+        <linearGradient id="auth-tri" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="15%" stop-color="rgb(0,197,91)" />
+          <stop offset="49.52%" stop-color="rgb(29,132,245)" />
+          <stop offset="85%" stop-color="rgb(248,74,84)" />
+        </linearGradient>
+      </defs>
+      <path d="M 18.434 0 L 3.566 0 C 2.004 0 1.045 1.71 1.86 3.043 L 9.293 15.207 C 10.073 16.484 11.927 16.484 12.707 15.207 L 20.14 3.043 C 20.955 1.71 19.996 0 18.434 0 Z" fill="url(#auth-tri)" />
+    </svg>
+  </span>
+  <span class="logo-word">LEDS</span>
+</a>
