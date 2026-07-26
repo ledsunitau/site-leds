@@ -1,6 +1,6 @@
 <%# Navbar compartilhada. local `active`: rótulo do link ativo (ex.: "AÇÕES"). %>
 <% active = local_assigns.fetch(:active, "INÍCIO") %>
-<% links = [["INÍCIO", root_path], ["AÇÕES", acoes_path], ["MEMBROS", "#"], ["NOVIDADES", "#"], ["LOJA", "#"]] %>
+<% links = [["INÍCIO", root_path], ["AÇÕES", acoes_path], ["MEMBROS", members_path], ["NOVIDADES", "#"], ["LOJA", "#"]] %>
 <div class="nav-fixed" data-controller="nav">
   <nav class="navbar">
     <a href="<%= root_path %>" class="logo" aria-label="LEDS — início">

@@ -33,11 +33,17 @@ class AcoesController < ApplicationController
       end
 
       # Página pública server-rendered: todas as publicadas; filtro/busca é no
-      # cliente (Stimulus). ponytail: N+1 nas assocs do detalhe (techs/membros/
-      # temas) — ok com poucas ações; pré-carrega por tipo se a lista crescer.
+      # cliente (Stimulus). ?membro=ID vem do card do membro ("Mais ações") e
+      # restringe às ações daquele membro (RF-MEM). ponytail: N+1 nas assocs do
+      # detalhe (techs/membros/temas) — ok com poucas ações; pré-carrega por tipo
+      # se a lista crescer.
       format.html do
-        @acoes = Acao.publicadas.includes(:detalhe, thumbnail_attachment: :blob)
-                     .order(created_at: :desc)
+        @membro_filtro = Member.find_by(id: params[:membro])
+        @acoes = if @membro_filtro
+          @membro_filtro.acoes_participadas.includes(:detalhe, thumbnail_attachment: :blob)
+        else
+          Acao.publicadas.includes(:detalhe, thumbnail_attachment: :blob).order(created_at: :desc)
+        end
       end
     end
   end

@@ -2,7 +2,7 @@ require "test_helper"
 
 class MembersControllerTest < ActionDispatch::IntegrationTest
   test "index é público e lista só quem tem mandato na gestão vigente" do
-    get members_path
+    get members_path, as: :json
 
     body = response.parsed_body
     ids = body["members"].map { |m| m["id"] }
@@ -12,7 +12,7 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "filtra por cargo" do
-    get members_path(cargo: "diretor")
+    get members_path(cargo: "diretor"), as: :json
 
     body = response.parsed_body["members"]
     assert_equal [ members(:diretor_cientifica).id ], body.map { |m| m["id"] }
@@ -21,16 +21,16 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "filtro com hash/array na query string não derruba o endpoint" do
-    get members_path(cargo: { x: "y" })
+    get members_path(cargo: { x: "y" }), as: :json
     assert_response :success
 
-    get members_path(diretoria_id: [ "1", "2" ])
+    get members_path(diretoria_id: [ "1", "2" ]), as: :json
     assert_response :success
     assert_equal 5, response.parsed_body["members"].size # filtro não-escalar é ignorado
   end
 
   test "filtra por diretoria" do
-    get members_path(diretoria_id: diretorias(:cientifica).id)
+    get members_path(diretoria_id: diretorias(:cientifica).id), as: :json
 
     ids = response.parsed_body["members"].map { |m| m["id"] }
     assert_equal [ members(:diretor_cientifica).id, members(:membro_comum).id ].sort, ids.sort

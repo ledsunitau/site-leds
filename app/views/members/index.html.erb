@@ -1,0 +1,140 @@
+<%# Página de Membros (Layer MEMBROS do Figma). Tudo vem do banco: grafo da
+    rede (@grafo), geneograma (@geneograma) e cards (@membros). Toggle de vista
+    e filtro por grupo são client-side (Stimulus members). %>
+<% content_for :title, "Membros — LEDS" %>
+
+<%= render "shared/page_bg" %>
+
+<div class="page" data-controller="members">
+  <%= render "shared/navbar", active: "MEMBROS" %>
+
+  <main class="content wrap membros-page">
+    <h1 class="leds-h1" style="margin:8px 0 18px">Membros</h1>
+
+    <%# ---- Toggle Rede de membros / Genograma ---- %>
+    <div class="membros-toggle">
+      <button type="button" class="membros-tab active" data-vista="rede"
+              data-members-target="tab" data-action="members#mostrar">Rede de membros</button>
+      <span class="membros-toggle-sep"></span>
+      <button type="button" class="membros-tab" data-vista="genograma"
+              data-members-target="tab" data-action="members#mostrar">Genograma</button>
+    </div>
+
+    <%# ---- Painel: Rede de membros (padrão) ---- %>
+    <div class="membros-vista" data-members-target="panel" data-vista="rede">
+      <%= render "shared/rede_grafo", rede: rede_de_membros(@grafo) %>
+    </div>
+
+    <%# ---- Painel: Genograma (diretores × anos) ---- %>
+    <div class="graph-panel membros-vista" data-members-target="panel" data-vista="genograma" hidden>
+      <% grafo = genograma_grafo(@geneograma) %>
+      <% if grafo %>
+        <div class="genograma-grafo">
+          <div class="gen-ano-axis">
+            <% grafo[:anos].each do |a| %>
+              <span class="gen-ano" style="top:<%= a[:y] %>%"><%= a[:ano] %></span>
+            <% end %>
+          </div>
+          <div class="gen-plot">
+            <svg class="gen-svg" preserveAspectRatio="none" aria-hidden="true">
+              <% grafo[:anos].each do |a| %>
+                <line class="gen-grid" x1="0" y1="<%= a[:y] %>%" x2="100%" y2="<%= a[:y] %>%" />
+              <% end %>
+              <% grafo[:edges].each do |e| %>
+                <line class="gen-edge gen-edge-<%= e[:tipo] %>" x1="<%= e[:x1] %>%" y1="<%= e[:y1] %>%" x2="<%= e[:x2] %>%" y2="<%= e[:y2] %>%" />
+              <% end %>
+            </svg>
+            <% grafo[:nodes].each do |nd| %>
+              <span class="gen-box gen-<%= nd[:cargo] %>" style="left:<%= nd[:x] %>%; top:<%= nd[:y] %>%"><%= nd[:name] %></span>
+            <% end %>
+          </div>
+        </div>
+        <div class="graph-legend">
+          <span><span class="gen-leg-line sucessao"></span>Sucessão da diretoria</span>
+          <span><span class="gen-leg-line linhagem"></span>Linhagem (padrinho)</span>
+        </div>
+      <% else %>
+        <div class="empty-state">
+          <span class="empty-mono">// sem histórico ainda</span>
+          <p>O genograma aparece aqui quando houver gestões e diretorias cadastradas.</p>
+        </div>
+      <% end %>
+    </div>
+
+    <%# ---- Filtros (client-side) ---- %>
+    <div class="membros-toolbar">
+      <div class="chips">
+        <% [["todos", "Todos"], ["presidencia", "Presidência"], ["diretores", "Diretores"],
+            ["membros", "Membros"], ["orientador", "Orientador"], ["ex-membros", "Ex-Membros"]].each_with_index do |(val, label), i| %>
+          <button type="button" class="chip <%= 'active' if i.zero? %>" data-grupo="<%= val %>"
+                  data-members-target="chip" data-action="members#filtrar"><%= label %></button>
+        <% end %>
+        <button type="button" class="chip chip-lupa" aria-label="Pesquisar" data-action="members#toggleBusca">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7" /><line x1="16.5" y1="16.5" x2="21" y2="21" />
+          </svg>
+        </button>
+        <input type="search" class="acoes-busca" placeholder="Pesquisar por nome…" hidden
+               data-members-target="busca" data-action="input->members#buscar">
+      </div>
+    </div>
+
+    <%# ---- Lista de membros ---- %>
+    <div class="membros-list">
+      <% @membros.each_with_index do |item, i| %>
+        <% member = item[:member]; mandato = item[:mandato] %>
+        <% grupo = grupo_do_membro(mandato&.cargo, item[:ex]) %>
+        <% acoes = member.acoes_participadas.pluck(:titulo) %>
+        <article class="membro-card" data-members-target="card" data-grupo="<%= grupo %>" data-nome="<%= member.name.downcase %>">
+          <header class="membro-bar" style="--accent:<%= acento_do_card(i) %>">
+            <h3 class="membro-nome"><%= member.name %></h3>
+            <span class="membro-cargo"><%= cargo_label(mandato&.cargo) %></span>
+          </header>
+
+          <div class="membro-body">
+            <div class="membro-foto" style="background-image:url('<%= foto_de_membro(member) %>')"></div>
+
+            <div class="membro-info">
+              <% if member.bio.present? %><p class="membro-desc"><%= member.bio %></p><% end %>
+
+              <div class="membro-acoes">
+                <span class="membro-acoes-titulo">Ações desenvolvidas como integrante da LEDS:</span>
+                <% if acoes.any? %>
+                  <ul>
+                    <% acoes.first(3).each do |titulo| %><li><%= titulo %></li><% end %>
+                  </ul>
+                  <% if acoes.size > 3 %>
+                    <a class="membro-mais" href="<%= acoes_path(membro: member.id) %>">Mais ações →</a>
+                  <% end %>
+                <% else %>
+                  <p class="membro-vazio">Nenhuma ação registrada ainda.</p>
+                <% end %>
+              </div>
+
+              <% if member.tecnologias.any? %>
+                <div class="membro-skills">
+                  <span class="membro-skills-label">Skills:</span>
+                  <div class="membro-skills-row">
+                    <% member.tecnologias.each do |tec| %><%= icone_ou_pill(tec) %><% end %>
+                  </div>
+                </div>
+              <% end %>
+
+              <div class="membro-links">
+                <% if member.email.present? %><a href="mailto:<%= member.email %>">E-mail</a><% end %>
+                <% if member.lattes_url.present? %><a href="<%= member.lattes_url %>" target="_blank" rel="noopener">Lattes</a><% end %>
+                <% if member.linkedin_url.present? %><a href="<%= member.linkedin_url %>" target="_blank" rel="noopener">LinkedIn</a><% end %>
+                <% if member.github_url.present? %><a href="<%= member.github_url %>" target="_blank" rel="noopener">GitHub</a><% end %>
+              </div>
+            </div>
+          </div>
+        </article>
+      <% end %>
+    </div>
+
+    <p class="acoes-empty" data-members-target="empty" hidden>Nenhum membro encontrado.</p>
+    <p class="acoes-end"><%= @membros.any? ? "Não há mais membros para carregar." : "Nenhum membro cadastrado ainda." %></p>
+  </main>
+
+  <%= render "shared/footer" %>
+</div>

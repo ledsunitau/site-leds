@@ -10,6 +10,13 @@
   <main class="content wrap acoes-page">
     <h1 class="leds-h1" style="margin:8px 0 22px">Ações</h1>
 
+    <% if @membro_filtro %>
+      <div class="acoes-membro-filtro">
+        <span>Mostrando ações de <strong><%= @membro_filtro.name %></strong></span>
+        <a href="<%= acoes_path %>">Ver todas →</a>
+      </div>
+    <% end %>
+
     <%# ---- Filtros + busca ---- %>
     <div class="acoes-toolbar">
       <div class="chips">
