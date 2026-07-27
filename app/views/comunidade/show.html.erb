@@ -1,0 +1,57 @@
+<%# Página da comunidade (não está no Figma) — arte chamativa na vibe do Discord
+    + botão que leva ao convite do servidor. Mascote pinguim como estrela. %>
+<% content_for :title, "Comunidade — LEDS" %>
+
+<%= render "shared/page_bg" %>
+
+<div class="page">
+  <%= render "shared/navbar", active: "" %>
+
+  <main class="content wrap comunidade-page">
+    <section class="comunidade-hero">
+      <%# ---- Esquerda: copy + CTA ---- %>
+      <div class="comunidade-copy">
+        <span class="eyebrow green">// comunidade leds</span>
+        <h1 class="leds-hero">Bora codar, trocar<br>ideia e evoluir <span class="grad-text">junto</span>.</h1>
+        <p class="leds-lead comunidade-lead">
+          Entra no nosso Discord: um espaço pra tirar dúvidas, conhecer em 
+          primeira mão os projetos que estamos desenvolvendo, participar de grupos 
+          de estudo, acompanhar eventos e trocar ideias com uma comunidade que curte tecnologia.
+        </p>
+
+        <div class="btn-row">
+          <a class="btn btn-discord" href="<%= @discord_invite %>" target="_blank" rel="noopener">
+            <%= render "shared/oauth_icon", provider: "discord" %>
+            <span>Entrar no Discord</span>
+            <span class="btn-arrow" aria-hidden="true">→</span>
+          </a>
+        </div>
+
+        <div class="comunidade-meta">
+          <span class="comunidade-pill">🐧 <%= pluralize(@membros, "membro") %> na liga</span>
+          <a class="comunidade-voltar" href="<%= root_path %>">← voltar ao início</a>
+        </div>
+      </div>
+
+      <%# ---- Direita: palco do mascote ---- %>
+      <div class="comunidade-stage" aria-hidden="true">
+        <span class="stage-stars"></span>
+        <span class="stage-glow"></span>
+        <span class="stage-ring"></span>
+
+        <span class="stage-node n1"></span>
+        <span class="stage-node n2"></span>
+        <span class="stage-node n3"></span>
+        <span class="stage-node n4"></span>
+
+        <span class="chat-bubble b1"><span class="cb-dot" style="background:var(--leds-blue)"></span><span class="cb-lines"></span></span>
+        <span class="chat-bubble b2"><span class="cb-dot" style="background:var(--leds-green)"></span><span class="cb-lines"></span></span>
+        <span class="chat-bubble b3"><span class="cb-dot" style="background:var(--leds-red)"></span><span class="cb-lines"></span></span>
+
+        <%= image_tag "mascot/penguin_leds_scarf.svg", class: "comunidade-mascote", alt: "Mascote LEDS" %>
+      </div>
+    </section>
+  </main>
+
+  <%= render "shared/footer" %>
+</div>
