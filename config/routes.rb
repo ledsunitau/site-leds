@@ -105,6 +105,11 @@ Rails.application.routes.draw do
   # Métricas da landing (RF-INI-01)
   get "metricas", to: "metricas#show"
 
+  # Página da comunidade (convite do Discord). Exige login: o "Participe da
+  # comunidade" da home traz o visitante pra cá — deslogado passa pelo login e
+  # o Devise devolve pra cá (stored_location).
+  get "comunidade", to: "comunidade#show"
+
   # Notificações (RF-NOT): centro in-app, preferências por canal/categoria e
   # inscrições de Web Push (VAPID).
   resources :notifications, only: :index do
