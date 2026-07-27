@@ -1,0 +1,13 @@
+<%# Aba Novidades: posts do usuário (todos os status), com badge de status. %>
+<% if @posts.any? %>
+  <div class="novidades-grid">
+    <% @posts.each do |p| %>
+      <%= render "posts/card", post: p, status_badge: true %>
+    <% end %>
+  </div>
+<% else %>
+  <div class="empty-state">
+    <span class="empty-mono">// nada por aqui ainda</span>
+    <p>As notícias e posts de blog que você escrever aparecem aqui.</p>
+  </div>
+<% end %>

@@ -20,7 +20,10 @@ class ReservasController < ApplicationController
   def cancelar
     reserva = current_user.reservas.find(params[:id])
     reserva.cancelar!
-    render json: reserva.card_json
+    respond_to do |format|
+      format.json { render json: reserva.card_json }
+      format.html { redirect_to profile_path(anchor: "loja"), notice: "Reserva cancelada." }
+    end
   end
 
   # RF-LOJ-07: pagar a reserva (após o disparo de produção) — cria o pedido e
@@ -31,11 +34,20 @@ class ReservasController < ApplicationController
     pedido = Checkout.da_reserva(reserva)
     init_point = Pagamentos.iniciar(pedido)
 
-    render json: { pedido: pedido.card_json, pagamento_url: init_point }, status: :created
+    respond_to do |format|
+      format.json { render json: { pedido: pedido.card_json, pagamento_url: init_point }, status: :created }
+      format.html { redirect_to init_point, allow_other_host: true } # vai pro gateway
+    end
   rescue Checkout::Erro => e
-    render json: { errors: [ e.message ] }, status: :unprocessable_entity
+    respond_to do |format|
+      format.json { render json: { errors: [ e.message ] }, status: :unprocessable_entity }
+      format.html { redirect_to profile_path(anchor: "loja"), alert: e.message }
+    end
   rescue MercadoPago::ErroGateway
-    render json: { errors: [ "Pagamento indisponível no momento. Tente novamente." ] },
-           status: :service_unavailable
+    msg = "Pagamento indisponível no momento. Tente novamente."
+    respond_to do |format|
+      format.json { render json: { errors: [ msg ] }, status: :service_unavailable }
+      format.html { redirect_to profile_path(anchor: "loja"), alert: msg }
+    end
   end
 end

@@ -16,14 +16,23 @@ class PedidosController < ApplicationController
   # checkout ou a tentativa anterior falhou (RF-LOJ-12: várias tentativas)
   def pagar
     init_point = Pagamentos.iniciar(pedido)
-    render json: { pagamento_url: init_point }
+    respond_to do |format|
+      format.json { render json: { pagamento_url: init_point } }
+      format.html { redirect_to init_point, allow_other_host: true } # vai pro gateway
+    end
   rescue MercadoPago::ErroGateway => e
-    render json: { errors: [ e.message ] }, status: :service_unavailable
+    respond_to do |format|
+      format.json { render json: { errors: [ e.message ] }, status: :service_unavailable }
+      format.html { redirect_to profile_path(anchor: "loja"), alert: "Pagamento indisponível no momento. Tente novamente." }
+    end
   end
 
   def cancelar
     pedido.cancelar!
-    render json: pedido.card_json
+    respond_to do |format|
+      format.json { render json: pedido.card_json }
+      format.html { redirect_to profile_path(anchor: "loja"), notice: "Pedido cancelado." }
+    end
   end
 
   private

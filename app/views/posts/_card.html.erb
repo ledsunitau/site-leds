@@ -3,6 +3,9 @@
 <a class="novidade-card" href="<%= post_path(post) %>"<% if local_assigns[:filtravel] %> data-novidades-target="card" data-tipo="<%= post.tipo %>" data-nome="<%= (post.caller.presence || post.titulo).to_s.downcase %>"<% end %>>
   <div class="novidade-media" style="background-image:url('<%= card_image_url(post) %>')">
     <span class="tag solid" style="--tag-color:var(--cat-<%= post.tipo %>)"><%= post.noticia? ? "Notícia" : "Blog" %></span>
+    <% if local_assigns[:status_badge] %>
+      <span class="post-status <%= post_status_cor(post.status) %>"><%= post_status_label(post.status) %></span>
+    <% end %>
   </div>
   <div class="novidade-body">
     <p class="novidade-desc"><%= post.caller.presence || post.titulo %></p>

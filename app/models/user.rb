@@ -59,6 +59,15 @@ class User < ApplicationRecord
     identidade_discord&.uid
   end
 
+  # Ações publicadas creditadas ao usuário no "Meu perfil": as que participou
+  # como membro (Contribuicao/EventoMembro/Autor) + as que idealizou (ideia
+  # aprovada que virou ação — RF-ACO-07, via acoes.ideia_id). Union sem duplicar.
+  def acoes_creditadas
+    ids = member&.acoes_participadas&.ids || []
+    ids |= Acao.publicadas.where(ideia_id: ideias.select(:id)).ids
+    Acao.publicadas.where(id: ids).order(created_at: :desc)
+  end
+
   private
 
   def identidade_discord

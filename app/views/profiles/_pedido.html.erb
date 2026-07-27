@@ -1,0 +1,45 @@
+<%# Card de pedido com rastreador de status. Local `pedido`. %>
+<article class="pedido-card <%= 'is-cancelado' if pedido.status == 'cancelado' %>">
+  <div class="pedido-head">
+    <div class="pedido-meta">
+      <span class="pedido-id">Pedido #<%= pedido.id %></span>
+      <span class="meta-mono pedido-data"><%= data_por_extenso(pedido.created_at) %></span>
+    </div>
+    <span class="pedido-total"><%= moeda(pedido.total) %></span>
+  </div>
+
+  <% if pedido.status == "cancelado" %>
+    <div class="pedido-cancelado">Pedido cancelado</div>
+  <% else %>
+    <% etapas = pedido_etapas(pedido); atual = pedido_etapa_atual(pedido) %>
+    <ol class="pedido-stepper">
+      <% etapas.each_with_index do |etapa, i| %>
+        <li class="pedido-step <%= 'done' if i <= atual %> <%= 'atual' if i == atual %>">
+          <span class="step-dot"></span>
+          <span class="step-label"><%= pedido_status_label(etapa) %></span>
+        </li>
+      <% end %>
+    </ol>
+  <% end %>
+
+  <div class="pedido-itens">
+    <% pedido.itens.each do |item| %>
+      <div class="pedido-item">
+        <span><%= item.quantidade %>× <%= item.produto&.nome || "Produto" %><% if item.variante %> · <%= item.variante.nome %><% end %></span>
+        <span class="meta-mono"><%= moeda(item.subtotal) %></span>
+      </div>
+    <% end %>
+  </div>
+
+  <% if pedido.rastreamento_codigo.present? %>
+    <p class="pedido-rastreio">Rastreio: <strong><%= pedido.rastreamento_codigo %></strong><% if pedido.transportadora.present? %> · <%= pedido.transportadora %><% end %></p>
+  <% end %>
+
+  <% if pedido.status == "aguardando_pagamento" %>
+    <div class="pedido-acoes">
+      <%= button_to "Pagar agora", pagar_pedido_path(pedido), class: "btn btn-primary btn-sm", data: { turbo: false } %>
+      <%= button_to "Cancelar", cancelar_pedido_path(pedido), class: "btn btn-secondary btn-sm",
+            form: { data: { turbo_confirm: "Cancelar este pedido?" } } %>
+    </div>
+  <% end %>
+</article>

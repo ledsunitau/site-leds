@@ -1,0 +1,36 @@
+<%# Aba Notificações: lista recebida + marcar lida/todas (via fetch, fallback
+    redirect). O painel tem data-controller="notificacao" (ver show.html.erb). %>
+<div class="notif-head">
+  <h3 class="perfil-card-title">Notificações</h3>
+  <% if @nao_lidas.positive? %>
+    <%= button_to "Marcar todas como lidas", read_all_notifications_path,
+          class: "btn btn-secondary btn-sm", data: { action: "notificacao#lerTodas" } %>
+  <% end %>
+</div>
+
+<% if @notificacoes.any? %>
+  <ul class="notif-list" data-notificacao-target="list">
+    <% @notificacoes.each do |n| %>
+      <% ev = n.event %>
+      <li class="notif-item <%= 'nao-lida' unless n.read? %>" data-notificacao-target="item">
+        <div class="notif-body">
+          <span class="notif-titulo"><%= ev.titulo %></span>
+          <span class="notif-msg"><%= ev.mensagem %></span>
+          <span class="meta-mono notif-time"><%= data_por_extenso(n.created_at) %></span>
+        </div>
+        <div class="notif-acoes">
+          <% if ev.url.present? %><a class="notif-link" href="<%= ev.url %>">Ver →</a><% end %>
+          <% unless n.read? %>
+            <%= button_to "Marcar lida", read_notification_path(n),
+                  class: "notif-ler", data: { action: "notificacao#ler" } %>
+          <% end %>
+        </div>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <div class="empty-state">
+    <span class="empty-mono">// tudo limpo</span>
+    <p>Você não tem notificações por enquanto.</p>
+  </div>
+<% end %>

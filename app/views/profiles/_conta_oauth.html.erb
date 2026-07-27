@@ -1,0 +1,21 @@
+<%# Linha de conta vinculada. Locais: provider ("google"/"discord"),
+    provider_omni (:google_oauth2/:discord), label. %>
+<% identidade = @user.oauth_identities.find { |i| i.provider == provider } %>
+<div class="conta-linha">
+  <%= render "shared/oauth_icon", provider: provider %>
+  <div class="conta-info">
+    <span class="conta-nome"><%= label %></span>
+    <% if identidade %>
+      <span class="conta-status on"><%= identidade.username.presence || "Conectado" %></span>
+    <% else %>
+      <span class="conta-status">Não conectado</span>
+    <% end %>
+  </div>
+  <% if identidade %>
+    <%= button_to "Desvincular", oauth_identity_path(identidade), method: :delete,
+          class: "btn btn-secondary btn-sm", form: { data: { turbo_confirm: "Desvincular sua conta #{label}?" } } %>
+  <% else %>
+    <%= button_to "Conectar", omniauth_authorize_path(:user, provider_omni),
+          class: "btn btn-secondary btn-sm", data: { turbo: false } %>
+  <% end %>
+</div>

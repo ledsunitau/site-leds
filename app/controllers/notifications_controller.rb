@@ -14,12 +14,18 @@ class NotificationsController < ApplicationController
 
   def read
     current_user.notifications.find(params[:id]).mark_as_read!
-    head :no_content
+    respond_to do |format|
+      format.json { head :no_content }
+      format.html { redirect_to profile_path(anchor: "notificacoes") }
+    end
   end
 
   def read_all
     current_user.notifications.unread.mark_as_read
-    head :no_content
+    respond_to do |format|
+      format.json { head :no_content }
+      format.html { redirect_to profile_path(anchor: "notificacoes") }
+    end
   end
 
   private

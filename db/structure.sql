@@ -1759,6 +1759,7 @@ CREATE TABLE public.users (
     remember_created_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    bio text,
     CONSTRAINT users_role_check CHECK (((role)::text = ANY ((ARRAY['comunidade'::character varying, 'escritor'::character varying, 'parceiro'::character varying, 'membro'::character varying, 'diretoria'::character varying, 'presidencia'::character varying])::text[])))
 );
 
@@ -3843,6 +3844,7 @@ ALTER TABLE ONLY public.itens_pedido
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260727000000'),
 ('20260726120000'),
 ('20260709080000'),
 ('20260709070000'),

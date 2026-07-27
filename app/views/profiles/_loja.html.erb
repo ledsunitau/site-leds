@@ -1,0 +1,31 @@
+<%# Aba Loja: pedidos em andamento, reservas ativas e histórico. %>
+<% ativos = @pedidos.select { |p| pedido_ativo?(p) } %>
+<% concluidos = @pedidos.reject { |p| pedido_ativo?(p) } %>
+
+<% if @pedidos.empty? && @reservas.empty? %>
+  <div class="empty-state">
+    <span class="empty-mono">// carrinho vazio</span>
+    <p>Seus pedidos e reservas da loja aparecem aqui.</p>
+  </div>
+<% else %>
+  <% if ativos.any? %>
+    <section class="perfil-secao">
+      <h3 class="perfil-secao-title">Pedidos em andamento</h3>
+      <div class="pedidos-list"><% ativos.each { |p| %><%= render "profiles/pedido", pedido: p %><% } %></div>
+    </section>
+  <% end %>
+
+  <% if @reservas.any? %>
+    <section class="perfil-secao">
+      <h3 class="perfil-secao-title">Reservas ativas</h3>
+      <div class="pedidos-list"><% @reservas.each { |r| %><%= render "profiles/reserva", reserva: r %><% } %></div>
+    </section>
+  <% end %>
+
+  <% if concluidos.any? %>
+    <section class="perfil-secao">
+      <h3 class="perfil-secao-title">Histórico</h3>
+      <div class="pedidos-list"><% concluidos.each { |p| %><%= render "profiles/pedido", pedido: p %><% } %></div>
+    </section>
+  <% end %>
+<% end %>

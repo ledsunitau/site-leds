@@ -22,7 +22,7 @@ class NotificationsFlowTest < ActionDispatch::IntegrationTest
     assert_equal "PostSubmetidoNotifier", notif["tipo"]
     assert_not notif["lida"]
 
-    post read_notification_path(notif["id"])
+    post read_notification_path(notif["id"]), as: :json
     assert_response :no_content
     assert users(:ana).notifications.find(notif["id"]).read?
 
@@ -34,7 +34,7 @@ class NotificationsFlowTest < ActionDispatch::IntegrationTest
     PostSubmetidoNotifier.with(record: posts(:rascunho_do_membro)).deliver([ users(:ana) ])
     sign_in users(:ana)
 
-    post read_all_notifications_path
+    post read_all_notifications_path, as: :json
     assert_response :no_content
     assert_equal 0, users(:ana).notifications.unread.count
   end
