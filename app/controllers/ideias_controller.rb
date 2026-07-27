@@ -16,10 +16,28 @@ class IdeiasController < ApplicationController
     render json: ideia_json(ideia, completo: true)
   end
 
+  # Portal de ideias (RF-IDE): o formulário. @grupo pré-filtra os tipos quando
+  # vem dos botões da home (?grupo=eventos|projetos).
+  def new
+    authorize Ideia, :create?
+    @ideia = current_user.ideias.new
+    @grupo = params[:grupo].presence_in(Ideia::GRUPOS.keys)
+  end
+
   def create
     authorize Ideia
-    ideia = current_user.ideias.create!(params.expect(ideia: %i[tipo titulo descricao]))
-    render json: ideia_json(ideia, completo: true), status: :created
+    @ideia = current_user.ideias.new(ideia_params)
+    if @ideia.save
+      respond_to do |format|
+        format.json { render json: ideia_json(@ideia, completo: true), status: :created }
+        format.html { redirect_to new_ideia_path, notice: "Ideia enviada! A gestão vai revisar. 💡" }
+      end
+    else
+      respond_to do |format|
+        format.json { render_invalido(@ideia) }
+        format.html { @grupo = nil; render :new, status: :unprocessable_entity }
+      end
+    end
   end
 
   def aprovar
@@ -31,6 +49,10 @@ class IdeiasController < ApplicationController
   end
 
   private
+
+  def ideia_params
+    params.expect(ideia: %i[tipo titulo descricao])
+  end
 
   def revisar(metodo, permissao)
     ideia = Ideia.find(params[:id])

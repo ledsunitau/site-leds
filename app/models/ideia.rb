@@ -10,14 +10,22 @@ class Ideia < ApplicationRecord
   # a FK acoes.ideia_id é nullify: a ação sobrevive à ideia apagada
   has_one :acao, dependent: :nullify, inverse_of: :ideia
 
-  TIPOS = %w[projeto pesquisa].freeze
+  TIPOS = %w[projeto pesquisa evento palestra].freeze
   STATUSES = %w[pendente aprovada rejeitada].freeze
+
+  # Grupos do portal de ideias: os botões da home pré-filtram por grupo.
+  GRUPOS = { "eventos" => %w[evento palestra], "projetos" => %w[projeto pesquisa] }.freeze
+  TIPO_LABEL = { "projeto" => "Projeto", "pesquisa" => "Pesquisa",
+                 "evento" => "Evento", "palestra" => "Palestra" }.freeze
+  TIPO_COR = { "projeto" => "var(--leds-green)", "pesquisa" => "var(--leds-yellow)",
+               "evento" => "var(--leds-blue)", "palestra" => "var(--leds-red)" }.freeze
   enum :tipo, TIPOS.index_by(&:itself), validate: true
   enum :status, STATUSES.index_by(&:itself), validate: true
   # transições só pelo fluxo: o bang do enum pularia revisor/reviewed_at
   private(*STATUSES.map { |s| :"#{s}!" })
 
   validates :titulo, presence: true
+  validates :tipo, presence: true # tipo ausente vira 422, não erro de NOT NULL
 
   scope :pendentes, -> { pendente }
 

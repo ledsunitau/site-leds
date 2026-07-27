@@ -951,7 +951,7 @@ CREATE TABLE public.ideias (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     CONSTRAINT ideias_status_check CHECK (((status)::text = ANY ((ARRAY['pendente'::character varying, 'aprovada'::character varying, 'rejeitada'::character varying])::text[]))),
-    CONSTRAINT ideias_tipo_check CHECK (((tipo)::text = ANY ((ARRAY['projeto'::character varying, 'pesquisa'::character varying])::text[])))
+    CONSTRAINT ideias_tipo_check CHECK (((tipo)::text = ANY ((ARRAY['projeto'::character varying, 'pesquisa'::character varying, 'evento'::character varying, 'palestra'::character varying])::text[])))
 );
 
 
@@ -3844,6 +3844,7 @@ ALTER TABLE ONLY public.itens_pedido
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260728000000'),
 ('20260727000000'),
 ('20260726120000'),
 ('20260709080000'),

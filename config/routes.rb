@@ -32,7 +32,7 @@ Rails.application.routes.draw do
   resources :temas, only: :index
 
   # Ideias (RF-IDE): comunidade propõe (RN-01), gestão revisa (RF-IDE-04)
-  resources :ideias, only: %i[index show create] do
+  resources :ideias, only: %i[index show create new] do
     member do
       post :aprovar
       post :rejeitar

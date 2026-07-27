@@ -241,8 +241,8 @@
             <p class="leds-body">Tem uma proposta para compartilhar? Escolha uma das opções ao lado e envie suas informações. Entraremos em contato em breve.</p>
           </div>
           <div class="cta-options">
-            <button class="cta-option" type="button" style="--accent:var(--leds-red)">Sugestão de eventos/palestras</button>
-            <button class="cta-option" type="button" style="--accent:var(--leds-green)">Ideias de projetos/pesquisas</button>
+            <a class="cta-option" href="<%= new_ideia_path(grupo: "eventos") %>" style="--accent:var(--leds-red)">Sugestão de eventos/palestras</a>
+            <a class="cta-option" href="<%= new_ideia_path(grupo: "projetos") %>" style="--accent:var(--leds-green)">Ideias de projetos/pesquisas</a>
             <button class="cta-option" type="button" style="--accent:var(--leds-blue)">Seja um parceiro</button>
           </div>
         </div>
