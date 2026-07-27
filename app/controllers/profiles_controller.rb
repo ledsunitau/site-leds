@@ -17,6 +17,7 @@ class ProfilesController < ApplicationController
         @reservas = current_user.reservas.ativa.includes(:produto, :variante)
         @notificacoes = current_user.notifications.includes(event: :record).newest_first.limit(50)
         @nao_lidas = current_user.notifications.unread.count
+        @ideias = current_user.ideias.includes(:acao).order(created_at: :desc)
       end
     end
   end

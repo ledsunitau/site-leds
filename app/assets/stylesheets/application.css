@@ -226,7 +226,8 @@ h1, h2, h3, p { margin: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   .graph-float, .graph-links line, .graph-node, .account-avatar::before,
-  .comunidade-mascote, .stage-glow, .stage-ring, .stage-stars, .stage-node, .chat-bubble { animation: none; }
+  .comunidade-mascote, .stage-glow, .stage-ring, .stage-stars, .stage-node, .chat-bubble,
+  .ideias-bulb, .idea-tag { animation: none; }
   html { scroll-behavior: auto; }
 }
 
@@ -361,7 +362,7 @@ h1, h2, h3, p { margin: 0; }
 .cta-dots span { width: 12px; height: 12px; border-radius: 50%; }
 .cta-options { display: flex; flex-direction: column; gap: 14px; min-width: 264px; flex: 1; }
 .cta-option {
-  font-family: var(--font-display); font-weight: 600; font-size: 15px; color: var(--text-primary);
+  display: block; width: 100%; font-family: var(--font-display); font-weight: 600; font-size: 15px; color: var(--text-primary);
   background: transparent;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent, var(--border-strong)) 55%, transparent);
   border-radius: var(--radius-btn); border: none; padding: 16px 22px; cursor: pointer; text-align: left;
@@ -1206,4 +1207,103 @@ body.no-scroll { overflow: hidden; }
   .comunidade-hero { grid-template-columns: 1fr; gap: 8px; min-height: 0; padding: 20px 0 10px; }
   .comunidade-stage { min-height: 380px; order: -1; }
   .comunidade-mascote { width: min(280px, 70%); }
+}
+
+/* =====================================================================
+   Página de Ideias (portal de sugestão)
+   ===================================================================== */
+.ideias-page { padding-top: 28px; padding-bottom: 64px; overflow-x: clip; }
+.ideias-hero {
+  display: grid; grid-template-columns: 1.05fr .95fr; gap: 44px; align-items: center;
+  min-height: calc(100vh - var(--nav-height) - 120px);
+}
+.ideias-copy { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.ideias-copy .leds-hero { margin: 0; }
+.ideias-lead { max-width: 500px; }
+.ideias-lead strong { color: var(--text-strong); }
+
+/* ---- Formulário ---- */
+.ideias-form { display: flex; flex-direction: column; gap: 16px; max-width: 520px; margin-top: 6px; }
+.tipo-fieldset { border: none; padding: 0; margin: 0; }
+.ideias-legend { display: block; font-family: var(--font-mono); font-size: 12px; color: var(--text-subtle); margin-bottom: 10px; }
+
+.tipo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.tipo-card {
+  position: relative; display: flex; align-items: center; gap: 12px; cursor: pointer;
+  padding: 13px 15px; border-radius: var(--radius-card);
+  background: var(--surface-chip); border: 1px solid var(--border-strong);
+  transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+.tipo-card[hidden] { display: none; }
+.tipo-card:hover { border-color: rgba(255,255,255,.32); }
+.tipo-radio { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
+.tipo-ico {
+  flex-shrink: 0; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px;
+  color: var(--accent); background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+.tipo-ico svg { width: 20px; height: 20px; }
+.tipo-label { font-family: var(--font-display); font-weight: 600; font-size: 15px; color: var(--text-primary); }
+.tipo-card:has(.tipo-radio:checked) {
+  border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-chip));
+}
+.tipo-vertodos {
+  margin-top: 12px; padding: 0; background: none; border: none; cursor: pointer;
+  font-family: var(--font-mono); font-size: 12px; color: var(--text-lead); text-decoration: underline;
+}
+.tipo-vertodos:hover { color: var(--text-strong); }
+.opcional { font-style: normal; font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); }
+.ideias-submit { align-self: flex-start; margin-top: 4px; }
+
+/* ---- Arte (lâmpada = ideia) ---- */
+.ideias-stage { position: relative; display: grid; place-items: center; min-height: 480px; isolation: isolate; }
+.stage-glow.ideias-glow { background: radial-gradient(circle, rgba(255,238,4,.20), rgba(29,132,245,.14) 46%, transparent 70%); }
+.ideias-bulb {
+  position: relative; z-index: 3; width: min(240px, 60%); height: auto;
+  filter: drop-shadow(0 0 32px rgba(255,238,4,.4));
+  animation: leds-float 6s ease-in-out infinite, leds-pulse 4.5s ease-in-out infinite;
+}
+.idea-tag {
+  position: absolute; z-index: 4; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+  padding: 8px 13px; border-radius: var(--radius-pill); font-family: var(--font-mono); font-size: 12px; color: var(--text-primary);
+  background: rgba(20,21,24,.85); backdrop-filter: blur(6px);
+  box-shadow: 0 12px 30px rgba(0,0,0,.42), inset 0 0 0 1px var(--border-faint);
+}
+.tag-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+.idea-tag.it1 { top: 8%;  left: -2%;  animation: bubble-a 7s ease-in-out infinite; }
+.idea-tag.it2 { top: 46%; right: -4%; animation: bubble-b 8s ease-in-out infinite; }
+.idea-tag.it3 { bottom: 8%; left: 6%;  animation: bubble-a 6.5s ease-in-out infinite .8s; }
+
+@media (max-width: 900px) {
+  .ideias-hero { grid-template-columns: 1fr; gap: 12px; min-height: 0; }
+  .ideias-stage { min-height: 340px; order: -1; }
+  .ideias-bulb { width: min(200px, 52%); }
+}
+@media (max-width: 460px) {
+  .tipo-grid { grid-template-columns: 1fr; }
+}
+
+/* ---- Aba Ideias do perfil (status sigiloso, só "Aceita" aparece) ---- */
+.ideias-caption { font-size: 13px; line-height: 1.5; color: var(--text-muted); margin-bottom: 16px; }
+.ideias-perfil-list { display: flex; flex-direction: column; gap: 14px; }
+.ideia-item {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 18px;
+  padding: 18px 20px; border-radius: var(--radius-card);
+  background: var(--surface-card-alt); box-shadow: inset 0 0 0 1px var(--border-hair);
+}
+.ideia-main { min-width: 0; }
+.ideia-top { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.ideia-data { color: var(--text-subtle); }
+.ideia-titulo { font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--text-strong); }
+.ideia-desc { font-size: 14px; line-height: 1.55; color: var(--text-muted); margin-top: 6px; }
+.ideia-aceita { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; }
+.ideia-badge {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--leds-green); white-space: nowrap;
+  padding: 5px 12px; border-radius: var(--radius-pill); background: rgba(0,197,91,.12); box-shadow: inset 0 0 0 1px rgba(0,197,91,.35);
+}
+.ideia-virou { font-size: 12px; color: var(--text-subtle); max-width: 220px; }
+
+@media (max-width: 560px) {
+  .ideia-item { flex-direction: column; }
+  .ideia-aceita { align-items: flex-start; text-align: left; flex-direction: row; gap: 10px; }
 }

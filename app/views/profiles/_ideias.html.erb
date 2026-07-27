@@ -1,0 +1,35 @@
+<%# Aba Ideias: as ideias que o usuário enviou. O status é sigiloso — só aparece
+    quando a ideia foi ACEITA (aprovada). Pendente/rejeitada ficam neutras. %>
+<% if @ideias.any? %>
+  <p class="ideias-caption">Enviadas por você. Se uma ideia for aceita, o selo aparece aqui.</p>
+  <div class="ideias-perfil-list">
+    <% @ideias.each do |ideia| %>
+      <article class="ideia-item">
+        <div class="ideia-main">
+          <div class="ideia-top">
+            <span class="tag outline" style="--tag-color:<%= Ideia::TIPO_COR[ideia.tipo] %>"><%= Ideia::TIPO_LABEL[ideia.tipo] %></span>
+            <span class="meta-mono ideia-data"><%= data_por_extenso(ideia.created_at) %></span>
+          </div>
+          <h4 class="ideia-titulo"><%= ideia.titulo %></h4>
+          <% if ideia.descricao.present? %>
+            <p class="ideia-desc"><%= truncate(ideia.descricao, length: 180) %></p>
+          <% end %>
+        </div>
+
+        <% if ideia.aprovada? %>
+          <div class="ideia-aceita">
+            <span class="ideia-badge">✓ Aceita</span>
+            <% if ideia.acao&.status == "publicada" %>
+              <span class="ideia-virou">virou a ação “<%= ideia.acao.titulo %>”</span>
+            <% end %>
+          </div>
+        <% end %>
+      </article>
+    <% end %>
+  </div>
+<% else %>
+  <div class="empty-state">
+    <span class="empty-mono">// nenhuma ideia ainda</span>
+    <p>As ideias que você enviar aparecem aqui. <a href="<%= new_ideia_path %>">Sugira uma ideia →</a></p>
+  </div>
+<% end %>

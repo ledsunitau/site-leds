@@ -12,7 +12,7 @@ class IdeiasControllerTest < ActionDispatch::IntegrationTest
     sign_in users(:ana) # role comunidade
 
     assert_difference "Ideia.count", 1 do
-      post ideias_path, params: { ideia: { tipo: "projeto", titulo: "App da liga", descricao: "..." } }
+      post ideias_path, params: { ideia: { tipo: "projeto", titulo: "App da liga", descricao: "..." } }, as: :json
     end
     assert_response :created
 
@@ -25,8 +25,40 @@ class IdeiasControllerTest < ActionDispatch::IntegrationTest
 
   test "tipo inválido é 422" do
     sign_in users(:ana)
-    post ideias_path, params: { ideia: { tipo: "parceiro", titulo: "X" } }
+    post ideias_path, params: { ideia: { tipo: "parceiro", titulo: "X" } }, as: :json
     assert_response :unprocessable_entity
+  end
+
+  test "portal (new) exige login" do
+    get new_ideia_path
+    assert_redirected_to new_user_session_path
+  end
+
+  test "portal (new) logado mostra o formulário com os 4 tipos" do
+    sign_in users(:ana)
+    get new_ideia_path
+
+    assert_response :success
+    assert_select "form"
+    %w[projeto pesquisa evento palestra].each do |t|
+      assert_select "input[name='ideia[tipo]'][value=?]", t
+    end
+  end
+
+  test "create HTML válido: redireciona com flash e cria a ideia (tipo novo)" do
+    sign_in users(:ana)
+    assert_difference "Ideia.count", 1 do
+      post ideias_path, params: { ideia: { tipo: "evento", titulo: "Workshop de Git" } }
+    end
+    assert_redirected_to new_ideia_path
+    assert Ideia.last.evento?
+  end
+
+  test "create HTML inválido: re-renderiza o form com 422" do
+    sign_in users(:ana)
+    post ideias_path, params: { ideia: { tipo: "projeto", titulo: "" } }
+    assert_response :unprocessable_entity
+    assert_select "form"
   end
 
   test "index lista só as ideias do próprio usuário" do
@@ -57,7 +89,7 @@ class IdeiasControllerTest < ActionDispatch::IntegrationTest
 
   test "gestor que propõe a própria ideia não notifica a si mesmo" do
     sign_in users(:diretor) # gestão
-    post ideias_path, params: { ideia: { tipo: "projeto", titulo: "Ideia do diretor" } }
+    post ideias_path, params: { ideia: { tipo: "projeto", titulo: "Ideia do diretor" } }, as: :json
     assert_response :created
 
     assert_not users(:diretor).notifications.joins(:event)
