@@ -1,0 +1,50 @@
+<%# Meu perfil (RF-AUT-06). Não está no Figma — segue o design system. Uma rota
+    com 5 abas (troca client-side, padrão do toggle de Membros). %>
+<% content_for :title, "Meu perfil — LEDS" %>
+
+<%= render "shared/page_bg" %>
+
+<div class="page" data-controller="perfil">
+  <%= render "shared/navbar" %>
+
+  <main class="content wrap perfil-page">
+    <h1 class="leds-h1" style="margin:8px 0 20px">Meu perfil</h1>
+
+    <%# ---- Cabeçalho: avatar + tag + nome + e-mail ---- %>
+    <header class="perfil-head">
+      <span class="perfil-avatar"><%= render "shared/avatar", user: @user %></span>
+      <div class="perfil-id">
+        <% if @member %>
+          <span class="perfil-tag membro"><%= cargo_label(@member.mandato_vigente&.cargo) %></span>
+        <% else %>
+          <span class="perfil-tag"><%= papel_label(@user.role) %></span>
+        <% end %>
+        <h2 class="perfil-nome"><%= @user.name %></h2>
+        <span class="perfil-email"><%= @user.email %></span>
+      </div>
+    </header>
+
+    <%# ---- Abas ---- %>
+    <nav class="perfil-tabs" role="tablist">
+      <% [["informacoes", "Informações"], ["projetos", "Projetos"], ["novidades", "Novidades"],
+          ["loja", "Loja"], ["notificacoes", "Notificações"]].each_with_index do |(vista, label), i| %>
+        <button type="button" class="perfil-tab <%= 'active' if i.zero? %>" data-vista="<%= vista %>"
+                data-perfil-target="tab" data-action="perfil#mostrar">
+          <%= label %>
+          <% if vista == "notificacoes" && @nao_lidas.positive? %>
+            <span class="perfil-badge" data-perfil-target="badge"><%= @nao_lidas %></span>
+          <% end %>
+        </button>
+      <% end %>
+    </nav>
+
+    <div class="perfil-panel" data-perfil-target="panel" data-vista="informacoes"><%= render "profiles/info" %></div>
+    <div class="perfil-panel" data-perfil-target="panel" data-vista="projetos" hidden><%= render "profiles/projetos" %></div>
+    <div class="perfil-panel" data-perfil-target="panel" data-vista="novidades" hidden><%= render "profiles/novidades" %></div>
+    <div class="perfil-panel" data-perfil-target="panel" data-vista="loja" hidden><%= render "profiles/loja" %></div>
+    <div class="perfil-panel" data-perfil-target="panel" data-vista="notificacoes" hidden
+         data-controller="notificacao"><%= render "profiles/notificacoes" %></div>
+  </main>
+
+  <%= render "shared/footer" %>
+</div>

@@ -1,0 +1,22 @@
+<%# Card de reserva ativa (pré-encomenda sob demanda). Local `reserva`. %>
+<article class="pedido-card reserva">
+  <div class="pedido-head">
+    <div class="pedido-meta">
+      <span class="pedido-id"><%= reserva.produto&.nome || "Reserva" %></span>
+      <span class="meta-mono pedido-data"><%= data_por_extenso(reserva.created_at) %></span>
+    </div>
+    <span class="tag outline" style="--tag-color:var(--leds-blue)">Reserva</span>
+  </div>
+
+  <div class="pedido-itens">
+    <div class="pedido-item">
+      <span><%= reserva.quantidade %>× <%= reserva.produto&.nome || "Produto" %><% if reserva.variante %> · <%= reserva.variante.nome %><% end %></span>
+    </div>
+  </div>
+
+  <div class="pedido-acoes">
+    <%= button_to "Pagar", pagar_reserva_path(reserva), class: "btn btn-primary btn-sm", data: { turbo: false } %>
+    <%= button_to "Cancelar", cancelar_reserva_path(reserva), class: "btn btn-secondary btn-sm",
+          form: { data: { turbo_confirm: "Cancelar esta reserva?" } } %>
+  </div>
+</article>

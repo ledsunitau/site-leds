@@ -131,7 +131,7 @@ class LojaCarrinhoReservasTest < ActionDispatch::IntegrationTest
     assert reserva.ativa?
     assert_equal users(:membro_user), reserva.user
 
-    post cancelar_reserva_path(reserva)
+    post cancelar_reserva_path(reserva), as: :json
     assert_response :success
     assert reserva.reload.cancelada?
   end

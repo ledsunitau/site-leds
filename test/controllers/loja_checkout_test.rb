@@ -212,7 +212,7 @@ class LojaCheckoutTest < ActionDispatch::IntegrationTest
     reserva = reservas(:ana_moletom)
 
     stub_mp(criar: { id: "pr", init_point: "https://mp/pay/r" }) do
-      post pagar_reserva_path(reserva)
+      post pagar_reserva_path(reserva), as: :json
     end
     assert_response :created
     pedido = reserva.reload.pedido
