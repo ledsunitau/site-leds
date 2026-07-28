@@ -7,9 +7,18 @@ class ParceriaLeadsController < ApplicationController
   skip_forgery_protection
 
   def create
-    lead = ParceriaLead.create!(params.expect(parceria_lead: %i[empresa contato_nome contato_email tipo descricao]))
-
-    # resposta mínima: é um formulário público, não expõe a fila da gestão
-    render json: { id: lead.id, status: lead.status }, status: :created
+    @lead = ParceriaLead.new(params.expect(parceria_lead: %i[empresa contato_nome contato_email tipo descricao]))
+    if @lead.save
+      respond_to do |format|
+        # resposta mínima: é um formulário público, não expõe a fila da gestão
+        format.json { render json: { id: @lead.id, status: @lead.status }, status: :created }
+        format.html { redirect_to parceiros_path(anchor: "seja-parceiro"), notice: "Recebemos seu interesse! Em breve a gente fala com você. 🤝" }
+      end
+    else
+      respond_to do |format|
+        format.json { render_invalido(@lead) }
+        format.html { redirect_to parceiros_path(anchor: "seja-parceiro"), alert: @lead.errors.full_messages.to_sentence }
+      end
+    end
   end
 end

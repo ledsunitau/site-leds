@@ -1342,6 +1342,8 @@ CREATE TABLE public.parceiros (
     status character varying DEFAULT 'ativo'::character varying NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    depoimento text,
+    depoimento_autor character varying,
     CONSTRAINT parceiros_status_check CHECK (((status)::text = ANY ((ARRAY['ativo'::character varying, 'inativo'::character varying])::text[])))
 );
 
@@ -3845,6 +3847,7 @@ SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
 ('20260728000000'),
+('20260727150000'),
 ('20260727000000'),
 ('20260726120000'),
 ('20260709080000'),

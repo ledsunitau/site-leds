@@ -21,12 +21,14 @@ module ImagemValidavel
   TAMANHO_MAX = 5.megabytes
 
   class_methods do
-    def valida_imagem(nome)
+    # tipos:/formatos: permitem casos como logo de parceiro (aceita SVG) sem
+    # afrouxar as demais imagens (foto, thumbnail, ícone) — que seguem raster.
+    def valida_imagem(nome, tipos: TIPOS, formatos: "JPEG, PNG ou WebP")
       validate do
         anexo = public_send(nome)
         next unless anexo.attached?
 
-        errors.add(nome, "deve ser JPEG, PNG ou WebP") unless anexo.content_type.in?(TIPOS)
+        errors.add(nome, "deve ser #{formatos}") unless anexo.content_type.in?(tipos)
         errors.add(nome, "deve ter no máximo 5 MB") if anexo.byte_size > TAMANHO_MAX
       end
     end

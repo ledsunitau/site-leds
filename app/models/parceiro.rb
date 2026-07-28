@@ -4,6 +4,8 @@
 # user_id é opcional: o registro existe assim que aceito, mas a área própria
 # (RF-PAR-05) só liga quando há conta vinculada.
 class Parceiro < ApplicationRecord
+  include ImagemValidavel
+
   # RF-ADM-07: quem tirou um parceiro da vitrine (status), renomeou ou trocou a
   # conta vinculada tem que ficar registrado — a junção já era auditada, o
   # registro em si não era. (O ParceriaLead NÃO é auditado de propósito: as
@@ -19,6 +21,13 @@ class Parceiro < ApplicationRecord
   # o lead sobrevive ao parceiro apagado (FK nullify), guardando o histórico
   has_many :parceria_leads, dependent: :nullify
 
+  # Logo da vitrine/faixa (RF-PAR-01); sem ele, a landing cai num chip com o nome.
+  # Aceita SVG (marca vetorial) além de raster — servido via <img>, então o SVG
+  # não executa script. O upload vem do admin ao registrar o parceiro (futuro).
+  has_one_attached :logo
+  valida_imagem :logo, tipos: ImagemValidavel::TIPOS + %w[image/svg+xml],
+                       formatos: "SVG, JPEG, PNG ou WebP"
+
   STATUSES = %w[ativo inativo].freeze
   enum :status, STATUSES.index_by(&:itself), validate: true
 
@@ -33,8 +42,9 @@ class Parceiro < ApplicationRecord
   validates :conta, presence: true, if: :user_id?
 
   scope :ativos, -> { ativo }
+  scope :com_depoimento, -> { where.not(depoimento: [ nil, "" ]) }
 
   def card_json
-    { id: id, nome: nome, site_url: site_url, status: status }
+    { id: id, nome: nome, site_url: site_url, status: status, logo_url: FotoUrl.para(logo) }
   end
 end
