@@ -48,7 +48,7 @@
           <p class="leds-lead hero-lead">A Liga Acadêmica de Estrutura de Dados e Soluções conecta estudantes que querem ir além da teoria — algoritmos, projetos práticos e uma comunidade que constrói junto.</p>
           <div class="btn-row" style="padding:8px 0">
             <a href="<%= comunidade_path %>" class="btn btn-primary">Participe da comunidade →</a>
-            <a href="#contato" class="btn btn-secondary">Seja parceiro</a>
+            <a href="<%= parceiros_path %>" class="btn btn-secondary">Seja parceiro</a>
           </div>
           <div class="stats">
             <div class="stat"><span class="stat-value"><%= @metricas[:membros] %><% if @metricas[:membros].positive? %><span style="color:var(--leds-red)">+</span><% end %></span><span class="stat-label">membros ativos</span></div>
@@ -243,7 +243,7 @@
           <div class="cta-options">
             <a class="cta-option" href="<%= new_ideia_path(grupo: "eventos") %>" style="--accent:var(--leds-red)">Sugestão de eventos/palestras</a>
             <a class="cta-option" href="<%= new_ideia_path(grupo: "projetos") %>" style="--accent:var(--leds-green)">Ideias de projetos/pesquisas</a>
-            <button class="cta-option" type="button" style="--accent:var(--leds-blue)">Seja um parceiro</button>
+            <a class="cta-option" href="<%= parceiros_path %>" style="--accent:var(--leds-blue)">Seja um parceiro</a>
           </div>
         </div>
       </div>

@@ -8,7 +8,7 @@ class ParceirosTest < ActionDispatch::IntegrationTest
   # --- vitrine (RF-PAR-01) e perfil (RF-PAR-02) ---
 
   test "vitrine pública lista só os ativos" do
-    get parceiros_path
+    get parceiros_path, as: :json
 
     assert_response :success
     nomes = response.parsed_body["parceiros"].map { |p| p["nome"] }
@@ -17,12 +17,12 @@ class ParceirosTest < ActionDispatch::IntegrationTest
   end
 
   test "gestão filtra parceiros por status; anônimo ignora o filtro" do
-    get parceiros_path(status: "inativo")
+    get parceiros_path(status: "inativo"), as: :json
     nomes = response.parsed_body["parceiros"].map { |p| p["nome"] }
     assert_not_includes nomes, "Parceiro Antigo", "filtro é ignorado para o público"
 
     sign_in users(:diretor)
-    get parceiros_path(status: "inativo")
+    get parceiros_path(status: "inativo"), as: :json
     assert_equal [ "Parceiro Antigo" ], response.parsed_body["parceiros"].map { |p| p["nome"] }
   end
 
@@ -85,13 +85,34 @@ class ParceirosTest < ActionDispatch::IntegrationTest
     assert outro.errors[:user_id].any?
   end
 
+  # --- landing pública (HTML) ---
+
+  test "landing de parceiros é pública e renderiza o form de lead" do
+    get parceiros_path
+
+    assert_response :success
+    assert_select "h1"
+    assert_select "form[action=?]", parceria_leads_path
+    assert_select "a.btn[href=?]", "#seja-parceiro"
+  end
+
+  test "lead pelo formulário HTML redireciona com flash e cria o lead" do
+    assert_difference "ParceriaLead.count", 1 do
+      post parceria_leads_path, params: {
+        parceria_lead: { empresa: "HTML Corp", contato_email: "html@corp.example", tipo: "software" }
+      }
+    end
+    assert_redirected_to parceiros_path(anchor: "seja-parceiro")
+    assert ParceriaLead.last.novo?
+  end
+
   # --- formulário público de lead (RF-PAR-03) ---
 
   test "qualquer um (sem login) manda o formulário de parceria e a gestão é notificada" do
     assert_difference "ParceriaLead.count", 1 do
       post parceria_leads_path, params: {
         parceria_lead: { empresa: "ACME", contato_email: "contato@acme.example", tipo: "patrocinio_geral" }
-      }
+      }, as: :json
     end
     assert_response :created
 
@@ -105,7 +126,7 @@ class ParceirosTest < ActionDispatch::IntegrationTest
   test "lead com tipo inválido é 422" do
     post parceria_leads_path, params: {
       parceria_lead: { empresa: "X", contato_email: "x@x.example", tipo: "doacao" }
-    }
+    }, as: :json
     assert_response :unprocessable_entity
   end
 
@@ -113,7 +134,7 @@ class ParceirosTest < ActionDispatch::IntegrationTest
     post parceria_leads_path, params: {
       parceria_lead: { empresa: "ACME", contato_email: "c@acme.example", tipo: "software",
                        status: "convertido", parceiro_id: parceiros(:tech_corp).id }
-    }
+    }, as: :json
     assert_response :created
 
     lead = ParceriaLead.last
@@ -124,13 +145,13 @@ class ParceirosTest < ActionDispatch::IntegrationTest
   test "formulário público valida e-mail e teto de tamanho (fronteira sem login)" do
     post parceria_leads_path, params: {
       parceria_lead: { empresa: "X", contato_email: "nao-e-email", tipo: "software" }
-    }
+    }, as: :json
     assert_response :unprocessable_entity
 
     post parceria_leads_path, params: {
       parceria_lead: { empresa: "X", contato_email: "x@x.example", tipo: "software",
                        descricao: "a" * 5_001 }
-    }
+    }, as: :json
     assert_response :unprocessable_entity
   end
 
@@ -161,7 +182,7 @@ class ParceirosTest < ActionDispatch::IntegrationTest
     assert lead.reload.convertido?
     assert_equal "ACME", response.parsed_body["parceiro"]["nome"]
 
-    get parceiros_path
+    get parceiros_path, as: :json
     assert_includes response.parsed_body["parceiros"].map { |p| p["nome"] }, "ACME"
   end
 

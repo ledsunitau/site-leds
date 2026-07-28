@@ -1,0 +1,204 @@
+<%# Landing pública de Parceiros (RF-PAR) — não está no Figma. Vende a parceria
+    e leva ao formulário "seja um parceiro" (cria um lead). %>
+<% content_for :title, "Seja parceiro — LEDS" %>
+<% content_for :body_class, "parceiros-snap" %>
+
+<%
+  vantagens = [
+    { chave: "valor", accent: "var(--leds-green)", titulo: "Custo-benefício imbatível",
+      desc: "Times afiados por um custo acadêmico: entrega de alto valor sem o preço de uma consultoria. A conta fecha — e sobra." },
+    { chave: "marca", accent: "var(--leds-blue)", titulo: "Sua marca em evidência",
+      desc: "Apareça em eventos, no portfólio e nos canais da liga. Associe sua empresa à inovação e à nova geração de devs." },
+    { chave: "time", accent: "var(--leds-red)", titulo: "Acesso a talento novo",
+      desc: "Conheça de perto os melhores alunos — um funil natural de recrutamento entrando na sua empresa." },
+    { chave: "escala", accent: "var(--leds-blue)", titulo: "Entrega com método",
+      desc: "Projetos de escala com orientação e processo por trás. Não é 'trabalho de faculdade' — é entrega de verdade." },
+    { chave: "tech", accent: "var(--leds-green)", titulo: "Tecnologia que dura",
+      desc: "Stacks modernas e LTS. Seu produto nasce sustentável e barato de evoluir — menos dívida técnica pra você." },
+    { chave: "comunidade", accent: "var(--leds-red)", titulo: "Reputação que não se compra",
+      desc: "Resolva um problema real e apoie a comunidade local. Impacto que vira marca — e história pra contar." }
+  ]
+  tipos_lead = [["Software / Projeto", "software"], ["Pesquisa", "pesquisa"], ["Evento", "evento"], ["Patrocínio geral", "patrocinio_geral"]]
+  cores = ["var(--leds-green)", "var(--leds-blue)", "var(--leds-red)"]
+%>
+
+<%= render "shared/page_bg" %>
+
+<div class="page">
+  <%= render "shared/navbar", active: "" %>
+
+  <main class="content parceiros-page">
+    <%# ---- 1. Hero (+ faixa de logos no rodapé, dentro do snap) ---- %>
+    <section class="parceiros-hero snap-section">
+      <div class="wrap parceiros-hero-inner">
+      <div class="parceiros-hero-copy">
+        <span class="eyebrow blue">// seja parceiro</span>
+        <h1 class="leds-hero">Se torne parceiro e<br><span class="grad-text">construa</span> com a LEDS.</h1>
+        <p class="leds-lead parceiros-lead">Desenvolvemos soluções para todo tipo de problema, de todo tipo de negócio — inclusive o seu.</p>
+        <div class="parceiro-cta-card">
+          <div>
+            <strong>Bora tirar sua ideia do papel?</strong>
+            <span>Conte o desafio e a liga desenvolve com você.</span>
+          </div>
+          <a class="btn btn-primary" href="#seja-parceiro">Quero ser parceiro →</a>
+        </div>
+      </div>
+
+      <div class="parceiros-stage" aria-hidden="true">
+        <span class="stage-stars"></span>
+        <span class="stage-glow"></span>
+        <span class="stage-ring"></span>
+        <span class="stage-node n1"></span>
+        <span class="stage-node n2"></span>
+        <span class="stage-node n3"></span>
+        <span class="stage-node n4"></span>
+        <svg class="parceiros-net" viewBox="0 0 220 220" fill="none" stroke-linecap="round" aria-hidden="true">
+          <g stroke="rgba(255,255,255,.16)" stroke-width="1.4">
+            <line x1="110" y1="110" x2="50" y2="52" /><line x1="110" y1="110" x2="170" y2="58" />
+            <line x1="110" y1="110" x2="52" y2="168" /><line x1="110" y1="110" x2="172" y2="160" />
+            <line x1="110" y1="110" x2="110" y2="34" />
+          </g>
+          <circle cx="110" cy="110" r="17" fill="#0d0e10" stroke="var(--leds-red)" stroke-width="3" style="filter:drop-shadow(0 0 14px rgba(248,74,84,.8))" />
+          <circle cx="50" cy="52" r="10" fill="#0d0e10" stroke="var(--leds-blue)" stroke-width="2.5" />
+          <circle cx="170" cy="58" r="10" fill="#0d0e10" stroke="var(--leds-green)" stroke-width="2.5" />
+          <circle cx="52" cy="168" r="10" fill="#0d0e10" stroke="var(--leds-green)" stroke-width="2.5" />
+          <circle cx="172" cy="160" r="10" fill="#0d0e10" stroke="var(--leds-blue)" stroke-width="2.5" />
+          <circle cx="110" cy="34" r="9" fill="#0d0e10" stroke="var(--leds-yellow)" stroke-width="2.5" />
+        </svg>
+      </div>
+      </div>
+
+      <%# faixa de logos no rodapé do hero (some sem parceiros) %>
+      <% if @parceiros.any? %>
+        <div class="parceiros-faixa">
+          <div class="faixa-track">
+            <% 2.times do %><% @parceiros.each do |p| %><%= render "parceiros/logo", parceiro: p %><% end %><% end %>
+          </div>
+        </div>
+      <% end %>
+    </section>
+
+    <%# ---- 3. Vantagens (banda de cor diferente) ---- %>
+    <section class="parceiros-vantagens snap-section">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow green">// o que a sua empresa ganha</span>
+          <div class="title-row"><h2 class="leds-h2">Vantagens de ser parceiro</h2></div>
+        </div>
+        <div class="vantagens-grid">
+          <%# cor por COLUNA (verde, azul, vermelho) — mesma ordem em todos os rows %>
+          <% vantagens.each_with_index do |v, i| %>
+            <article class="vantagem-card" style="--accent:<%= cores[i % cores.size] %>">
+              <span class="vantagem-ico"><%= render "parceiros/vantagem_icon", chave: v[:chave] %></span>
+              <h3><%= v[:titulo] %></h3>
+              <p><%= v[:desc] %></p>
+              <span class="vantagem-glow" aria-hidden="true"></span>
+            </article>
+          <% end %>
+        </div>
+      </div>
+    </section>
+
+    <%# ---- 4. Projetos com parceiros (some se vazio) ---- %>
+    <% if @acoes_parceiras.any? %>
+      <section class="wrap section parceiros-projetos snap-section">
+        <div class="section-head">
+          <span class="eyebrow red">// feito com parceiros</span>
+          <div class="title-row"><h2 class="leds-h2">O que já construímos junto</h2></div>
+        </div>
+        <div class="cards-3" style="margin-top:24px">
+          <% @acoes_parceiras.each_with_index do |a, i| %>
+            <% cor = cores[i % cores.size] %>
+            <% nomes = a.parceiros.select(&:ativo?).map(&:nome).join(", ") %>
+            <article class="action-card" style="--accent:<%= cor %>">
+              <div class="action-media" style="background-image:url('<%= card_image_url(a) %>')"></div>
+              <div class="action-body">
+                <div class="meta-row">
+                  <span class="tag outline" style="--tag-color:<%= cor %>"><%= a.detalhe_type.downcase %></span>
+                  <span class="meta-mono"><%= mes_ano(a.created_at) %></span>
+                </div>
+                <h3><%= a.titulo %></h3>
+                <p><%= truncate(a.descricao.to_s, length: 130) %></p>
+                <% if nomes.present? %><span class="projeto-parceiro">Parceiro: <strong><%= nomes %></strong></span><% end %>
+              </div>
+            </article>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+
+    <%# ---- 5. Reviews (some se vazio) ---- %>
+    <% if @depoimentos.any? %>
+      <section class="wrap section parceiros-reviews snap-section">
+        <div class="section-head">
+          <span class="eyebrow blue">// quem já é parceiro</span>
+          <div class="title-row"><h2 class="leds-h2">Na palavra de quem confia</h2></div>
+        </div>
+        <p class="reviews-intro">Empresas que trocaram uma ideia por um resultado — e ficaram.</p>
+        <div class="reviews-grid">
+          <% @depoimentos.each_with_index do |p, i| %>
+            <% cor = cores[i % cores.size] %>
+            <figure class="review-bubble" style="--accent:<%= cor %>">
+              <span class="review-quote" aria-hidden="true">”</span>
+              <blockquote><%= p.depoimento %></blockquote>
+              <figcaption>
+                <span class="review-avatar"><%= iniciais(p.depoimento_autor.presence || p.nome) %></span>
+                <span class="review-quem">
+                  <% if p.depoimento_autor.present? %><strong><%= p.depoimento_autor %></strong><% end %>
+                  <span class="review-empresa"><%= p.nome %></span>
+                </span>
+              </figcaption>
+            </figure>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+
+    <%# ---- 6. Formulário "seja um parceiro" ---- %>
+    <section class="wrap section parceiros-form-sec snap-section" id="seja-parceiro">
+      <div class="parceiros-form-panel">
+        <span class="cta-blob red"></span>
+        <span class="cta-blob blue"></span>
+        <div class="parceiros-form-inner">
+          <div class="parceiros-form-copy">
+            <div class="cta-dots">
+              <span style="background:var(--leds-red)"></span>
+              <span style="background:var(--leds-green)"></span>
+              <span style="background:var(--leds-blue)"></span>
+            </div>
+            <h2 class="leds-h2" style="font-size:34px">Vamos ser parceiros?</h2>
+            <p class="leds-body">Conta pra gente sobre a sua empresa e o que você tem em mente. A liga entra em contato pra desenhar a parceria.</p>
+          </div>
+
+          <%= form_with model: @lead, url: parceria_leads_path, class: "parceiros-form" do |f| %>
+            <label class="auth-field">
+              <span>Empresa</span>
+              <%= f.text_field :empresa, required: true, placeholder: "Nome da sua empresa" %>
+            </label>
+            <div class="parceiros-form-row">
+              <label class="auth-field">
+                <span>Seu nome</span>
+                <%= f.text_field :contato_nome, placeholder: "Quem fala com a gente" %>
+              </label>
+              <label class="auth-field">
+                <span>E-mail</span>
+                <%= f.email_field :contato_email, required: true, placeholder: "voce@empresa.com" %>
+              </label>
+            </div>
+            <label class="auth-field">
+              <span>Tipo de parceria</span>
+              <%= f.select :tipo, tipos_lead, {}, class: "parceiros-select" %>
+            </label>
+            <label class="auth-field">
+              <span>Conta um pouco <em class="opcional">(opcional)</em></span>
+              <%= f.text_area :descricao, rows: 4, placeholder: "O desafio, o que imagina, prazos…" %>
+            </label>
+            <%= f.submit "Enviar interesse →", class: "btn btn-primary" %>
+          <% end %>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <%= render "shared/footer" %>
+</div>

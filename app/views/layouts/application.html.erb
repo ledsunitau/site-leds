@@ -23,7 +23,7 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body data-controller="drawer">
+  <body class="<%= content_for(:body_class) %>" data-controller="drawer">
     <%= render "shared/flash" %>
     <%= yield %>
     <% if user_signed_in? %>

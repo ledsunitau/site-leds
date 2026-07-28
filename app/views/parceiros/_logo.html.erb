@@ -1,0 +1,6 @@
+<%# Logo do parceiro na faixa; sem logo, um chip com o nome. Local `parceiro`. %>
+<% if parceiro.logo.attached? %>
+  <span class="faixa-item"><img src="<%= FotoUrl.para(parceiro.logo) %>" alt="<%= parceiro.nome %>" class="faixa-logo"></span>
+<% else %>
+  <span class="faixa-item"><span class="logo-chip"><%= parceiro.nome %></span></span>
+<% end %>
