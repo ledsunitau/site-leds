@@ -39,6 +39,13 @@ gem "thruster", require: false
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem "image_processing", "~> 2.0"
+# Backend vips do image_processing (libvips vem no Dockerfile). O image_processing
+# 2.0 exige a gem explícita, e o activestorage 8.1.3.1 resolve o transformer no boot.
+# require: false — o Bundler.require NÃO a pré-carrega: onde falta o libvips (ex.: o
+# runner do CI, que não roda no Docker) o Active Storage cai no rescue com um aviso,
+# em vez de estourar no boot. Onde o libvips existe (container/produção) ela carrega
+# normalmente quando o transformer é montado.
+gem "ruby-vips", "~> 2.2", require: false
 
 # Backend S3-compatível do Active Storage em produção — Cloudflare R2 (RNF-13,
 # feature/deploy-producao). Só carregado quando o serviço :r2 é usado.
