@@ -16,7 +16,7 @@ class LojaCheckoutTest < ActionDispatch::IntegrationTest
 
     stub_mp(criar: { id: "pref-1", init_point: "https://mp/pay/1" }) do
       assert_difference "Pedido.count", 1 do
-        post checkout_path
+        post checkout_path, as: :json
       end
     end
     assert_response :created
@@ -29,17 +29,18 @@ class LojaCheckoutTest < ActionDispatch::IntegrationTest
   test "checkout com carrinho vazio é 422" do
     sign_in users(:membro_user)
     stub_mp do
-      post checkout_path
+      post checkout_path, as: :json
     end
     assert_response :unprocessable_entity
   end
 
   test "gateway indisponível: 503, mas o pedido fica (retomável em /pedidos/:id/pagar)" do
     sign_in users(:ana)
+    Setting.modo_pagamento = "mercado_pago" # sem isso o padrão "direto" nem chama o gateway
     # sem stub e sem credenciais reais → ErroGateway
     ENV["MERCADO_PAGO_ACCESS_TOKEN"], antigo = nil, ENV["MERCADO_PAGO_ACCESS_TOKEN"]
     assert_difference "Pedido.count", 1 do
-      post checkout_path
+      post checkout_path, as: :json
     end
     assert_response :service_unavailable
     assert Pedido.last.aguardando_pagamento?
@@ -47,12 +48,71 @@ class LojaCheckoutTest < ActionDispatch::IntegrationTest
     ENV["MERCADO_PAGO_ACCESS_TOKEN"] = antigo
   end
 
+  test "modo direto (padrão): registra intenção de compra e avisa a gestão, sem Mercado Pago" do
+    sign_in users(:ana)
+    # padrão é "direto": nem token de MP, e o gateway não é chamado. Resposta com
+    # modo "direto" e sem pagamento_url prova que o fluxo não passou pelo gateway.
+    assert_difference "Pedido.count", 1 do
+      post checkout_path, params: { contato: "(12) 99999-0000" }, as: :json
+    end
+    assert_response :created
+
+    body = response.parsed_body
+    assert_equal "direto", body["modo"]
+    assert_nil body["pagamento_url"]
+
+    pedido = Pedido.last
+    assert pedido.aguardando_pagamento?
+    assert_equal "(12) 99999-0000", pedido.contato
+    assert_empty users(:ana).carrinho.reload.itens
+    assert users(:diretor).notifications.joins(:event)
+                          .where(noticed_events: { type: "IntencaoCompraNotifier" }).exists?,
+           "a gestão é avisada da intenção de compra"
+  end
+
+  test "produto de variante única fecha a compra sem precisar escolher variação" do
+    produto = Produto.create!(nome: "Boné LEDS", preco: 40, modo_venda: "estoque",
+                              status: "ativo", criador: members(:membro_comum))
+    unica = produto.variantes.create!(nome: "Único", estoque: 5)
+
+    sign_in users(:membro_user) # carrinho vazio; adiciona sem variante
+    post carrinho_itens_path, params: { item: { produto_id: produto.id } }, as: :json
+    assert_response :created
+
+    assert_difference "Pedido.count", 1 do
+      post checkout_path, params: { contato: "x" }, as: :json
+    end
+    assert_response :created
+    assert_equal 4, unica.reload.estoque, "baixou o estoque da variante única"
+  end
+
+  test "loja desativada bloqueia o checkout e preserva o carrinho (sem pedido)" do
+    Setting.loja_ativa = false
+    sign_in users(:ana) # tem itens no carrinho
+
+    assert_no_difference "Pedido.count" do
+      post checkout_path, as: :json
+    end
+    assert_response :service_unavailable
+    assert users(:ana).carrinho.reload.itens.any?, "carrinho intacto — cliente não perde nada"
+  end
+
+  test "desligar a loja DURANTE o checkout reverte tudo (corrida): sem pedido, carrinho intacto" do
+    # simula a corrida: o guard mora dentro da transação que cria o pedido/baixa
+    # estoque, então um desligamento no meio reverte sem deixar pedido órfão.
+    Setting.loja_ativa = false
+    assert_no_difference [ "Pedido.count", "ItemPedido.count" ] do
+      assert_raises(Checkout::Indisponivel) { Checkout.do_carrinho(users(:ana)) }
+    end
+    assert users(:ana).carrinho.reload.itens.any?, "carrinho preservado; nenhum dinheiro se moveu"
+  end
+
   # --- webhook do gateway (RF-LOJ-12) ---
 
   test "webhook aprovado marca o pedido pago e notifica o comprador" do
     sign_in users(:ana)
     pedido = nil
-    stub_mp(criar: { id: "p", init_point: "u" }) { post checkout_path }
+    stub_mp(criar: { id: "p", init_point: "u" }) { post checkout_path, as: :json }
     pedido = Pedido.last
 
     perform_enqueued_jobs do
@@ -70,7 +130,7 @@ class LojaCheckoutTest < ActionDispatch::IntegrationTest
 
   test "webhook recusado não paga o pedido" do
     sign_in users(:ana)
-    stub_mp(criar: { id: "p", init_point: "u" }) { post checkout_path }
+    stub_mp(criar: { id: "p", init_point: "u" }) { post checkout_path, as: :json }
     pedido = Pedido.last
 
     stub_mp(consultar: { "status" => "rejected", "external_reference" => pedido.id.to_s, "transaction_amount" => 99.8 }) do
@@ -82,7 +142,7 @@ class LojaCheckoutTest < ActionDispatch::IntegrationTest
 
   test "webhook duplicado não repaga nem duplica pagamento" do
     sign_in users(:ana)
-    stub_mp(criar: { id: "p", init_point: "u" }) { post checkout_path }
+    stub_mp(criar: { id: "p", init_point: "u" }) { post checkout_path, as: :json }
     pedido = Pedido.last
 
     stub_mp(consultar: { "status" => "approved", "external_reference" => pedido.id.to_s, "transaction_amount" => 99.8 }) do
@@ -100,7 +160,7 @@ class LojaCheckoutTest < ActionDispatch::IntegrationTest
 
   test "webhook aprovado com valor MENOR que o total não paga (subpagamento)" do
     sign_in users(:ana)
-    stub_mp(criar: { id: "p", init_point: "u" }) { post checkout_path }
+    stub_mp(criar: { id: "p", init_point: "u" }) { post checkout_path, as: :json }
     pedido = Pedido.last # total 99.80
 
     stub_mp(consultar: { "status" => "approved", "external_reference" => pedido.id.to_s, "transaction_amount" => 1.0 }) do
@@ -112,7 +172,7 @@ class LojaCheckoutTest < ActionDispatch::IntegrationTest
 
   test "webhook para pedido cancelado não dá 500 (sem loop de retry no MP)" do
     sign_in users(:ana)
-    stub_mp(criar: { id: "p", init_point: "u" }) { post checkout_path }
+    stub_mp(criar: { id: "p", init_point: "u" }) { post checkout_path, as: :json }
     pedido = Pedido.last
     pedido.cancelar! # cliente desistiu; mas o pagamento é aprovado depois
 
@@ -134,7 +194,7 @@ class LojaCheckoutTest < ActionDispatch::IntegrationTest
 
   test "com secret configurado, webhook com assinatura HMAC válida processa" do
     sign_in users(:ana)
-    stub_mp(criar: { id: "p", init_point: "u" }) { post checkout_path }
+    stub_mp(criar: { id: "p", init_point: "u" }) { post checkout_path, as: :json }
     pedido = Pedido.last
 
     com_webhook_secret("s3cr3t") do
@@ -238,8 +298,11 @@ class LojaCheckoutTest < ActionDispatch::IntegrationTest
     ENV["MERCADO_PAGO_WEBHOOK_SECRET"] = antigo
   end
 
-  # Stub do módulo MercadoPago (module_function). Restaura no ensure.
+  # Stub do módulo MercadoPago (module_function). Restaura no ensure. Também põe
+  # a loja em modo mercado_pago: o padrão agora é "direto" (intenção de compra),
+  # e este helper é usado justamente pelos testes do fluxo de gateway.
   def stub_mp(criar: nil, consultar: nil)
+    Setting.modo_pagamento = "mercado_pago"
     orig_criar = MercadoPago.method(:criar_preferencia)
     orig_consultar = MercadoPago.method(:consultar_pagamento)
     MercadoPago.define_singleton_method(:criar_preferencia) { |_pedido| criar } if criar

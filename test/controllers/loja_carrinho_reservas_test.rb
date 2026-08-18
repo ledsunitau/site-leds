@@ -14,7 +14,7 @@ class LojaCarrinhoReservasTest < ActionDispatch::IntegrationTest
   test "ver o carrinho cria o de quem ainda não tem, e mostra os itens" do
     sign_in users(:membro_user) # sem carrinho fixture
     assert_difference "Carrinho.count", 1 do
-      get carrinho_path
+      get carrinho_path, as: :json
     end
     assert_response :success
     assert_equal 0, response.parsed_body["total_itens"]

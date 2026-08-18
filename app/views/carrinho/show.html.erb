@@ -1,0 +1,68 @@
+<%# Carrinho (#LOJA, print 8). Itens + total + finalizar. Finalizar cria a
+    "intenção de compra" (modo direto) ou vai ao gateway (mercado_pago). %>
+<% content_for :title, "Carrinho — LEDS" %>
+
+<%= render "shared/page_bg" %>
+
+<div class="page" data-controller="loja">
+  <%= render "shared/navbar", active: "LOJA" %>
+
+  <main class="content wrap carrinho-page">
+    <h1 class="leds-h1 loja-titulo">Seu carrinho</h1>
+    <nav class="loja-breadcrumb"><%= link_to "← Continuar comprando", produtos_path %></nav>
+
+    <% if @itens.any? %>
+      <div class="carrinho-layout">
+        <div class="carrinho-itens">
+          <% @itens.each do |item| %>
+            <article class="carrinho-item">
+              <img src="<%= produto_imagem_url(item.produto) %>" alt="<%= item.produto.nome %>">
+              <div class="carrinho-item-info">
+                <h3><%= link_to item.produto.nome, produto_path(item.produto) %></h3>
+                <% if item.variante %><span class="carrinho-item-var">Tamanho: <%= item.variante.nome %></span><% end %>
+                <span class="carrinho-item-preco"><%= preco_br(item.produto.preco_atual) %></span>
+              </div>
+              <div class="carrinho-item-qtd">
+                <span>Qtd: <strong><%= item.quantidade %></strong></span>
+                <button type="button" class="carrinho-remover" data-action="loja#remover"
+                        data-loja-item-param="<%= item.id %>">Remover</button>
+              </div>
+              <div class="carrinho-item-subtotal"><%= preco_br(item.produto.preco_atual * item.quantidade) %></div>
+            </article>
+          <% end %>
+        </div>
+
+        <aside class="carrinho-resumo">
+          <h2 class="leds-h2">Resumo</h2>
+          <div class="carrinho-total">
+            <span>Total</span>
+            <strong><%= preco_br(@total) %></strong>
+          </div>
+
+          <% if @modo_pagamento == "direto" %>
+            <p class="carrinho-nota">Sem pagamento online por enquanto: ao finalizar, a gestão entra em contato para combinar o pagamento e a retirada no campus.</p>
+          <% end %>
+
+          <%= form_with url: checkout_path, method: :post, class: "carrinho-form" do %>
+            <label class="auth-field">
+              <span>Seu contato (WhatsApp/telefone)</span>
+              <%= text_field_tag :contato, nil, placeholder: "(12) 90000-0000",
+                    class: "auth-field-input", required: (@modo_pagamento == "direto") %>
+            </label>
+            <%= submit_tag "Finalizar compra", class: "btn btn-primary carrinho-finalizar" %>
+          <% end %>
+
+          <%= link_to "← Continuar comprando", produtos_path, class: "btn btn-secondary carrinho-continuar" %>
+        </aside>
+      </div>
+    <% else %>
+      <div class="empty-state carrinho-vazio">
+        <p>Seu carrinho está vazio.</p>
+        <%= link_to "Ir às compras →", produtos_path, class: "btn btn-secondary" %>
+      </div>
+    <% end %>
+  </main>
+
+  <%= render "shared/cart_fab" %>
+  <%= render "shared/footer" %>
+</div>

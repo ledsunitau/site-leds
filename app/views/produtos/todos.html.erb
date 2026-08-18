@@ -1,0 +1,102 @@
+<%# Loja — catálogo expandido (#LOJA2). Sidebar de categorias + grade de todos os
+    produtos ativos. Filtro por categoria e paginação são no cliente (Stimulus loja). %>
+<% content_for :title, "Loja — produtos — LEDS" %>
+
+<% teto = (@produtos.map(&:preco_atual).max || 100).ceil %>
+
+<%= render "shared/page_bg" %>
+
+<div class="page" data-controller="loja" data-loja-por-pagina-value="8" data-loja-teto-value="<%= teto %>">
+  <%= render "shared/navbar", active: "LOJA" %>
+
+  <main class="content wrap loja-todos-page">
+    <%= render "shared/loja_gestao" %>
+
+    <nav class="loja-breadcrumb"><%= link_to "← Voltar à loja", produtos_path %></nav>
+
+    <div class="loja-todos-head">
+      <h2 class="leds-h2" style="margin:0">Nossos produtos</h2>
+      <label class="loja-busca-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" /><line x1="16.5" y1="16.5" x2="21" y2="21" />
+        </svg>
+        <input type="search" class="loja-busca" placeholder="Pesquisar por nome…"
+               data-loja-target="busca" data-action="input->loja#buscar" aria-label="Pesquisar produto por nome">
+      </label>
+    </div>
+
+    <div class="loja-todos-layout">
+      <%# ---- Sidebar de filtros ---- %>
+      <aside class="loja-filtros">
+        <div class="loja-filtros-head">
+          <span>Filtros</span>
+          <button type="button" class="loja-clear" data-action="loja#limparFiltro">Limpar</button>
+        </div>
+        <span class="loja-filtros-titulo">Categorias</span>
+        <ul class="loja-cat-lista">
+          <li>
+            <button type="button" class="categoria-item active" data-cat=""
+                    data-loja-target="categoria" data-action="loja#filtrarCategoria">
+              Todas <span class="cat-count"><%= @produtos.size %></span>
+            </button>
+          </li>
+          <% @categorias.each do |c| %>
+            <% qtd = @contagem_categoria[c.id].to_i %>
+            <% next if qtd.zero? %>
+            <li>
+              <button type="button" class="categoria-item" data-cat="<%= c.id %>"
+                      data-loja-target="categoria" data-action="loja#filtrarCategoria">
+                <%= c.nome %> <span class="cat-count"><%= qtd %></span>
+              </button>
+            </li>
+          <% end %>
+        </ul>
+
+        <%# ---- Preço ---- %>
+        <div class="loja-filtro-bloco">
+          <span class="loja-filtros-titulo">Preço</span>
+          <div class="preco-slider" data-loja-target="precoSlider">
+            <span class="preco-trilha"></span>
+            <span class="preco-fill" data-loja-target="precoFill"></span>
+            <input type="range" min="0" max="<%= teto %>" value="0" step="1"
+                   class="preco-range" data-loja-target="rangeMin" data-action="input->loja#faixaPrecoSlider"
+                   aria-label="Preço mínimo">
+            <input type="range" min="0" max="<%= teto %>" value="<%= teto %>" step="1"
+                   class="preco-range" data-loja-target="rangeMax" data-action="input->loja#faixaPrecoSlider"
+                   aria-label="Preço máximo">
+          </div>
+          <div class="preco-inputs">
+            <label>R$<input type="number" min="0" max="<%= teto %>" value="0" inputmode="numeric"
+                   data-loja-target="precoMin" data-action="change->loja#faixaPrecoNumero" aria-label="Preço mínimo"></label>
+            <span class="preco-tra">–</span>
+            <label>R$<input type="number" min="0" max="<%= teto %>" value="<%= teto %>" inputmode="numeric"
+                   data-loja-target="precoMax" data-action="change->loja#faixaPrecoNumero" aria-label="Preço máximo"></label>
+          </div>
+        </div>
+
+        <%# ---- Promoções ---- %>
+        <div class="loja-filtro-bloco">
+          <label class="loja-promo-toggle">
+            <input type="checkbox" data-loja-target="promo" data-action="change->loja#filtrarPromo">
+            <span>Somente promoções</span>
+          </label>
+        </div>
+      </aside>
+
+      <%# ---- Grade + paginação ---- %>
+      <div class="loja-todos-main">
+        <div class="cards-2 loja-grid" data-loja-target="grade">
+          <% @produtos.each_with_index do |p, i| %>
+            <%= render "produtos/card", produto: p, accent: loja_accent(i) %>
+          <% end %>
+        </div>
+
+        <p class="empty-state" data-loja-target="vazio" hidden>Nenhum produto encontrado.</p>
+        <div class="loja-paginacao" data-loja-target="paginacao"></div>
+      </div>
+    </div>
+  </main>
+
+  <%= render "shared/cart_fab" %>
+  <%= render "shared/footer" %>
+</div>

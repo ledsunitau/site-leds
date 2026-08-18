@@ -3,6 +3,8 @@
 # fica auditado (RF-LOJ-09/RN-13, via PaperTrail no model).
 class ProdutosController < ApplicationController
   before_action :authenticate_user!
+  # loja desligada pela gestão → comprador vê "indisponível"; quem opera segue.
+  before_action :loja_disponivel!, only: %i[index show todos]
 
   def index
     authorize Produto
@@ -18,14 +20,41 @@ class ProdutosController < ApplicationController
     end
     produtos = produtos.where(modo_venda: filtro(:modo_venda)) if filtro(:modo_venda)
 
-    render json: { produtos: paginar(produtos).map(&:card_json) }
+    respond_to do |format|
+      format.json { render json: { produtos: paginar(produtos).map(&:card_json) } }
+      format.html do
+        # #LOJA: 3 banners de destaque + 6 mais vendidos (sem filtro)
+        @destaques = Produto.destaques.ativos.includes(:variantes, imagem_attachment: :blob).limit(3)
+        @mais_vendidos = Produto.mais_vendidos(6)
+      end
+    end
+  end
+
+  # #LOJA2: catálogo expandido — todos os ativos + categorias para o filtro
+  # lateral. Filtro/paginação são no cliente (Stimulus loja), como em Ações.
+  def todos
+    authorize Produto, :index?
+
+    @produtos = Produto.ativos.includes(:categoria, :variantes, imagem_attachment: :blob).order(:nome)
+    @categorias = Categoria.order(:nome)
+    # contagem por categoria numa query só (evita N COUNTs na sidebar)
+    @contagem_categoria = Produto.ativos.group(:categoria_id).count
   end
 
   def show
     produto = Produto.includes(:variantes, imagem_attachment: :blob).find(params[:id])
     authorize produto
 
-    render json: produto_json(produto)
+    respond_to do |format|
+      format.json { render json: produto_json(produto) }
+      format.html do
+        # #LOJA3/#LOJA4: detalhe + avaliações (cliente pagina)
+        @produto = produto
+        @avaliacoes = produto.avaliacoes.recentes.includes(:autor)
+        @pode_avaliar = produto.comprado_por?(current_user)
+        @ja_avaliou = produto.avaliacoes.exists?(user_id: current_user.id)
+      end
+    end
   end
 
   def create
@@ -56,6 +85,18 @@ class ProdutosController < ApplicationController
   end
 
   private
+
+  # Loja desligada (Setting): o comprador vê "indisponível"; quem cadastra/edita
+  # (membro da liga) segue enxergando para operar. Barra só a navegação; carrinho
+  # e checkout têm o próprio guard.
+  def loja_disponivel!
+    return if Setting.loja_ativa? || policy(Produto).create?
+
+    respond_to do |format|
+      format.json { render json: { errors: [ "Loja indisponível no momento." ] }, status: :service_unavailable }
+      format.html { render "produtos/indisponivel", status: :service_unavailable }
+    end
+  end
 
   # require+permit, não expect: expect levanta quando NENHUM escalar esperado
   # veio, e um PATCH que só troca as variantes é legítimo (400 seria mentira).

@@ -1,0 +1,187 @@
+<%# Loja — detalhe do produto (#LOJA3/#LOJA4). Galeria + compra + descrição +
+    avaliações. Tamanhos são as variantes do produto (só aparecem se houver). %>
+<% content_for :title, "#{@produto.nome} — Loja LEDS" %>
+
+<%= render "shared/page_bg" %>
+
+<div class="page" data-controller="loja" data-loja-produto-id-value="<%= @produto.id %>"
+     data-loja-nome-value="<%= @produto.nome %>"
+     data-loja-variante-value="<%= @produto.variantes.first.id if @produto.variantes.one? %>">
+  <%= render "shared/navbar", active: "LOJA" %>
+
+  <main class="content wrap produto-detalhe">
+    <%= render "shared/loja_gestao" %>
+
+    <nav class="loja-breadcrumb">
+      <%= link_to "Nossos Produtos", todos_produtos_path %> ›
+      <span><%= @produto.nome %></span>
+    </nav>
+
+    <% urls = @produto.fotos.any? ? @produto.fotos.map { |f| foto_url(f) } : [ produto_imagem_url(@produto) ] %>
+    <div class="produto-topo">
+      <%# ---- Galeria: até 3 miniaturas + foto principal; "+N" e clique abrem o
+          lightbox (carrossel com zoom) ---- %>
+      <div class="produto-galeria" data-controller="galeria" data-galeria-fotos-value="<%= urls.to_json %>">
+        <div class="galeria-thumbs">
+          <% urls.first(3).each_with_index do |url, i| %>
+            <% mais = (i == 2 && urls.size > 3) %>
+            <button type="button" class="galeria-thumb <%= 'ativa' if i.zero? %> <%= 'tem-mais' if mais %>"
+                    data-index="<%= i %>"
+                    data-action="galeria#<%= mais ? 'abrir' : 'trocar' %>"
+                    aria-label="<%= mais ? 'Ver todas as fotos' : "Foto #{i + 1}" %>">
+              <img src="<%= url %>" alt="" loading="lazy">
+              <% if mais %><span class="galeria-mais">+<%= urls.size - 3 %></span><% end %>
+            </button>
+          <% end %>
+        </div>
+
+        <div class="galeria-main">
+          <button type="button" class="galeria-abrir" data-action="galeria#abrir" aria-label="Ampliar foto">
+            <img src="<%= urls.first %>" alt="<%= @produto.nome %>" class="produto-img-main" data-galeria-target="main">
+            <span class="galeria-lupa" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="7" /><line x1="16.5" y1="16.5" x2="21" y2="21" />
+                <line x1="11" y1="8" x2="11" y2="14" /><line x1="8" y1="11" x2="14" y2="11" />
+              </svg>
+            </span>
+          </button>
+        </div>
+
+        <%# Lightbox / carrossel com zoom %>
+        <div class="galeria-lightbox" data-galeria-target="lightbox" data-action="click->galeria#fecharFora" hidden>
+          <button type="button" class="lb-fechar" data-action="galeria#fechar" aria-label="Fechar">&times;</button>
+          <% if urls.size > 1 %>
+            <button type="button" class="lb-nav lb-prev" data-action="galeria#anterior" aria-label="Anterior">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+            </button>
+            <button type="button" class="lb-nav lb-next" data-action="galeria#proximo" aria-label="Próxima">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+            </button>
+          <% end %>
+          <img src="<%= urls.first %>" alt="<%= @produto.nome %>" class="lb-img"
+               data-galeria-target="lightboxImg" data-action="galeria#alternarZoom">
+          <span class="lb-contador" data-galeria-target="contador">1 / <%= urls.size %></span>
+        </div>
+      </div>
+
+      <%# ---- Info + compra (ocupa a altura toda da foto) ---- %>
+      <div class="produto-info">
+        <h1 class="produto-nome"><%= @produto.nome %></h1>
+
+        <div class="produto-preco-linha">
+          <% if @produto.em_promocao? %>
+            <span class="preco-antigo"><%= preco_br(@produto.preco) %></span>
+            <span class="preco-promo"><%= preco_br(@produto.preco_atual) %></span>
+          <% else %>
+            <span class="preco"><%= preco_br(@produto.preco_atual) %></span>
+          <% end %>
+          <span class="produto-nota">
+            <%= estrelas(@produto.nota_media) %>
+            <a href="#avaliacoes">(<%= @produto.avaliacoes_count %> avaliações)</a>
+          </span>
+        </div>
+
+        <hr class="produto-divisor">
+
+        <% if @produto.descricao.present? %>
+          <p class="produto-lead"><%= truncate(@produto.descricao, length: 220) %></p>
+        <% end %>
+
+        <% if @produto.variantes.many? %>
+          <div class="produto-tamanhos">
+            <span class="produto-tamanhos-titulo">Tamanhos:</span>
+            <div class="tamanho-chips">
+              <% @produto.variantes.each do |v| %>
+                <button type="button" class="tamanho-chip <%= 'esgotado' if v.estoque.to_i.zero? %>"
+                        data-variante="<%= v.id %>" data-loja-target="tamanho"
+                        data-action="loja#escolherTamanho"
+                        <%= "disabled" if v.estoque.to_i.zero? %>><%= v.nome %></button>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+        <%# ---- Bloco de compra: cola no rodapé da foto ---- %>
+        <div class="produto-acoes">
+          <div class="produto-entrega">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 3h11v13H3zM14 8h4l3 3v5h-7z" /><circle cx="7.5" cy="18.5" r="1.5" /><circle cx="17.5" cy="18.5" r="1.5" />
+            </svg>
+            Retirada no campus da Unitau
+          </div>
+
+          <div class="produto-compra">
+            <div class="qty-stepper">
+              <button type="button" aria-label="Menos" data-action="loja#menos">−</button>
+              <input type="text" value="1" inputmode="numeric" data-loja-target="qtd" aria-label="Quantidade">
+              <button type="button" aria-label="Mais" data-action="loja#mais">+</button>
+            </div>
+            <button type="button" class="btn btn-primary produto-add-btn" data-action="loja#adicionarDetalhe">Adicionar ao carrinho</button>
+          </div>
+          <button type="button" class="btn btn-secondary produto-comprar" data-action="loja#comprarAgora">Comprar agora</button>
+        </div>
+      </div>
+    </div>
+
+    <%# ---- Descrição ---- %>
+    <% if @produto.descricao.present? %>
+      <section class="produto-descricao">
+        <h2 class="leds-h2">Descrição</h2>
+        <div class="produto-descricao-txt"><%= simple_format(@produto.descricao) %></div>
+      </section>
+    <% end %>
+
+    <%# ---- Avaliações (#LOJA4) ---- %>
+    <section class="produto-avaliacoes" id="avaliacoes" data-controller="avaliacao"
+             data-avaliacao-por-pagina-value="4">
+      <h2 class="leds-h2">Avaliações</h2>
+
+      <% if @avaliacoes.any? %>
+        <div class="avaliacoes-resumo">
+          <span class="avaliacoes-media"><%= @produto.nota_media %></span>
+          <div class="avaliacoes-resumo-info">
+            <%= estrelas(@produto.nota_media) %>
+            <span class="avaliacoes-qtd"><%= pluralize(@produto.avaliacoes_count, "avaliação", "avaliações") %></span>
+          </div>
+        </div>
+
+        <div class="avaliacoes-lista" data-avaliacao-target="lista">
+          <% @avaliacoes.each do |a| %>
+            <%= render "produtos/avaliacao", avaliacao: a %>
+          <% end %>
+        </div>
+        <div class="avaliacoes-paginacao" data-avaliacao-target="paginacao"></div>
+      <% else %>
+        <p class="empty-state">Ainda sem avaliações. Seja o primeiro a avaliar depois de comprar!</p>
+      <% end %>
+
+      <%# Form: só quem comprou e ainda não avaliou %>
+      <% if @pode_avaliar && !@ja_avaliou %>
+        <%= form_with url: produto_avaliacoes_path(@produto), method: :post, class: "avaliacao-form" do |f| %>
+          <%= f.fields_for :avaliacao do |af| %>
+            <%= af.text_area :comentario, rows: 3, required: true,
+                  placeholder: "Escreva sua avaliação", class: "auth-field-input" %>
+            <div class="avaliacao-form-baixo">
+              <div class="star-picker" data-avaliacao-target="picker">
+                <span>Sua avaliação</span>
+                <% (1..5).each do |n| %>
+                  <button type="button" class="star-btn" data-nota="<%= n %>"
+                          data-action="avaliacao#escolher" aria-label="<%= n %> estrelas">★</button>
+                <% end %>
+              </div>
+              <%= af.hidden_field :nota, data: { avaliacao_target: "nota" } %>
+              <%= f.submit "Post Review", class: "btn btn-primary" %>
+            </div>
+          <% end %>
+        <% end %>
+      <% elsif @ja_avaliou %>
+        <p class="avaliacao-aviso">Você já avaliou este produto. Valeu! ⭐</p>
+      <% else %>
+        <p class="avaliacao-aviso">Compre este produto para poder avaliá-lo.</p>
+      <% end %>
+    </section>
+  </main>
+
+  <%= render "shared/cart_fab" %>
+  <%= render "shared/footer" %>
+</div>

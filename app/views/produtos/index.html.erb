@@ -1,0 +1,51 @@
+<%# Loja — home (#LOJA). Banners de destaque + 6 mais vendidos. Tudo vem do
+    banco; o "+" adiciona ao carrinho via Stimulus (loja). %>
+<% content_for :title, "Loja — LEDS" %>
+
+<%= render "shared/page_bg" %>
+
+<div class="page" data-controller="loja">
+  <%= render "shared/navbar", active: "LOJA" %>
+
+  <main class="content wrap loja-page">
+    <%= render "shared/loja_gestao" %>
+
+    <h1 class="leds-h1 loja-titulo">Loja</h1>
+
+    <%# ---- Banners de destaque (1 grande + 2 empilhados) ---- %>
+    <% if @destaques.any? %>
+      <section class="loja-destaques">
+        <% @destaques.each_with_index do |p, i| %>
+          <%= link_to produto_path(p), class: "destaque-banner #{'destaque-grande' if i.zero?}",
+                      style: "background-image:url('#{produto_imagem_url(p)}')" do %>
+            <span class="destaque-info">
+              <strong><%= p.nome %></strong>
+              <span class="destaque-preco"><%= preco_br(p.preco_atual) %></span>
+            </span>
+          <% end %>
+        <% end %>
+      </section>
+    <% end %>
+
+    <%# ---- Mais vendidos (6, sem filtro) ---- %>
+    <section class="loja-produtos-sec">
+      <div class="section-head loja-produtos-head">
+        <h2 class="leds-h2">Nossos produtos</h2>
+        <%= link_to "Veja mais →", todos_produtos_path, class: "btn btn-secondary" %>
+      </div>
+
+      <% if @mais_vendidos.any? %>
+        <div class="cards-3 loja-grid">
+          <% @mais_vendidos.each_with_index do |p, i| %>
+            <%= render "produtos/card", produto: p, accent: loja_accent(i) %>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="empty-state">Ainda não temos produtos por aqui. Volte em breve! 🛒</p>
+      <% end %>
+    </section>
+  </main>
+
+  <%= render "shared/cart_fab" %>
+  <%= render "shared/footer" %>
+</div>

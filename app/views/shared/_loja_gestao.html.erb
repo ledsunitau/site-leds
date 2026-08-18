@@ -1,0 +1,26 @@
+<%# Barra de gestão da loja: só aparece para diretoria/presidência. Liga/desliga
+    a loja e alterna o modo de pagamento (direto ↔ Mercado Pago). Enquanto não há
+    painel admin, mora no topo da própria loja. %>
+<% if user_signed_in? && current_user.gestao? %>
+  <div class="loja-gestao-bar">
+    <span class="loja-gestao-tag">Gestão</span>
+
+    <%= button_to admin_loja_config_path, method: :patch, class: "loja-gestao-toggle",
+                  params: { loja_ativa: (!Setting.loja_ativa?).to_s } do %>
+      <% if Setting.loja_ativa? %>
+        Loja <strong>ativa</strong> — desativar
+      <% else %>
+        Loja <strong>desativada</strong> — reativar
+      <% end %>
+    <% end %>
+
+    <%= form_with url: admin_loja_config_path, method: :patch, class: "loja-gestao-modo" do |f| %>
+      <label>Pagamento
+        <%= f.select :modo_pagamento,
+              [ [ "Contato direto", "direto" ], [ "Mercado Pago", "mercado_pago" ] ],
+              { selected: Setting.modo_pagamento }, class: "loja-select" %>
+      </label>
+      <%= f.submit "Trocar", class: "loja-gestao-aplicar" %>
+    <% end %>
+  </div>
+<% end %>

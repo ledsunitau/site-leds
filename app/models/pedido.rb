@@ -22,12 +22,16 @@ class Pedido < ApplicationRecord
 
   TIPOS_ENTREGA = %w[retirada envio].freeze
   STATUSES = %w[aguardando_pagamento pago em_producao enviado entregue cancelado].freeze
+  # "pago-ou-além": pedido que conta como venda concretizada (best-sellers,
+  # direito de avaliar). Exclui aguardando_pagamento e cancelado.
+  PAGOS = %w[pago em_producao enviado entregue].freeze
   enum :tipo_entrega, TIPOS_ENTREGA.index_by(&:itself), validate: true
   enum :status, STATUSES.index_by(&:itself), validate: true
   # transições só pelo fluxo (marcar_pago!/cancelar!)
   private(*STATUSES.map { |s| :"#{s}!" })
 
   validates :total, numericality: { greater_than_or_equal_to: 0 }
+  validates :contato, length: { maximum: 120 } # input do checkout (modo direto)
   validate :envio_exige_endereco
 
   scope :em_aberto, -> { aguardando_pagamento }

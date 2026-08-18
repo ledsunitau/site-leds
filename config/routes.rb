@@ -45,8 +45,12 @@ Rails.application.routes.draw do
   resources :parceria_leads, only: :create
 
   # Loja (RF-LOJ-01): catálogo. Ver exige login — padrão exclusivo da loja
-  # (RN-17); cadastrar/editar é de membro para cima (RN-13).
-  resources :produtos, only: %i[index show create update]
+  # (RN-17); cadastrar/editar é de membro para cima (RN-13). `todos` é o catálogo
+  # expandido (#LOJA2); avaliações (#LOJA4) são aninhadas ao produto.
+  resources :produtos, only: %i[index show create update] do
+    collection { get :todos }
+    resources :avaliacoes, only: :create
+  end
 
   # Carrinho (RF-LOJ-02) e reservas sob demanda (RF-LOJ-05/06) — do próprio
   # usuário logado. Rotas de item explícitas: "itens" singulariza mal
@@ -156,6 +160,8 @@ Rails.application.routes.draw do
         post :entregar
       end
     end
+    # Liga/desliga a loja e alterna o modo de pagamento (direto ↔ mercado_pago)
+    resource :loja_config, only: :update
   end
   mount MissionControl::Jobs::Engine, at: "/admin/jobs"
 
