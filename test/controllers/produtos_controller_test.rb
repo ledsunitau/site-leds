@@ -14,7 +14,7 @@ class ProdutosControllerTest < ActionDispatch::IntegrationTest
 
   test "qualquer usuário logado vê a vitrine (só ativos)" do
     sign_in users(:ana) # comunidade: compra, não cadastra
-    get produtos_path
+    get produtos_path, as: :json
 
     assert_response :success
     nomes = response.parsed_body["produtos"].map { |p| p["nome"] }
@@ -24,24 +24,24 @@ class ProdutosControllerTest < ActionDispatch::IntegrationTest
 
   test "quem cadastra filtra por status; o cliente não" do
     sign_in users(:ana)
-    get produtos_path(status: "indisponivel")
+    get produtos_path(status: "indisponivel"), as: :json
     nomes = response.parsed_body["produtos"].map { |p| p["nome"] }
     assert_not_includes nomes, "Caneca antiga", "filtro ignorado para quem só compra"
 
     sign_in users(:membro_user)
-    get produtos_path(status: "indisponivel")
+    get produtos_path(status: "indisponivel"), as: :json
     assert_equal [ "Caneca antiga" ], response.parsed_body["produtos"].map { |p| p["nome"] }
   end
 
   test "filtro por modo de venda" do
     sign_in users(:ana)
-    get produtos_path(modo_venda: "sob_demanda")
+    get produtos_path(modo_venda: "sob_demanda"), as: :json
     assert_equal [ "Moletom LEDS" ], response.parsed_body["produtos"].map { |p| p["nome"] }
   end
 
   test "show traz variantes e o preço vigente" do
     sign_in users(:ana)
-    get produto_path(produtos(:camiseta))
+    get produto_path(produtos(:camiseta)), as: :json
 
     body = response.parsed_body
     # Contrato de dinheiro: numeric(10,2) vira BigDecimal e o Rails serializa
@@ -61,18 +61,18 @@ class ProdutosControllerTest < ActionDispatch::IntegrationTest
       post produtos_path, params: { produto: { nome: "Pirata", preco: 1 } }
       assert_response :forbidden, "#{quem} não cadastra produto (matriz)"
 
-      get produtos_path
+      get produtos_path, as: :json
       assert_response :success, "#{quem} compra, então vê a vitrine"
     end
   end
 
   test "produto indisponível também não é servido por id (index não pode ser furado)" do
     sign_in users(:ana)
-    get produto_path(produtos(:caneca_antiga))
+    get produto_path(produtos(:caneca_antiga)), as: :json
     assert_response :forbidden
 
     sign_in users(:membro_user)
-    get produto_path(produtos(:caneca_antiga))
+    get produto_path(produtos(:caneca_antiga)), as: :json
     assert_response :success, "quem cadastra segue enxergando para operar"
   end
 
@@ -186,7 +186,7 @@ class ProdutosControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     sign_in users(:ana)
-    get produtos_path
+    get produtos_path, as: :json
     assert_not_includes response.parsed_body["produtos"].map { |p| p["nome"] }, "Camiseta LEDS"
   end
 end

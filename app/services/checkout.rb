@@ -22,9 +22,19 @@ module Checkout
     atributos = atributos_entrega(user, carrinho, entrega)
 
     Pedido.transaction do
+      # A gestão pode ter desligado a loja DURANTE o checkout. Recheca dentro da
+      # transação que cria o pedido e baixa estoque: se desligou, tudo reverte
+      # (sem pedido, sem baixa, carrinho intacto) e o cliente vê "indisponível".
+      # Nada de dinheiro se move aqui — pagamento é etapa separada.
+      raise Indisponivel, "Loja indisponível no momento." unless Setting.loja_ativa?
+
       pedido = Pedido.create!(comprador: user, status: "aguardando_pagamento", **atributos)
-      total = carrinho.itens.includes(:produto, :variante).sum do |item|
-        adicionar_item!(pedido, item.produto, item.variante, item.quantidade, baixar_estoque: true)
+      total = carrinho.itens.includes(:variante, produto: :variantes).sum do |item|
+        # sem variação escolhida mas com UMA só variante: usa ela (o "Único" dos
+        # produtos simples). Com várias, segue exigindo a escolha (baixar_estoque!).
+        variante = item.variante
+        variante ||= item.produto.variantes.first if item.produto.variantes.one?
+        adicionar_item!(pedido, item.produto, variante, item.quantidade, baixar_estoque: true)
       end
       pedido.update!(total: total + (pedido.frete_valor || 0))
       carrinho.itens.destroy_all

@@ -32,4 +32,6 @@ ActiveSupport::Inflector.inflections(:en) do |inflect|
   inflect.irregular "contribuicao", "contribuicoes"
   inflect.irregular "apresentacao", "apresentacoes"
   inflect.irregular "autor", "autores"
+  inflect.irregular "avaliacao", "avaliacoes"
+  inflect.irregular "categoria", "categorias" # senão /([ti])a$/ o deixa igual
 end

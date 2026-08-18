@@ -1,0 +1,11 @@
+<%# Botão flutuante do carrinho (#LOJA, print 8): círculo vermelho fixo no canto
+    inferior direito. O badge mostra a contagem; o loja_controller atualiza sem
+    recarregar quando um item entra. %>
+<% itens_no_carrinho = Carrinho.find_by(user: current_user)&.itens&.sum(:quantidade) || 0 %>
+<%= link_to carrinho_path, class: "cart-fab", aria: { label: "Ver carrinho" } do %>
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+  </svg>
+  <span class="cart-fab-badge" data-loja-target="badge" <%= "hidden" if itens_no_carrinho.zero? %>><%= itens_no_carrinho %></span>
+<% end %>

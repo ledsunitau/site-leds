@@ -89,7 +89,7 @@ class LojaFreteFluxoTest < ActionDispatch::IntegrationTest
       stub_mp_criar("https://mp/pay/x") do
         post checkout_path, params: { entrega: {
           tipo_entrega: "envio", endereco_id: enderecos(:casa_da_ana).id, servico_id: 1
-        } }
+        } }, as: :json
       end
     end
     assert_response :created
@@ -107,7 +107,7 @@ class LojaFreteFluxoTest < ActionDispatch::IntegrationTest
         post checkout_path, params: { entrega: {
           tipo_entrega: "envio", endereco_id: enderecos(:casa_da_ana).id, servico_id: 1,
           frete_valor: "0.01", preco: "0.01" # ignorados: não estão no permit
-        } }
+        } }, as: :json
       end
     end
     assert_response :created
@@ -116,14 +116,14 @@ class LojaFreteFluxoTest < ActionDispatch::IntegrationTest
 
   test "entrega como escalar não quebra (cai em retirada)" do
     sign_in users(:ana)
-    stub_mp_criar("u") { post checkout_path, params: { entrega: "foo" } }
+    stub_mp_criar("u") { post checkout_path, params: { entrega: "foo" }, as: :json }
     assert_response :created
     assert_equal "retirada", response.parsed_body["pedido"]["tipo_entrega"]
   end
 
   test "checkout de envio com endereço inexistente é 422 (não 404)" do
     sign_in users(:ana)
-    post checkout_path, params: { entrega: { tipo_entrega: "envio", endereco_id: 999_999, servico_id: 1 } }
+    post checkout_path, params: { entrega: { tipo_entrega: "envio", endereco_id: 999_999, servico_id: 1 } }, as: :json
     assert_response :unprocessable_entity
   end
 
@@ -182,6 +182,7 @@ class LojaFreteFluxoTest < ActionDispatch::IntegrationTest
   end
 
   def stub_mp_criar(init_point)
+    Setting.modo_pagamento = "mercado_pago" # padrão agora é "direto"; frete é fluxo de gateway
     orig = MercadoPago.method(:criar_preferencia)
     MercadoPago.define_singleton_method(:criar_preferencia) { |_pedido| { id: "p", init_point: init_point } }
     yield

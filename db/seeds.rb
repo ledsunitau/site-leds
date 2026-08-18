@@ -59,6 +59,127 @@ ActiveRecord::Base.transaction do
         m.diretoria = f[:diretoria] && diretorias[f[:diretoria]]
       end
     end
+
+    # --- Loja: catálogo demo (só dev/test; em produção a gestão cadastra) ---
+    cats = [ "Vestuário", "Acessórios", "Papelaria" ]
+           .index_with { |nome| Categoria.find_or_create_by!(nome: nome) }
+    criador = Member.first # autor do cadastro (auditoria)
+
+    # Foto default = sem anexo → cai no card-placeholder.svg (simula destaque).
+    produtos = [
+      { nome: "Camiseta LEDS Dev", preco: 69.90, promo: 49.90, cat: "Vestuário",
+        destaque: true, desc: "Camiseta oficial da liga, 100% algodão. Confortável pro dia a dia e pras hackathons.",
+        tamanhos: { "PP" => 4, "P" => 8, "M" => 10, "G" => 8, "GG" => 5 } },
+      { nome: "Moletom LEDS", preco: 149.90, cat: "Vestuário", destaque: true,
+        desc: "Moletom pesado com capuz e o triângulo LEDS bordado. Esquenta no frio do campus.",
+        tamanhos: { "P" => 3, "M" => 6, "G" => 6, "GG" => 3 } },
+      { nome: "Caneca LEDS", preco: 39.90, promo: 29.90, cat: "Acessórios", destaque: true,
+        desc: "Caneca de cerâmica 300ml com a logo. Pro café que sustenta o código." },
+      { nome: "Adesivos (pack)", preco: 14.90, cat: "Papelaria",
+        desc: "Cartela com 6 adesivos das cores node (verde, azul, vermelho, amarelo)." },
+      { nome: "Caderno LEDS", preco: 34.90, cat: "Papelaria",
+        desc: "Caderno pautado 90g com capa dura. Pra rascunhar estruturas de dados." },
+      { nome: "Boné LEDS", preco: 59.90, cat: "Acessórios",
+        desc: "Boné aba curva com bordado. Fecho ajustável, tamanho único." }
+    ]
+
+    produtos.each do |attrs|
+      produto = Produto.find_or_create_by!(nome: attrs[:nome]) do |p|
+        p.preco = attrs[:preco]
+        p.preco_promocional = attrs[:promo]
+        p.descricao = attrs[:desc]
+        p.modo_venda = "estoque"
+        p.status = "ativo"
+        p.destaque = attrs.fetch(:destaque, false)
+        p.categoria = cats[attrs[:cat]]
+        p.criador = criador
+      end
+
+      # Todo produto de estoque precisa de ao menos uma variante (o saldo mora
+      # nela). Sem tamanhos definidos, cria uma "Único".
+      tamanhos = attrs[:tamanhos] || { "Único" => 20 }
+      tamanhos.each do |nome, estoque|
+        produto.variantes.find_or_create_by!(nome: nome) { |v| v.estoque = estoque }
+      end
+    end
+
+    # Galeria demo (dev/test): 5 fotos pra mostrar o "+N" e o lightbox no detalhe.
+    # Usa SVGs do repo como stand-in — a gestão sobe as fotos reais depois.
+    camiseta = Produto.find_by(nome: "Camiseta LEDS Dev")
+    slugs = %w[ruby rails docker python react]
+    if camiseta && camiseta.galeria.attachments.size != slugs.size
+      camiseta.galeria.purge
+      slugs.each do |slug|
+        caminho = Rails.root.join("app/assets/images/tech/#{slug}.svg")
+        next unless File.exist?(caminho)
+
+        camiseta.galeria.attach(io: File.open(caminho), filename: "#{slug}.svg", content_type: "image/svg+xml")
+      end
+    end
+
+    # --- Compradores fictícios: pedidos pagos + avaliações (dev/test) ---
+    # Pedidos pagos alimentam o "mais vendidos" (soma de quantidade) e habilitam
+    # as avaliações (só quem comprou avalia). Camiseta é a campeã de vendas e a
+    # única com 5 avaliações (pra ver a paginação de reviews).
+    prod = Produto.where(nome: [ "Camiseta LEDS Dev", "Moletom LEDS", "Caneca LEDS",
+                                 "Adesivos (pack)", "Caderno LEDS", "Boné LEDS" ]).index_by(&:nome)
+
+    compradores = {
+      "Bruno Alves" => { email: "bruno@leds.dev",
+        compras: { "Camiseta LEDS Dev" => 3, "Caneca LEDS" => 2, "Boné LEDS" => 1 } },
+      "Carla Dias" => { email: "carla@leds.dev",
+        compras: { "Camiseta LEDS Dev" => 2, "Moletom LEDS" => 1, "Adesivos (pack)" => 2 } },
+      "Diego Souza" => { email: "diego@leds.dev",
+        compras: { "Camiseta LEDS Dev" => 4, "Caneca LEDS" => 3, "Caderno LEDS" => 1 } },
+      "Elena Rocha" => { email: "elena@leds.dev",
+        compras: { "Camiseta LEDS Dev" => 1, "Caneca LEDS" => 2, "Boné LEDS" => 3, "Moletom LEDS" => 2 } },
+      "Felipe Lima" => { email: "felipe@leds.dev",
+        compras: { "Camiseta LEDS Dev" => 3, "Boné LEDS" => 3, "Moletom LEDS" => 2, "Adesivos (pack)" => 2 } }
+    }
+
+    usuarios = {}
+    compradores.each do |nome, dados|
+      user = User.find_or_create_by!(email: dados[:email]) do |u|
+        u.name = nome
+        u.password = "leds-mudar-123"
+      end
+      usuarios[nome] = user
+      next if user.pedidos.any? # idempotente
+
+      # Cria já como pago (sem passar pelo gateway): é só dado de demonstração.
+      pedido = Pedido.create!(comprador: user, tipo_entrega: "retirada", status: "pago", total: 0)
+      total = dados[:compras].sum do |pnome, qtd|
+        produto = prod[pnome] or next 0
+        pedido.itens.create!(produto: produto, variante: produto.variantes.first,
+                             quantidade: qtd, preco_unitario: produto.preco_atual)
+        produto.preco_atual * qtd
+      end
+      pedido.update!(total: total)
+    end
+
+    avaliacoes = [
+      [ "Bruno Alves", "Camiseta LEDS Dev", 5, "Camiseta super confortável, o tecido é ótimo e não desbota!" ],
+      [ "Carla Dias", "Camiseta LEDS Dev", 4, "Gostei bastante, só achei a modelagem um pouco justa." ],
+      [ "Diego Souza", "Camiseta LEDS Dev", 5, "Melhor camiseta de liga que já tive, uso quase todo dia." ],
+      [ "Elena Rocha", "Camiseta LEDS Dev", 4, "Boa qualidade e, na promoção, valeu muito a pena." ],
+      [ "Felipe Lima", "Camiseta LEDS Dev", 5, "Chegou certinho na retirada e ficou show no corpo." ],
+      [ "Diego Souza", "Caneca LEDS", 4, "Caneca linda, segura bem o café e não esquenta a mão." ],
+      [ "Bruno Alves", "Caneca LEDS", 5, "Cerâmica de qualidade, virou minha caneca oficial de código." ],
+      [ "Elena Rocha", "Boné LEDS", 5, "Boné estiloso e o ajuste é perfeito. Recomendo!" ],
+      [ "Felipe Lima", "Boné LEDS", 4, "Bom boné, bordado caprichado. Só queria mais opções de cor." ],
+      [ "Felipe Lima", "Moletom LEDS", 5, "Moletom pesado e macio, salva no frio do campus." ],
+      [ "Elena Rocha", "Moletom LEDS", 3, "Quentinho, mas veio um pouco maior que o esperado." ]
+    ]
+    avaliacoes.each do |nome_user, pnome, nota, texto|
+      user = usuarios[nome_user]
+      produto = prod[pnome]
+      next unless user && produto
+
+      Avaliacao.find_or_create_by!(produto: produto, autor: user) do |a|
+        a.nota = nota
+        a.comentario = texto
+      end
+    end
   end
 
   puts "Seeds: #{Diretoria.count} diretorias, gestão #{gestao.ano_inicio}–#{gestao.ano_fim}, " \

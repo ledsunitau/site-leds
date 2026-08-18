@@ -1,0 +1,12 @@
+<%# Card de avaliação (#LOJA4). Local `avaliacao`. Começa oculto quando fora da
+    primeira página (o avaliacao_controller revela). %>
+<article class="avaliacao-card">
+  <span class="avaliacao-avatar"><%= iniciais(avaliacao.autor&.name.presence || "Anônimo") %></span>
+  <div class="avaliacao-corpo">
+    <div class="avaliacao-topo">
+      <strong><%= avaliacao.autor&.name.presence || "Usuário" %></strong>
+      <%= estrelas(avaliacao.nota) %>
+    </div>
+    <p><%= avaliacao.comentario %></p>
+  </div>
+</article>
