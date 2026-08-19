@@ -1,0 +1,21 @@
+<%# Paginação do painel. Locals: `pagina`, `tem_proxima`, `params_base` (hash).
+    Sem contagem total de propósito: um COUNT(*) em versions/error_logs varre a
+    tabela inteira só para escrever "de N". Anterior/próxima resolve navegar,
+    que é o que a tela precisa. %>
+<% if pagina > 1 || tem_proxima %>
+  <nav class="painel-paginacao" aria-label="Paginação">
+    <% if pagina > 1 %>
+      <%= link_to "← anterior", url_for(params_base.merge(pagina: pagina - 1)), class: "painel-mini" %>
+    <% else %>
+      <span class="painel-mini desabilitado">← anterior</span>
+    <% end %>
+
+    <span class="painel-paginacao-atual">página <%= pagina %></span>
+
+    <% if tem_proxima %>
+      <%= link_to "próxima →", url_for(params_base.merge(pagina: pagina + 1)), class: "painel-mini" %>
+    <% else %>
+      <span class="painel-mini desabilitado">próxima →</span>
+    <% end %>
+  </nav>
+<% end %>

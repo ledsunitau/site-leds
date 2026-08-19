@@ -1,0 +1,10 @@
+<% content_for :title, "#{@post.titulo} — Gestão LEDS" %>
+<% content_for :painel_titulo, @post.titulo %>
+<% content_for :painel_acoes do %>
+  <span class="painel-badge-status <%= @post.status %>"><%= post_status_label(@post.status) %></span>
+  <%= link_to "Versões", versoes_painel_post_path(@post), class: "btn btn-secondary btn-sm" %>
+<% end %>
+
+<div class="painel-panel painel-form-panel">
+  <%= render "form", post: @post %>
+</div>

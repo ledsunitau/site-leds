@@ -23,7 +23,10 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="<%= content_for(:body_class) %>" data-controller="drawer">
+  <%# analytics: coleta só com consentimento (RN-14) — o controller checa o
+      localStorage e o EventsController revalida no servidor. %>
+  <body class="<%= content_for(:body_class) %>" data-controller="drawer analytics"
+        data-analytics-url-value="<%= events_path %>">
     <%= render "shared/flash" %>
     <%= yield %>
     <% if user_signed_in? %>

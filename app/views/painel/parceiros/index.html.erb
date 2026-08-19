@@ -1,0 +1,72 @@
+<% content_for :title, "Parceiros — Gestão LEDS" %>
+<% content_for :painel_titulo, "Parceiros" %>
+<% content_for :painel_acoes do %>
+  <%= link_to "Novo parceiro", new_painel_parceiro_path, class: "btn btn-primary btn-sm" %>
+<% end %>
+
+<div class="painel-toolbar">
+  <div class="chips">
+    <%= link_to "Todos", painel_parceiros_path, class: "chip #{'active' unless @status}" %>
+    <% Parceiro::STATUSES.each do |status| %>
+      <%= link_to "#{status.capitalize} (#{@por_status[status].to_i})",
+            painel_parceiros_path(status: status), class: "chip #{'active' if @status == status}" %>
+    <% end %>
+  </div>
+</div>
+
+<p class="painel-dica">
+  A vitrine pública mostra só os <strong>ativos</strong>. Marcar como inativo tira
+  o parceiro do site inteiro — vitrine, métricas e a marca nas ações apoiadas.
+</p>
+
+<% if @parceiros.empty? %>
+  <div class="painel-empty"><span class="empty-mono">// nenhum parceiro cadastrado</span></div>
+<% else %>
+  <div class="painel-table-wrap">
+    <table class="painel-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Nome</th>
+          <th>Site</th>
+          <th>Conta vinculada</th>
+          <th>Ações apoiadas</th>
+          <th>Status</th>
+          <th class="acoes"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @parceiros.each do |parceiro| %>
+          <tr>
+            <td>
+              <span class="painel-foto">
+                <% if parceiro.logo.attached? %>
+                  <img src="<%= FotoUrl.para(parceiro.logo) %>" alt="<%= parceiro.nome %>">
+                <% else %>
+                  <span class="avatar-initials"><%= iniciais(parceiro.nome) %></span>
+                <% end %>
+              </span>
+            </td>
+            <td>
+              <%= parceiro.nome %>
+              <% if parceiro.depoimento.present? %><span class="painel-td-sub">tem depoimento</span><% end %>
+            </td>
+            <td class="painel-td-mono">
+              <% if parceiro.site_url.present? %>
+                <%= link_to truncate(parceiro.site_url, length: 34), parceiro.site_url, rel: "noopener", target: "_blank" %>
+              <% else %>—<% end %>
+            </td>
+            <td><%= parceiro.conta&.name || "—" %></td>
+            <td class="painel-td-mono"><%= @acoes_por_parceiro[parceiro.id].to_i %></td>
+            <td><span class="painel-badge-status <%= parceiro.status %>"><%= parceiro.status %></span></td>
+            <td class="acoes">
+              <%= link_to "Editar", edit_painel_parceiro_path(parceiro), class: "painel-mini" %>
+              <%= button_to "Apagar", painel_parceiro_path(parceiro), method: :delete, class: "painel-mini perigo",
+                    form: { data: { turbo_confirm: "Apagar “#{parceiro.nome}”? Os vínculos com ações vão junto. Para só tirar do site, use inativo." } } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

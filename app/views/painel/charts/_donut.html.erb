@@ -1,0 +1,39 @@
+<%# Composição (status, papéis, tipos). Locals: `dados` [[rótulo, valor], ...],
+    `cores` opcional (lista de CSS vars, ciclada).
+    Um círculo só com stroke-dasharray por fatia: sem trigonometria de path e
+    sem risco de arco errado quando uma fatia passa de 180°. %>
+<% dados = Array(dados).reject { |(_, v)| v.to_i.zero? }
+   cores = local_assigns.fetch(:cores, [ "var(--leds-green)", "var(--leds-blue)", "var(--leds-red)", "var(--leds-yellow)", "var(--text-subtle)" ]) %>
+
+<% if dados.empty? %>
+  <p class="painel-chart-vazio">// sem dados</p>
+<% else %>
+  <% total = dados.sum { |(_, v)| v.to_i }
+     circunferencia = 100.0 # r escolhido para a volta dar 100 (dasharray em %)
+     raio = (circunferencia / (2 * Math::PI)).round(4)
+     deslocamento = 0 %>
+  <div class="painel-donut-wrap">
+    <svg viewBox="0 0 40 40" class="painel-donut" role="img" aria-label="Distribuição em <%= dados.size %> fatias">
+      <circle cx="20" cy="20" r="<%= raio %>" fill="none" stroke="var(--border-hair)" stroke-width="5" />
+      <% dados.each_with_index do |(rotulo, valor), i| %>
+        <% fatia = (valor.to_f / total * 100).round(3) %>
+        <circle cx="20" cy="20" r="<%= raio %>" fill="none" stroke="<%= cores[i % cores.size] %>" stroke-width="5"
+                stroke-dasharray="<%= fatia %> <%= (100 - fatia).round(3) %>"
+                stroke-dashoffset="<%= (25 - deslocamento).round(3) %>">
+          <title><%= rotulo %>: <%= valor %> (<%= fatia.round(1) %>%)</title>
+        </circle>
+        <% deslocamento += fatia %>
+      <% end %>
+      <text x="20" y="20" class="painel-donut-total" text-anchor="middle" dominant-baseline="central"><%= total %></text>
+    </svg>
+    <ul class="painel-legenda">
+      <% dados.each_with_index do |(rotulo, valor), i| %>
+        <li>
+          <span class="painel-legenda-cor" style="background: <%= cores[i % cores.size] %>"></span>
+          <span class="painel-legenda-label"><%= rotulo %></span>
+          <span class="painel-legenda-valor"><%= valor %></span>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>

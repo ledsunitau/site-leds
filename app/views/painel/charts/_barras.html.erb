@@ -1,0 +1,24 @@
+<%# Ranking horizontal. Locals: `dados` [[rótulo, valor], ...], `cor` opcional,
+    `formato` opcional (lambda para o valor exibido).
+    Barras em CSS (div com width %), não SVG: rótulo de texto em SVG não quebra
+    linha nem herda a tipografia — aqui o texto é metade do gráfico. %>
+<% dados = Array(dados)
+   cor = local_assigns.fetch(:cor, "var(--leds-blue)")
+   formato = local_assigns.fetch(:formato, ->(v) { v.to_i.to_s }) %>
+
+<% if dados.empty? %>
+  <p class="painel-chart-vazio">// sem dados no período</p>
+<% else %>
+  <% topo = [ dados.map { |(_, v)| v.to_f }.max, 1 ].max %>
+  <ul class="painel-barras" style="--chart-cor: <%= cor %>">
+    <% dados.each do |rotulo, valor| %>
+      <li class="painel-barra">
+        <span class="painel-barra-label" title="<%= rotulo %>"><%= rotulo.presence || "—" %></span>
+        <span class="painel-barra-trilha">
+          <span class="painel-barra-fill" style="width: <%= (valor.to_f / topo * 100).round(2) %>%"></span>
+        </span>
+        <span class="painel-barra-valor"><%= formato.call(valor) %></span>
+      </li>
+    <% end %>
+  </ul>
+<% end %>

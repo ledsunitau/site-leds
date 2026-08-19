@@ -1,0 +1,102 @@
+<% content_for :title, "LGPD — Gestão LEDS" %>
+<% content_for :painel_titulo, "LGPD" %>
+
+<section class="painel-secao">
+  <div class="painel-grid-3">
+    <div class="painel-kpi" style="--kpi-cor: var(--leds-green)">
+      <span class="painel-kpi-valor"><%= @lgpd[:taxa] %>%</span>
+      <span class="painel-kpi-label">aceitam analytics</span>
+    </div>
+    <div class="painel-kpi" style="--kpi-cor: var(--leds-blue)">
+      <span class="painel-kpi-valor"><%= @lgpd[:total] %></span>
+      <span class="painel-kpi-label">decisões registradas</span>
+    </div>
+    <div class="painel-kpi" style="--kpi-cor: var(--leds-yellow)">
+      <span class="painel-kpi-valor"><%= @lgpd[:eventos_guardados] %></span>
+      <span class="painel-kpi-label">eventos guardados</span>
+    </div>
+  </div>
+</section>
+
+<section class="painel-secao">
+  <div class="painel-panel">
+    <h3 class="painel-panel-title">Consentimentos por dia</h3>
+    <%= render "painel/charts/linha", dados: @lgpd[:por_dia], cor: "var(--leds-blue)", altura: 130 %>
+    <p class="painel-dica">
+      Analytics só é coletado com aceite (RN-14). Os eventos são podados aos 90
+      dias — o mais antigo guardado é de
+      <%= @lgpd[:evento_mais_antigo] ? data_e_hora(@lgpd[:evento_mais_antigo]) : "—" %>.
+    </p>
+  </div>
+</section>
+
+<section class="painel-secao">
+  <div class="painel-secao-head">
+    <span class="eyebrow red">// eliminação de dados (art. 18)</span>
+  </div>
+
+  <div class="painel-panel">
+    <p class="painel-dica">
+      Apaga os eventos de comportamento e o registro de consentimento de um
+      titular. Informe a conta (para quem tem login) ou o id anônimo do cookie
+      (para quem nunca logou). <strong>Não há como desfazer.</strong>
+    </p>
+
+    <%= form_with url: painel_lgpd_path, method: :delete, class: "painel-form",
+                  data: { turbo_confirm: "Eliminar os dados de comportamento deste titular?" } do |f| %>
+      <div class="painel-form-grid">
+        <label class="painel-campo">
+          <span>Conta</span>
+          <%= select_tag :user_id, options_from_collection_for_select(User.order(:name), :id, ->(u) { "#{u.name} · #{u.email}" }),
+                include_blank: "nenhuma", class: "painel-input" %>
+        </label>
+        <label class="painel-campo">
+          <span>Id anônimo (cookie)</span>
+          <%= text_field_tag :anonymous_id, nil, class: "painel-input", placeholder: "colado do registro abaixo" %>
+        </label>
+      </div>
+      <%= f.submit "Eliminar dados", class: "btn btn-secondary" %>
+    <% end %>
+  </div>
+</section>
+
+<section class="painel-secao">
+  <div class="painel-secao-head">
+    <span class="eyebrow faint">// registro de consentimento</span>
+  </div>
+
+  <% if @consents.empty? %>
+    <div class="painel-empty"><span class="empty-mono">// nenhum consentimento registrado</span></div>
+  <% else %>
+    <div class="painel-table-wrap">
+      <table class="painel-table">
+        <thead>
+          <tr>
+            <th>Quando</th>
+            <th>Conta</th>
+            <th>Id anônimo</th>
+            <th>Analytics</th>
+            <th>Marketing</th>
+            <th>Navegador</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @consents.each do |consent| %>
+            <tr>
+              <td class="painel-td-mono"><%= data_e_hora(consent.consented_at) %></td>
+              <td><%= consent.user&.name || "anônimo" %></td>
+              <td class="painel-td-mono"><%= consent.anonymous_id&.first(12) %></td>
+              <td>
+                <span class="painel-badge-status <%= consent.analytics? ? "ativo" : "inativo" %>">
+                  <%= consent.analytics? ? "sim" : "não" %>
+                </span>
+              </td>
+              <td class="painel-td-mono"><%= consent.marketing? ? "sim" : "não" %></td>
+              <td class="painel-td-texto painel-td-mono"><%= truncate(consent.user_agent.to_s, length: 60) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+</section>

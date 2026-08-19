@@ -1,0 +1,65 @@
+<% content_for :title, "Logs de erro — Gestão LEDS" %>
+<% content_for :painel_titulo, "Logs de erro" %>
+
+<section class="painel-secao">
+  <div class="painel-panel">
+    <h3 class="painel-panel-title">Erros por dia (30 dias)</h3>
+    <%= render "painel/charts/linha", dados: @por_dia, cor: "var(--leds-red)", altura: 120 %>
+  </div>
+</section>
+
+<div class="painel-toolbar">
+  <div class="chips">
+    <%= link_to "Todos", painel_logs_path(rota: @rota), class: "chip #{'active' unless @severidade}" %>
+    <% ErrorLog::SEVERIDADES.each do |sev| %>
+      <%= link_to "#{sev} (#{@por_severidade[sev].to_i})",
+            painel_logs_path(severidade: sev, rota: @rota),
+            class: "chip #{'active' if @severidade == sev}" %>
+    <% end %>
+  </div>
+
+  <%= form_with url: painel_logs_path, method: :get, class: "painel-busca" do |f| %>
+    <%= f.hidden_field :severidade, value: @severidade %>
+    <%= f.search_field :rota, value: @rota, placeholder: "Rota (ex.: POST /acoes)…", class: "painel-input" %>
+    <%= f.date_field :de, value: params[:de], class: "painel-input compacto" %>
+    <%= f.date_field :ate, value: params[:ate], class: "painel-input compacto" %>
+    <%= f.submit "Filtrar", class: "btn btn-secondary btn-sm" %>
+  <% end %>
+</div>
+
+<% if @logs.empty? %>
+  <div class="painel-empty">
+    <span class="empty-mono">// nenhum erro registrado</span>
+    <p class="painel-dica">Boa notícia. Erros de servidor caem aqui automaticamente.</p>
+  </div>
+<% else %>
+  <div class="painel-table-wrap">
+    <table class="painel-table">
+      <thead>
+        <tr>
+          <th>Quando</th>
+          <th>Severidade</th>
+          <th>Erro</th>
+          <th>Rota</th>
+          <th>Usuário</th>
+          <th class="acoes"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @logs.each do |log| %>
+          <tr>
+            <td class="painel-td-mono"><%= data_e_hora(log.occurred_at) %></td>
+            <td><span class="painel-badge-status <%= severidade_cor(log.severidade) %>"><%= log.severidade %></span></td>
+            <td class="painel-td-texto">
+              <strong><%= log.error_class %></strong>
+              <span class="painel-td-sub"><%= truncate(log.error_message, length: 120) %></span>
+            </td>
+            <td class="painel-td-mono"><%= log.rota %></td>
+            <td><%= log.user&.name || "anônimo" %></td>
+            <td class="acoes"><%= link_to "Detalhe", painel_log_path(log), class: "painel-mini" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

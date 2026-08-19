@@ -1,0 +1,44 @@
+<% content_for :title, "Versões — #{@post.titulo}" %>
+<% content_for :painel_titulo, "Histórico · #{@post.titulo}" %>
+<% content_for :painel_acoes do %>
+  <%= link_to "Voltar à edição", edit_painel_post_path(@post), class: "btn btn-secondary btn-sm" %>
+<% end %>
+
+<p class="painel-dica">
+  RF-NOV-07: cada alteração salva vira uma versão. O diff abaixo omite os
+  carimbos de tempo — só o que mudou de conteúdo.
+</p>
+
+<% if @versoes.empty? %>
+  <div class="painel-empty"><span class="empty-mono">// nenhuma versão registrada</span></div>
+<% else %>
+  <ol class="painel-timeline">
+    <% @versoes.each do |item| %>
+      <li class="painel-timeline-item <%= item[:versao].event %>">
+        <span class="painel-timeline-dot"></span>
+        <div class="painel-timeline-corpo painel-versao">
+          <div class="painel-timeline-texto">
+            <strong><%= item[:autor]&.name || "Sistema" %></strong>
+            <%= evento_label(item[:versao].event) %> esta novidade
+          </div>
+          <span class="painel-timeline-quando"><%= data_e_hora(item[:versao].created_at) %></span>
+
+          <% if item[:mudancas].present? %>
+            <table class="painel-diff">
+              <tbody>
+                <% item[:mudancas].each do |campo, (antes, depois)| %>
+                  <tr>
+                    <th><%= campo %></th>
+                    <td class="antes"><%= truncate(antes.to_s.presence || "—", length: 140) %></td>
+                    <td class="seta">→</td>
+                    <td class="depois"><%= truncate(depois.to_s.presence || "—", length: 140) %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          <% end %>
+        </div>
+      </li>
+    <% end %>
+  </ol>
+<% end %>

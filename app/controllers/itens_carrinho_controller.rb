@@ -2,6 +2,10 @@
 # quantidade em vez de duplicar (o índice único é por carrinho+produto+variante).
 class ItensCarrinhoController < ApplicationController
   include CarrinhoDoUsuario
+  include RecursoAtivo
+
+  # mesma razão das reservas: o carrinho aceitava item com a loja desligada
+  exige_recurso "loja_ativa", only: :create
 
   def create
     dados = params.expect(item: %i[produto_id variante_id quantidade])

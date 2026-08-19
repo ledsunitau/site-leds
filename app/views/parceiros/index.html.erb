@@ -193,7 +193,8 @@
               <span>Conta um pouco <em class="opcional">(opcional)</em></span>
               <%= f.text_area :descricao, rows: 4, placeholder: "O desafio, o que imagina, prazos…" %>
             </label>
-            <%= f.submit "Enviar interesse →", class: "btn btn-primary" %>
+            <%= f.submit "Enviar interesse →", class: "btn btn-primary",
+                  data: { action: "analytics#rastrear", evento: "lead_enviado" } %>
           <% end %>
         </div>
       </div>

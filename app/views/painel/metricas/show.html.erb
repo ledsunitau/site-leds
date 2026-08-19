@@ -1,0 +1,204 @@
+<% content_for :title, "Métricas — Gestão LEDS" %>
+<% content_for :painel_titulo, "Métricas" %>
+
+<div class="painel-toolbar" data-controller="painel">
+  <nav class="perfil-tabs" role="tablist">
+    <% [["trafego", "Tráfego"], ["conteudo", "Conteúdo"], ["loja", "Loja"],
+        ["comunidade", "Comunidade"], ["lgpd", "LGPD"]].each_with_index do |(vista, label), i| %>
+      <button type="button" class="perfil-tab <%= 'active' if i.zero? %>" data-vista="<%= vista %>"
+              data-painel-target="tab" data-action="painel#mostrar"><%= label %></button>
+    <% end %>
+  </nav>
+
+  <%= form_with url: painel_metricas_path, method: :get, class: "painel-busca" do |f| %>
+    <%= f.date_field :de, value: @de, class: "painel-input compacto" %>
+    <%= f.date_field :ate, value: @ate, class: "painel-input compacto" %>
+    <%= f.submit "Aplicar período", class: "btn btn-secondary btn-sm" %>
+  <% end %>
+</div>
+
+<%# ---- Tráfego ---- %>
+<div data-painel-target="panel" data-vista="trafego">
+  <div class="painel-kpis">
+    <div class="painel-kpi" style="--kpi-cor: var(--leds-green)">
+      <span class="painel-kpi-valor"><%= @trafego[:total] %></span>
+      <span class="painel-kpi-label">eventos</span>
+    </div>
+    <div class="painel-kpi" style="--kpi-cor: var(--leds-blue)">
+      <span class="painel-kpi-valor"><%= @trafego[:visitantes] %></span>
+      <span class="painel-kpi-label">visitantes únicos</span>
+    </div>
+  </div>
+
+  <div class="painel-panel" style="margin-top:14px">
+    <h3 class="painel-panel-title">Eventos por dia</h3>
+    <%= render "painel/charts/linha", dados: @trafego[:por_dia], cor: "var(--leds-green)" %>
+  </div>
+
+  <div class="painel-grid-3" style="margin-top:14px">
+    <div class="painel-panel">
+      <h3 class="painel-panel-title">Páginas mais vistas</h3>
+      <%= render "painel/charts/barras", dados: @trafego[:por_rota], cor: "var(--leds-blue)" %>
+    </div>
+    <div class="painel-panel">
+      <h3 class="painel-panel-title">Eventos por nome</h3>
+      <%= render "painel/charts/barras", dados: @trafego[:por_nome], cor: "var(--leds-green)" %>
+    </div>
+    <div class="painel-panel">
+      <h3 class="painel-panel-title">De onde vieram</h3>
+      <%= render "painel/charts/barras", dados: @trafego[:por_referrer], cor: "var(--leds-yellow)" %>
+    </div>
+  </div>
+</div>
+
+<%# ---- Conteúdo ---- %>
+<div data-painel-target="panel" data-vista="conteudo" hidden>
+  <div class="painel-grid-3">
+    <div class="painel-panel">
+      <h3 class="painel-panel-title">Ações por status</h3>
+      <%= render "painel/charts/donut", dados: @conteudo[:acoes_por_status] %>
+    </div>
+    <div class="painel-panel">
+      <h3 class="painel-panel-title">Ações publicadas por tipo</h3>
+      <%= render "painel/charts/donut", dados: @conteudo[:acoes_por_tipo],
+            cores: [ "var(--leds-green)", "var(--leds-blue)", "var(--leds-red)" ] %>
+    </div>
+    <div class="painel-panel">
+      <h3 class="painel-panel-title">Novidades por status</h3>
+      <%= render "painel/charts/donut", dados: @conteudo[:posts_por_status] %>
+    </div>
+  </div>
+
+  <div class="painel-grid-2" style="margin-top:14px">
+    <div class="painel-panel">
+      <h3 class="painel-panel-title">Quem mais publica</h3>
+      <%= render "painel/charts/barras", dados: @conteudo[:posts_por_autor], cor: "var(--leds-blue)" %>
+    </div>
+    <div class="painel-panel">
+      <h3 class="painel-panel-title">Fila de aprovação</h3>
+      <p class="painel-numerao"><%= @conteudo[:espera_media_horas] %>h</p>
+      <p class="painel-dica">espera média do que está na fila agora</p>
+      <hr class="painel-sep">
+      <h3 class="painel-panel-title">Ideias por status</h3>
+      <%= render "painel/charts/barras", dados: @conteudo[:ideias_por_status], cor: "var(--leds-yellow)" %>
+    </div>
+  </div>
+
+  <div class="painel-grid-2" style="margin-top:14px">
+    <div class="painel-panel">
+      <h3 class="painel-panel-title">Comentários por status</h3>
+      <%= render "painel/charts/barras", dados: @conteudo[:comentarios_por_status], cor: "var(--leds-green)" %>
+    </div>
+    <div class="painel-panel">
+      <h3 class="painel-panel-title">Denúncias por status</h3>
+      <%= render "painel/charts/barras", dados: @conteudo[:denuncias_por_status], cor: "var(--leds-red)" %>
+    </div>
+  </div>
+</div>
+
+<%# ---- Loja ---- %>
+<div data-painel-target="panel" data-vista="loja" hidden>
+  <div class="painel-kpis">
+    <div class="painel-kpi destaque" style="--kpi-cor: var(--leds-green)">
+      <span class="painel-kpi-valor"><%= moeda(@loja[:receita]) %></span>
+      <span class="painel-kpi-label">receita no período</span>
+    </div>
+    <div class="painel-kpi" style="--kpi-cor: var(--leds-blue)">
+      <span class="painel-kpi-valor"><%= @loja[:pedidos] %></span>
+      <span class="painel-kpi-label">pedidos pagos</span>
+    </div>
+    <div class="painel-kpi" style="--kpi-cor: var(--leds-yellow)">
+      <span class="painel-kpi-valor"><%= moeda(@loja[:ticket_medio]) %></span>
+      <span class="painel-kpi-label">ticket médio</span>
+    </div>
+    <div class="painel-kpi" style="--kpi-cor: var(--leds-red)">
+      <span class="painel-kpi-valor"><%= @loja[:nota_media] || "—" %></span>
+      <span class="painel-kpi-label">nota média</span>
+    </div>
+  </div>
+
+  <div class="painel-panel" style="margin-top:14px">
+    <h3 class="painel-panel-title">Receita por dia</h3>
+    <%= render "painel/charts/linha", dados: @loja[:receita_por_dia], cor: "var(--leds-green)" %>
+  </div>
+
+  <div class="painel-grid-3" style="margin-top:14px">
+    <div class="painel-panel">
+      <h3 class="painel-panel-title">Funil</h3>
+      <%= render "painel/charts/barras", dados: @loja[:funil], cor: "var(--leds-blue)" %>
+    </div>
+    <div class="painel-panel">
+      <h3 class="painel-panel-title">Mais vendidos</h3>
+      <%= render "painel/charts/barras", dados: @loja[:mais_vendidos], cor: "var(--leds-green)" %>
+    </div>
+    <div class="painel-panel">
+      <h3 class="painel-panel-title">Pedidos por status</h3>
+      <%= render "painel/charts/donut", dados: @loja[:por_status] %>
+    </div>
+  </div>
+</div>
+
+<%# ---- Comunidade ---- %>
+<div data-painel-target="panel" data-vista="comunidade" hidden>
+  <div class="painel-panel">
+    <h3 class="painel-panel-title">Cadastros por dia</h3>
+    <%= render "painel/charts/linha", dados: @comunidade[:cadastros_por_dia], cor: "var(--leds-blue)" %>
+  </div>
+
+  <div class="painel-grid-3" style="margin-top:14px">
+    <div class="painel-panel">
+      <h3 class="painel-panel-title">Contas por papel</h3>
+      <%= render "painel/charts/barras",
+            dados: @comunidade[:por_papel].map { |papel, n| [ papel_label(papel), n ] },
+            cor: "var(--leds-yellow)" %>
+    </div>
+    <div class="painel-panel">
+      <h3 class="painel-panel-title">Membros por diretoria</h3>
+      <%= render "painel/charts/donut", dados: @comunidade[:membros_por_diretoria] %>
+    </div>
+    <div class="painel-panel">
+      <h3 class="painel-panel-title">Membros por cargo</h3>
+      <%= render "painel/charts/barras",
+            dados: @comunidade[:membros_por_cargo].map { |cargo, n| [ cargo_label(cargo), n ] },
+            cor: "var(--leds-green)" %>
+    </div>
+  </div>
+
+  <div class="painel-grid-3" style="margin-top:14px">
+    <div class="painel-kpi" style="--kpi-cor: var(--leds-blue)">
+      <span class="painel-kpi-valor"><%= @comunidade[:push] %></span>
+      <span class="painel-kpi-label">inscrições push</span>
+    </div>
+    <div class="painel-kpi" style="--kpi-cor: var(--leds-green)">
+      <span class="painel-kpi-valor"><%= @comunidade[:discord] %></span>
+      <span class="painel-kpi-label">contas com Discord</span>
+    </div>
+    <div class="painel-panel">
+      <h3 class="painel-panel-title">Canais desligados</h3>
+      <%= render "painel/charts/barras", dados: @comunidade[:desligamentos], cor: "var(--leds-red)" %>
+      <p class="painel-campo-dica">Opt-out: só aparece quem desligou explicitamente.</p>
+    </div>
+  </div>
+</div>
+
+<%# ---- LGPD ---- %>
+<div data-painel-target="panel" data-vista="lgpd" hidden>
+  <div class="painel-kpis">
+    <div class="painel-kpi" style="--kpi-cor: var(--leds-green)">
+      <span class="painel-kpi-valor"><%= @lgpd[:taxa] %>%</span>
+      <span class="painel-kpi-label">aceitam analytics</span>
+    </div>
+    <div class="painel-kpi" style="--kpi-cor: var(--leds-blue)">
+      <span class="painel-kpi-valor"><%= @lgpd[:total] %></span>
+      <span class="painel-kpi-label">decisões registradas</span>
+    </div>
+  </div>
+
+  <div class="painel-panel" style="margin-top:14px">
+    <h3 class="painel-panel-title">Consentimentos por dia</h3>
+    <%= render "painel/charts/linha", dados: @lgpd[:por_dia], cor: "var(--leds-blue)" %>
+    <p class="painel-dica">
+      Eliminação de dados de um titular fica em <%= link_to "LGPD", painel_lgpd_path %>.
+    </p>
+  </div>
+</div>

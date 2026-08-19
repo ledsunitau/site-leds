@@ -35,7 +35,28 @@ class ApplicationController < ActionController::Base
   # PaperTrail: registra quem fez cada mudança auditada (RF-ADM-07)
   before_action :set_paper_trail_whodunnit
 
+  # Modo manutenção (painel → Recursos): fecha o site para quem não é gestão.
+  before_action :bloquear_em_manutencao
+
   protected
+
+  # Quem passa mesmo em manutenção:
+  #   - gestão (é quem vai consertar; cobre /painel e /admin, que já exigem isso)
+  #   - telas do Devise (senão ninguém consegue LOGAR para virar gestão)
+  #   - o webhook do gateway — bloquear perde confirmação de pagamento que o
+  #     Mercado Pago não repete para sempre (skip_before_action lá, não aqui)
+  # /up não passa por aqui: é o controller interno do Rails, não herda deste.
+  def bloquear_em_manutencao
+    return if devise_controller?
+    return unless Setting.ativo?("manutencao")
+    return if current_user&.gestao?
+
+    aviso = "O site está em manutenção. Já voltamos."
+    respond_to do |format|
+      format.json { render json: { errors: [ aviso ] }, status: :service_unavailable }
+      format.html { render "shared/manutencao", status: :service_unavailable, layout: false }
+    end
+  end
 
   def configure_permitted_parameters
     devise_parameter_sanitizer.permit(:sign_up, keys: [ :name ])

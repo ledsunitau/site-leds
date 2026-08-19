@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <title><%= content_for(:title) || "Gestão — LEDS" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= yield :head %>
+
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <%# trix.css vem do gem action_text-trix. Fica só no painel: o editor de
+        texto rico não existe em nenhuma tela pública. O tema escuro dele está
+        na seção do painel em application.css. %>
+    <%= stylesheet_link_tag "trix", "application", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="painel-body">
+    <%= render "shared/flash" %>
+
+    <div class="painel-shell" data-controller="painel">
+      <%# ---- Sidebar ---- %>
+      <div class="painel-side-overlay" data-action="click->painel#fecharMenu"></div>
+
+      <aside class="painel-side" data-painel-target="side">
+        <a href="<%= painel_path %>" class="painel-brand">
+          <span class="logo-mark">
+            <span class="logo-dots"><span></span><span></span></span>
+            <svg width="22" height="18" viewBox="0 0 22 18" style="border-radius:2px;display:block" aria-hidden="true">
+              <defs>
+                <linearGradient id="painel-tri" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="15%" stop-color="rgb(0,197,91)" />
+                  <stop offset="49.52%" stop-color="rgb(29,132,245)" />
+                  <stop offset="85%" stop-color="rgb(248,74,84)" />
+                </linearGradient>
+              </defs>
+              <path d="M 18.434 0 L 3.566 0 C 2.004 0 1.045 1.71 1.86 3.043 L 9.293 15.207 C 10.073 16.484 11.927 16.484 12.707 15.207 L 20.14 3.043 C 20.955 1.71 19.996 0 18.434 0 Z" fill="url(#painel-tri)" />
+            </svg>
+          </span>
+          <span class="painel-brand-word">LEDS<em>gestão</em></span>
+        </a>
+
+        <nav class="painel-nav">
+          <% painel_nav.each do |secao, itens| %>
+            <span class="painel-nav-title"><%= secao %></span>
+            <% itens.each do |label, path, badge| %>
+              <a href="<%= path %>" class="painel-nav-link <%= "active" if painel_ativo?(path) %>"
+                 data-action="painel#fecharMenu">
+                <span><%= label %></span>
+                <%= painel_badge(badge) if badge %>
+              </a>
+            <% end %>
+          <% end %>
+
+          <span class="painel-nav-title">Externo</span>
+          <a href="/admin/jobs" class="painel-nav-link">Filas de jobs <span class="painel-nav-ext">→</span></a>
+          <a href="<%= root_path %>" class="painel-nav-link">Voltar ao site <span class="painel-nav-ext">→</span></a>
+        </nav>
+      </aside>
+
+      <%# ---- Conteúdo ---- %>
+      <div class="painel-main">
+        <header class="painel-topbar">
+          <button type="button" class="painel-menu-btn" data-action="painel#abrirMenu" aria-label="Abrir menu">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <line x1="3" y1="7" x2="21" y2="7" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="17" x2="21" y2="17" />
+            </svg>
+          </button>
+
+          <div class="painel-crumb">
+            <span class="eyebrow faint">// gestão</span>
+            <h1 class="painel-crumb-title"><%= content_for(:painel_titulo) || "Visão geral" %></h1>
+          </div>
+
+          <div class="painel-topbar-right">
+            <%= yield :painel_acoes %>
+            <a href="<%= profile_path %>" class="painel-user" title="<%= current_user.name %>">
+              <span class="painel-user-avatar"><%= render "shared/avatar", user: current_user %></span>
+              <span class="painel-user-id">
+                <span class="painel-user-name"><%= current_user.name %></span>
+                <span class="painel-user-role"><%= papel_label(current_user.role) %></span>
+              </span>
+            </a>
+          </div>
+        </header>
+
+        <main class="painel-content"><%= yield %></main>
+      </div>
+    </div>
+  </body>
+</html>

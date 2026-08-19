@@ -1,0 +1,76 @@
+<% content_for :title, "Novidades — Gestão LEDS" %>
+<% content_for :painel_titulo, "Novidades" %>
+<% content_for :painel_acoes do %>
+  <%= link_to "Nova novidade", new_painel_post_path, class: "btn btn-primary btn-sm" %>
+<% end %>
+
+<div class="painel-toolbar">
+  <div class="chips">
+    <%= link_to "Todas", painel_posts_path(tipo: @tipo, busca: @busca), class: "chip #{'active' unless @status}" %>
+    <% Post::STATUSES.each do |status| %>
+      <%= link_to "#{post_status_label(status)} (#{@contagem[status].to_i})",
+            painel_posts_path(status: status, tipo: @tipo, busca: @busca),
+            class: "chip #{'active' if @status == status}" %>
+    <% end %>
+  </div>
+
+  <div class="chips">
+    <%= link_to "Notícia e blog", painel_posts_path(status: @status, busca: @busca), class: "chip #{'active' unless @tipo}" %>
+    <% Post::TIPOS.each do |tipo| %>
+      <%= link_to tipo.capitalize, painel_posts_path(tipo: tipo, status: @status, busca: @busca),
+            class: "chip #{'active' if @tipo == tipo}" %>
+    <% end %>
+  </div>
+
+  <%= form_with url: painel_posts_path, method: :get, class: "painel-busca" do |f| %>
+    <%= f.hidden_field :status, value: @status %>
+    <%= f.hidden_field :tipo, value: @tipo %>
+    <%= f.search_field :busca, value: @busca, placeholder: "Título…", class: "painel-input" %>
+    <%= f.submit "Buscar", class: "btn btn-secondary btn-sm" %>
+  <% end %>
+</div>
+
+<% if @posts.empty? %>
+  <div class="painel-empty"><span class="empty-mono">// nenhuma novidade encontrada</span></div>
+<% else %>
+  <div class="painel-table-wrap">
+    <table class="painel-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Título</th>
+          <th>Tipo</th>
+          <th>Status</th>
+          <th>Autor</th>
+          <th>Atualizada</th>
+          <th class="acoes"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @posts.each do |post| %>
+          <tr>
+            <td><span class="painel-foto"><img src="<%= card_image_url(post) %>" alt=""></span></td>
+            <td>
+              <%= post.titulo %>
+              <% if post.aprovador %>
+                <span class="painel-td-sub">liberada por <%= post.aprovador.name %></span>
+              <% end %>
+            </td>
+            <td>
+              <span class="tag solid" style="--tag-color:var(--cat-<%= post.tipo %>)"><%= post.tipo.upcase %></span>
+            </td>
+            <td><span class="painel-badge-status <%= post.status %>"><%= post_status_label(post.status) %></span></td>
+            <td><%= post.autor&.name || "—" %></td>
+            <td class="painel-td-mono"><%= data_e_hora(post.updated_at) %></td>
+            <td class="acoes">
+              <%= link_to "Editar", edit_painel_post_path(post), class: "painel-mini" %>
+              <%= link_to "Versões", versoes_painel_post_path(post), class: "painel-mini" %>
+              <%= button_to "Apagar", painel_post_path(post), method: :delete, class: "painel-mini perigo",
+                    form: { data: { turbo_confirm: "Apagar “#{post.titulo}”? Comentários e notificações vão junto." } } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

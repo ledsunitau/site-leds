@@ -1,0 +1,61 @@
+<% content_for :title, "Leads de parceria — Gestão LEDS" %>
+<% content_for :painel_titulo, "Leads de parceria" %>
+
+<div class="painel-toolbar">
+  <div class="chips">
+    <%= link_to "Todos", painel_leads_path(tipo: @tipo), class: "chip #{'active' unless @status}" %>
+    <% ParceriaLead::STATUSES.each do |status| %>
+      <%= link_to "#{status.humanize} (#{@por_status[status].to_i})",
+            painel_leads_path(status: status, tipo: @tipo),
+            class: "chip #{'active' if @status == status}" %>
+    <% end %>
+  </div>
+
+  <div class="chips">
+    <%= link_to "Qualquer tipo", painel_leads_path(status: @status), class: "chip #{'active' unless @tipo}" %>
+    <% ParceriaLead::TIPOS.each do |tipo| %>
+      <%= link_to tipo.humanize, painel_leads_path(tipo: tipo, status: @status),
+            class: "chip #{'active' if @tipo == tipo}" %>
+    <% end %>
+  </div>
+</div>
+
+<% if @leads.empty? %>
+  <div class="painel-empty"><span class="empty-mono">// nenhum lead</span></div>
+<% else %>
+  <ul class="painel-fila">
+    <% @leads.each do |lead| %>
+      <li class="painel-fila-item sem-media">
+        <div class="painel-fila-corpo">
+          <span class="painel-fila-tags">
+            <span class="painel-tag-mono"><%= lead.tipo.humanize.upcase %></span>
+            <span class="painel-badge-status <%= lead.status %>"><%= lead.status.humanize %></span>
+            <span class="painel-fila-espera"><%= ha_quanto_tempo(lead.created_at) %></span>
+          </span>
+
+          <span class="painel-fila-titulo"><%= lead.empresa %></span>
+          <p class="painel-fila-resumo"><%= lead.descricao %></p>
+          <span class="painel-fila-meta">
+            <%= lead.contato_nome %> · <%= lead.contato_email %>
+            <% if lead.parceiro %>
+              · virou <%= link_to lead.parceiro.nome, edit_painel_parceiro_path(lead.parceiro) %>
+            <% end %>
+          </span>
+        </div>
+
+        <div class="painel-fila-acoes">
+          <% if ParceriaLead::ABERTOS.include?(lead.status) %>
+            <%= button_to "Aceitar", converter_painel_lead_path(lead), class: "btn btn-primary btn-sm",
+                  form: { data: { turbo_confirm: "Aceitar e criar o parceiro “#{lead.empresa}”?" } } %>
+            <%= button_to "Recusar", recusar_painel_lead_path(lead), class: "btn btn-secondary btn-sm" %>
+          <% end %>
+
+          <%# LGPD art. 18: o lead guarda nome e e-mail de uma pessoa que pediu
+              contato. Sem isto, atender um pedido de exclusão exigiria console. %>
+          <%= button_to "Eliminar dados", painel_lead_path(lead), method: :delete, class: "painel-mini perigo",
+                form: { data: { turbo_confirm: "Eliminar os dados de contato de #{lead.contato_nome}? Não há como desfazer." } } %>
+        </div>
+      </li>
+    <% end %>
+  </ul>
+<% end %>

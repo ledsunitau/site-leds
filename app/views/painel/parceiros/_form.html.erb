@@ -1,0 +1,41 @@
+<%# Ficha do parceiro. Local: `parceiro`. %>
+<%= form_with model: parceiro, url: (parceiro.persisted? ? painel_parceiro_path(parceiro) : painel_parceiros_path),
+              method: (parceiro.persisted? ? :patch : :post), class: "painel-form" do |f| %>
+
+  <div class="painel-form-grid">
+    <label class="painel-campo">
+      <span>Nome</span>
+      <%= f.text_field :nome, class: "painel-input", required: true %>
+    </label>
+    <label class="painel-campo">
+      <span>Site</span>
+      <%= f.url_field :site_url, class: "painel-input", placeholder: "https://" %>
+    </label>
+  </div>
+
+  <div class="painel-form-grid tres">
+    <label class="painel-campo">
+      <span>Status</span>
+      <%= f.select :status, Parceiro::STATUSES.map { |s| [ s.capitalize, s ] }, {}, class: "painel-input" %>
+    </label>
+    <label class="painel-campo">
+      <span>Logo <em>(SVG, JPEG, PNG ou WebP)</em></span>
+      <%= f.file_field :logo, accept: "image/svg+xml,image/jpeg,image/png,image/webp", class: "painel-input" %>
+    </label>
+    <label class="painel-campo">
+      <span>Conta vinculada <em>(abre a área do parceiro)</em></span>
+      <%= f.select :user_id, @contas.map { |u| [ "#{u.name} · #{u.email}", u.id ] },
+            { include_blank: "nenhuma" }, class: "painel-input" %>
+    </label>
+  </div>
+
+  <label class="painel-campo">
+    <span>Depoimento <em>(aparece na vitrine quando preenchido)</em></span>
+    <%= f.text_area :depoimento, rows: 3, class: "painel-input" %>
+  </label>
+
+  <div class="painel-form-acoes">
+    <%= f.submit parceiro.persisted? ? "Salvar alterações" : "Cadastrar parceiro", class: "btn btn-primary" %>
+    <%= link_to "Cancelar", painel_parceiros_path, class: "btn btn-secondary" %>
+  </div>
+<% end %>

@@ -10,7 +10,6 @@
   <%= render "shared/navbar", active: "LOJA" %>
 
   <main class="content wrap produto-detalhe">
-    <%= render "shared/loja_gestao" %>
 
     <nav class="loja-breadcrumb">
       <%= link_to "Nossos Produtos", todos_produtos_path %> ›
@@ -116,7 +115,9 @@
               <input type="text" value="1" inputmode="numeric" data-loja-target="qtd" aria-label="Quantidade">
               <button type="button" aria-label="Mais" data-action="loja#mais">+</button>
             </div>
-            <button type="button" class="btn btn-primary produto-add-btn" data-action="loja#adicionarDetalhe">Adicionar ao carrinho</button>
+            <button type="button" class="btn btn-primary produto-add-btn"
+                    data-action="loja#adicionarDetalhe analytics#rastrear" data-evento="carrinho_add"
+                    data-meta='<%= { id: @produto.id, nome: @produto.nome }.to_json %>'>Adicionar ao carrinho</button>
           </div>
           <button type="button" class="btn btn-secondary produto-comprar" data-action="loja#comprarAgora">Comprar agora</button>
         </div>

@@ -1,0 +1,50 @@
+<%# Um catálogo. Locals: `tipo` (slug da rota), `titulo`, `itens`, `uso`, `icone`.
+    Os três catálogos têm a mesma forma — nome + ícone opcional. %>
+<section class="painel-panel">
+  <h3 class="painel-panel-title"><%= titulo %> <span class="painel-linha-meta"><%= itens.size %></span></h3>
+
+  <ul class="painel-linhas">
+    <% itens.each do |item| %>
+      <li class="painel-linha painel-catalogo-linha">
+        <%= form_with url: painel_catalogo_item_path(tipo: tipo, id: item.id), method: :patch,
+                      class: "painel-linha-form", scope: :item do |f| %>
+          <% if icone %>
+            <span class="painel-catalogo-icone">
+              <% if item.icone.attached? %>
+                <img src="<%= FotoUrl.para(item.icone) %>" alt="">
+              <% else %>
+                <span class="painel-catalogo-vazio">—</span>
+              <% end %>
+            </span>
+          <% end %>
+          <%= f.text_field :nome, value: item.nome, class: "painel-input", required: true %>
+          <% if icone %>
+            <%= f.file_field :icone, accept: "image/svg+xml,image/jpeg,image/png,image/webp",
+                  class: "painel-input painel-arquivo" %>
+          <% end %>
+          <%= f.submit "Salvar", class: "painel-mini" %>
+        <% end %>
+
+        <span class="painel-linha-meta"><%= uso[item.id].to_i %> uso(s)</span>
+        <%= button_to "×", painel_catalogo_item_path(tipo: tipo, id: item.id), method: :delete,
+              class: "painel-mini perigo",
+              form: { data: { turbo_confirm: "Apagar “#{item.nome}”?" } } %>
+      </li>
+    <% end %>
+  </ul>
+
+  <% if itens.empty? %>
+    <p class="painel-chart-vazio">// vazio</p>
+  <% end %>
+
+  <hr class="painel-sep">
+  <%= form_with url: painel_criar_catalogo_path(tipo: tipo), method: :post,
+                class: "painel-linha-form", scope: :item do |f| %>
+    <%= f.text_field :nome, placeholder: "Novo item", class: "painel-input", required: true %>
+    <% if icone %>
+      <%= f.file_field :icone, accept: "image/svg+xml,image/jpeg,image/png,image/webp",
+            class: "painel-input painel-arquivo" %>
+    <% end %>
+    <%= f.submit "Criar", class: "btn btn-primary btn-sm" %>
+  <% end %>
+</section>

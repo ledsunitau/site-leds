@@ -1,0 +1,63 @@
+<% content_for :title, "Estrutura — Gestão LEDS" %>
+<% content_for :painel_titulo, "Estrutura da liga" %>
+
+<div class="painel-grid-2">
+  <%# ---- Diretorias ---- %>
+  <section class="painel-panel">
+    <h3 class="painel-panel-title">Diretorias</h3>
+
+    <ul class="painel-linhas">
+      <% @diretorias.each do |diretoria| %>
+        <li class="painel-linha">
+          <%= form_with model: diretoria, url: painel_diretoria_path(diretoria), method: :patch, class: "painel-linha-form" do |f| %>
+            <%= f.text_field :nome, class: "painel-input", required: true %>
+            <%= f.submit "Salvar", class: "painel-mini" %>
+          <% end %>
+          <span class="painel-linha-meta"><%= @mandatos_por_diretoria[diretoria.id].to_i %> mandatos</span>
+          <%= button_to "×", painel_diretoria_path(diretoria), method: :delete, class: "painel-mini perigo",
+                form: { data: { turbo_confirm: "Apagar “#{diretoria.nome}”?" } } %>
+        </li>
+      <% end %>
+    </ul>
+
+    <hr class="painel-sep">
+    <%= form_with model: Diretoria.new, url: painel_diretorias_path, class: "painel-linha-form" do |f| %>
+      <%= f.text_field :nome, placeholder: "Nova diretoria", class: "painel-input", required: true %>
+      <%= f.submit "Criar", class: "btn btn-primary btn-sm" %>
+    <% end %>
+  </section>
+
+  <%# ---- Gestões ---- %>
+  <section class="painel-panel">
+    <h3 class="painel-panel-title">Gestões</h3>
+    <p class="painel-dica">
+      A gestão vigente decide o cargo mostrado nos cards, no grafo e no geneograma.
+      É a que cobre o ano atual; sem nenhuma, vale a mais recente.
+    </p>
+
+    <ul class="painel-linhas">
+      <% @gestoes.each do |gestao| %>
+        <li class="painel-linha">
+          <%= form_with model: gestao, url: painel_gestao_path(gestao), method: :patch, class: "painel-linha-form" do |f| %>
+            <%= f.number_field :ano_inicio, class: "painel-input compacto", required: true %>
+            <span class="painel-linha-sep">–</span>
+            <%= f.number_field :ano_fim, class: "painel-input compacto", required: true %>
+            <%= f.submit "Salvar", class: "painel-mini" %>
+          <% end %>
+          <% if gestao == @vigente %><span class="painel-tag-mono">VIGENTE</span><% end %>
+          <span class="painel-linha-meta"><%= @mandatos_por_gestao[gestao.id].to_i %> mandatos</span>
+          <%= button_to "×", painel_gestao_path(gestao), method: :delete, class: "painel-mini perigo",
+                form: { data: { turbo_confirm: "Apagar a gestão #{gestao.ano_inicio}–#{gestao.ano_fim}?" } } %>
+        </li>
+      <% end %>
+    </ul>
+
+    <hr class="painel-sep">
+    <%= form_with model: Gestao.new, url: painel_gestoes_path, class: "painel-linha-form" do |f| %>
+      <%= f.number_field :ano_inicio, placeholder: "início", class: "painel-input compacto", required: true %>
+      <span class="painel-linha-sep">–</span>
+      <%= f.number_field :ano_fim, placeholder: "fim", class: "painel-input compacto", required: true %>
+      <%= f.submit "Criar", class: "btn btn-primary btn-sm" %>
+    <% end %>
+  </section>
+</div>

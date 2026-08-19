@@ -1,0 +1,66 @@
+<% content_for :title, "Membros — Gestão LEDS" %>
+<% content_for :painel_titulo, "Membros" %>
+<% content_for :painel_acoes do %>
+  <%= link_to "Novo membro", new_painel_membro_path, class: "btn btn-primary btn-sm" %>
+<% end %>
+
+<p class="painel-dica">
+  Cargo e diretoria vêm do mandato da gestão vigente
+  (<%= @gestao ? "#{@gestao.ano_inicio}–#{@gestao.ano_fim}" : "nenhuma cadastrada" %>).
+  Sem mandato nessa gestão, o membro não aparece com cargo nos cards nem no grafo.
+</p>
+
+<% if @membros.empty? %>
+  <div class="painel-empty"><span class="empty-mono">// nenhum membro cadastrado</span></div>
+<% else %>
+  <div class="painel-table-wrap">
+    <table class="painel-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Nome</th>
+          <th>Cargo vigente</th>
+          <th>Diretoria</th>
+          <th>Padrinho</th>
+          <th>Tags</th>
+          <th class="acoes"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @membros.each do |membro| %>
+          <% mandato = membro.mandatos.find { |m| m.gestao_id == @gestao&.id } %>
+          <tr>
+            <td>
+              <span class="painel-foto">
+                <% if membro.foto.attached? %>
+                  <img src="<%= FotoUrl.para(membro.foto) %>" alt="<%= membro.name %>">
+                <% else %>
+                  <span class="avatar-initials"><%= iniciais(membro.name) %></span>
+                <% end %>
+              </span>
+            </td>
+            <td>
+              <%= membro.name %>
+              <span class="painel-td-sub"><%= membro.email %></span>
+            </td>
+            <td>
+              <% if mandato %>
+                <span class="painel-badge-status"><%= cargo_label(mandato.cargo) %></span>
+              <% else %>
+                <span class="painel-td-sub">sem mandato vigente</span>
+              <% end %>
+            </td>
+            <td><%= mandato&.diretoria&.nome || "—" %></td>
+            <td><%= membro.padrinho&.name || "—" %></td>
+            <td><% if membro.founder? %><span class="painel-tag-mono">FUNDADOR</span><% end %></td>
+            <td class="acoes">
+              <%= link_to "Editar", edit_painel_membro_path(membro), class: "painel-mini" %>
+              <%= button_to "Remover", painel_membro_path(membro), method: :delete, class: "painel-mini perigo",
+                    form: { data: { turbo_confirm: "Remover o perfil de #{membro.name}? Os mandatos vão junto; a conta do usuário permanece." } } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

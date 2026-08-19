@@ -1,0 +1,79 @@
+<% content_for :title, "Reservas — Gestão LEDS" %>
+<% content_for :painel_titulo, "Reservas sob demanda" %>
+
+<section class="painel-secao">
+  <div class="painel-secao-head">
+    <span class="eyebrow green">// progresso até a meta</span>
+  </div>
+
+  <p class="painel-dica">
+    Quando as reservas ativas de um produto atingem a meta, os reservantes são
+    avisados para pagar (RF-LOJ-07). O disparo é automático no cruzamento — o
+    botão abaixo serve para antecipar, quando a liga decide produzir assim mesmo.
+  </p>
+
+  <% if @progresso.empty? %>
+    <div class="painel-empty"><span class="empty-mono">// nenhum produto sob demanda com reserva ativa</span></div>
+  <% else %>
+    <div class="painel-grid-2">
+      <% @progresso.each do |linha| %>
+        <% produto = linha[:produto] %>
+        <% pct = linha[:alvo].positive? ? [ (linha[:reservado] * 100.0 / linha[:alvo]).round, 100 ].min : 0 %>
+        <div class="painel-panel painel-meta-card">
+          <h3 class="painel-panel-title"><%= link_to produto.nome, edit_painel_produto_path(produto) %></h3>
+
+          <div class="painel-meta-barra">
+            <span class="painel-meta-fill <%= "cheia" if pct >= 100 %>" style="width: <%= pct %>%"></span>
+          </div>
+          <p class="painel-meta-num">
+            <strong><%= linha[:reservado] %></strong> de <%= linha[:alvo] %> reservados
+            <span class="painel-td-sub"><%= pct %>%</span>
+          </p>
+
+          <%= button_to "Disparar aviso de produção", painel_disparar_reserva_path(produto),
+                class: "btn btn-secondary btn-sm",
+                form: { data: { turbo_confirm: "Avisar todos os reservantes de “#{produto.nome}” para pagar?" } } %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</section>
+
+<section class="painel-secao">
+  <div class="painel-secao-head">
+    <span class="eyebrow blue">// reservas registradas</span>
+  </div>
+
+  <% if @reservas.empty? %>
+    <div class="painel-empty"><span class="empty-mono">// nenhuma reserva</span></div>
+  <% else %>
+    <div class="painel-table-wrap">
+      <table class="painel-table">
+        <thead>
+          <tr>
+            <th>Produto</th>
+            <th>Variante</th>
+            <th>Quem</th>
+            <th>Qtd</th>
+            <th>Status</th>
+            <th>Pedido</th>
+            <th>Quando</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @reservas.each do |reserva| %>
+            <tr>
+              <td><%= reserva.produto.nome %></td>
+              <td><%= reserva.variante&.nome || "—" %></td>
+              <td><%= reserva.user.name %></td>
+              <td class="painel-td-mono"><%= reserva.quantidade %></td>
+              <td><span class="painel-badge-status <%= reserva.status %>"><%= reserva.status %></span></td>
+              <td class="painel-td-mono"><%= reserva.pedido_id ? "##{reserva.pedido_id}" : "—" %></td>
+              <td class="painel-td-mono"><%= data_e_hora(reserva.created_at) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+</section>

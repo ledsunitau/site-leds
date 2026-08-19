@@ -1,0 +1,37 @@
+<% content_for :title, "Erro ##{@log.id} — Gestão LEDS" %>
+<% content_for :painel_titulo, @log.error_class %>
+<% content_for :painel_acoes do %>
+  <span class="painel-badge-status <%= severidade_cor(@log.severidade) %>"><%= @log.severidade %></span>
+  <%= link_to "Voltar aos logs", painel_logs_path, class: "btn btn-secondary btn-sm" %>
+<% end %>
+
+<div class="painel-grid-2">
+  <div class="painel-panel">
+    <h3 class="painel-panel-title">Contexto</h3>
+    <dl class="painel-dl">
+      <dt>Quando</dt><dd><%= data_e_hora(@log.occurred_at) %></dd>
+      <dt>Rota</dt><dd><%= @log.rota || "—" %></dd>
+      <dt>Componente</dt><dd><%= @log.componente || "—" %></dd>
+      <dt>Ação tentada</dt><dd><%= @log.acao_tentada || "—" %></dd>
+      <dt>Usuário</dt><dd><%= @log.user&.name || "anônimo" %></dd>
+      <dt>Ambiente</dt><dd><%= @log.ambiente || "—" %></dd>
+      <dt>Navegador</dt><dd class="painel-quebra"><%= @log.user_agent || "—" %></dd>
+    </dl>
+  </div>
+
+  <div class="painel-panel">
+    <h3 class="painel-panel-title">Mensagem</h3>
+    <pre class="painel-pre"><%= @log.error_message %></pre>
+
+    <h3 class="painel-panel-title" style="margin-top:20px">Payload de entrada</h3>
+    <p class="painel-campo-dica">
+      Mascarado na captura (RN-16): senha, token e dado de pagamento nunca chegam aqui.
+    </p>
+    <pre class="painel-pre"><%= JSON.pretty_generate(@log.input_payload || {}) %></pre>
+  </div>
+</div>
+
+<div class="painel-panel" style="margin-top:14px">
+  <h3 class="painel-panel-title">Backtrace</h3>
+  <pre class="painel-pre painel-backtrace"><%= @log.backtrace.presence || "—" %></pre>
+</div>

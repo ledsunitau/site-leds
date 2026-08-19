@@ -1,0 +1,78 @@
+<% content_for :title, "Aprovações — Gestão LEDS" %>
+<% content_for :painel_titulo, "Aprovações" %>
+
+<section class="painel-secao">
+  <div class="painel-secao-head">
+    <span class="eyebrow green">// novidades aguardando</span>
+    <span class="painel-secao-meta"><%= @posts.size %> na fila</span>
+  </div>
+
+  <% if @posts.empty? %>
+    <div class="painel-empty"><span class="empty-mono">// nenhuma novidade na fila</span></div>
+  <% else %>
+    <ul class="painel-fila">
+      <% @posts.each do |post| %>
+        <li class="painel-fila-item">
+          <span class="painel-fila-media" style="background-image:url('<%= card_image_url(post) %>')"></span>
+
+          <div class="painel-fila-corpo">
+            <span class="painel-fila-tags">
+              <span class="tag solid" style="--tag-color:var(--cat-<%= post.tipo %>)">
+                <%= post.noticia? ? "NOTÍCIA" : "BLOG" %>
+              </span>
+              <span class="painel-fila-espera"><%= ha_quanto_tempo(post.updated_at) %></span>
+            </span>
+            <a href="<%= post_path(post) %>" class="painel-fila-titulo"><%= post.titulo %></a>
+            <% if post.caller.present? %>
+              <p class="painel-fila-resumo"><%= truncate(post.caller, length: 180) %></p>
+            <% end %>
+            <span class="painel-fila-meta">por <%= post.autor&.name || "—" %></span>
+          </div>
+
+          <div class="painel-fila-acoes">
+            <%= button_to "Aprovar", painel_aprovacoes_aprovar_post_path(post),
+                  class: "btn btn-primary btn-sm" %>
+            <%= button_to "Rejeitar", painel_aprovacoes_rejeitar_post_path(post),
+                  class: "btn btn-secondary btn-sm",
+                  form: { data: { turbo_confirm: "Rejeitar “#{post.titulo}”? O autor é notificado." } } %>
+          </div>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</section>
+
+<section class="painel-secao">
+  <div class="painel-secao-head">
+    <span class="eyebrow blue">// ideias da comunidade</span>
+    <span class="painel-secao-meta"><%= @ideias.size %> pendentes</span>
+  </div>
+
+  <% if @ideias.empty? %>
+    <div class="painel-empty"><span class="empty-mono">// nenhuma ideia pendente</span></div>
+  <% else %>
+    <ul class="painel-fila">
+      <% @ideias.each do |ideia| %>
+        <li class="painel-fila-item sem-media">
+          <div class="painel-fila-corpo">
+            <span class="painel-fila-tags">
+              <span class="painel-tag-mono"><%= ideia.tipo.upcase %></span>
+              <span class="painel-fila-espera"><%= ha_quanto_tempo(ideia.created_at) %></span>
+            </span>
+            <span class="painel-fila-titulo"><%= ideia.titulo %></span>
+            <p class="painel-fila-resumo"><%= truncate(ideia.descricao, length: 260) %></p>
+            <span class="painel-fila-meta">por <%= ideia.autor&.name || "—" %></span>
+          </div>
+
+          <div class="painel-fila-acoes">
+            <%= button_to "Aprovar", painel_aprovacoes_aprovar_ideia_path(ideia),
+                  class: "btn btn-primary btn-sm" %>
+            <%= button_to "Rejeitar", painel_aprovacoes_rejeitar_ideia_path(ideia),
+                  class: "btn btn-secondary btn-sm",
+                  form: { data: { turbo_confirm: "Rejeitar esta ideia? O autor é notificado." } } %>
+          </div>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</section>

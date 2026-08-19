@@ -47,16 +47,23 @@ class LojaViewTest < ActionDispatch::IntegrationTest
     assert_select "form[action=?]", checkout_path
   end
 
-  # --- barra de gestão só para gestão ---
+  # --- controles de gestão saíram da loja e foram para o painel ---
 
-  test "a barra de gestão aparece só para diretoria/presidência" do
+  test "a loja não mostra mais controles de gestão na própria tela" do
+    sign_in users(:diretor)
+    get produtos_path
+    assert_select ".loja-gestao-bar", false,
+                  "a barra virou a aba Recursos do painel (/painel/recursos)"
+  end
+
+  test "o atalho para o painel aparece só para a gestão" do
     sign_in users(:ana)
     get produtos_path
-    assert_select ".loja-gestao-bar", false, "comprador não vê controles de gestão"
+    assert_select "a.drawer-gestao", count: 0
 
     sign_in users(:diretor)
     get produtos_path
-    assert_select ".loja-gestao-bar"
+    assert_select "a.drawer-gestao", count: 1
   end
 
   # --- toggle liga/desliga (RF-LOJ) ---

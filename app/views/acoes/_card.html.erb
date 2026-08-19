@@ -3,7 +3,9 @@
     efeito dentro do controller "acoes"; fora dele são inertes. %>
 <% cat = a.detalhe_type.downcase %>
 <% parts = participantes_da_acao(a) %>
-<article class="acao-card" data-acoes-target="card" data-tipo="<%= a.detalhe_type %>" data-nome="<%= a.titulo.downcase %>">
+<article class="acao-card" data-acoes-target="card" data-tipo="<%= a.detalhe_type %>" data-nome="<%= a.titulo.downcase %>"
+         data-action="click->analytics#rastrear" data-evento="acao_view"
+         data-meta='<%= { tipo: a.detalhe_type, id: a.id }.to_json %>'>
   <div class="acao-media" style="background-image:url('<%= card_image_url(a) %>')">
     <span class="tag solid" style="--tag-color:var(--cat-<%= cat %>)"><%= cat.upcase %></span>
   </div>

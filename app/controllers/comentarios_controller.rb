@@ -1,7 +1,13 @@
 # Comentários em posts (RF-NOV-08) e moderação (RF-NOV-10). Leitura pública
 # mostra só os visíveis; a gestão vê tudo para operar. Throttle em rack_attack.
 class ComentariosController < ApplicationController
+  include RecursoAtivo
+
   before_action :authenticate_user!, only: %i[create moderar]
+  # painel → Recursos. Só o CREATE: desligar comentários fecha a porta para
+  # novos, sem apagar nem esconder os que já estão publicados — e a gestão
+  # continua podendo moderar o que ficou.
+  exige_recurso "comentarios_ativos", only: :create
 
   def index
     authorize Comentario

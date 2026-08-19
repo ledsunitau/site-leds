@@ -1,0 +1,112 @@
+<% content_for :title, "Recursos — Gestão LEDS" %>
+<% content_for :painel_titulo, "Recursos do site" %>
+
+<section class="painel-secao">
+  <div class="painel-secao-head">
+    <span class="eyebrow green">// ativação de recursos</span>
+  </div>
+
+  <p class="painel-dica">
+    Cada chave fecha o recurso de verdade — a rota passa a recusar, não só o
+    botão some. Toda mudança fica na <%= link_to "auditoria", painel_auditoria_path %>.
+  </p>
+
+  <div class="painel-recursos">
+    <% @flags.each do |chave, config| %>
+      <% ligado = Setting.ativo?(chave) %>
+      <div class="painel-recurso <%= ligado ? 'ligado' : 'desligado' %>">
+        <div class="painel-recurso-info">
+          <span class="painel-recurso-nome">
+            <%= config[:label] %>
+            <span class="painel-badge-status <%= ligado ? 'ativo' : 'inativo' %>">
+              <%= ligado ? "ligado" : "desligado" %>
+            </span>
+          </span>
+          <p class="painel-recurso-desc"><%= config[:descricao] %></p>
+        </div>
+
+        <%= button_to (ligado ? "Desligar" : "Ligar"), painel_recursos_path, method: :patch,
+              params: { chave: chave, ligado: (!ligado).to_s },
+              class: "btn #{ligado ? 'btn-secondary' : 'btn-primary'} btn-sm",
+              form: { data: { turbo_confirm: chave == "manutencao" && !ligado ? "Fechar o site para todo mundo que não é da gestão?" : nil } } %>
+      </div>
+    <% end %>
+  </div>
+</section>
+
+<section class="painel-secao">
+  <div class="painel-secao-head">
+    <span class="eyebrow blue">// pagamento da loja</span>
+  </div>
+
+  <div class="painel-panel">
+    <%# align-items:end no .painel-form-linha alinha o botão pela BASE do select,
+        e não pelo topo do <label> (que é mais alto por causa da legenda). %>
+    <%= form_with url: painel_recursos_modo_pagamento_path, method: :patch, class: "painel-form-linha" do |f| %>
+      <label class="painel-campo">
+        <span>Como a compra é fechada</span>
+        <%= select_tag :modo_pagamento,
+              options_for_select([ [ "Contato direto (a gestão fecha por fora)", "direto" ],
+                                   [ "Mercado Pago (gateway)", "mercado_pago" ] ], @modo_pagamento),
+              class: "painel-input" %>
+      </label>
+      <%= f.submit "Aplicar", class: "btn btn-primary" %>
+    <% end %>
+
+    <p class="painel-dica">
+      No modo <strong>contato direto</strong> o site não cobra: o pedido nasce
+      aguardando pagamento e a gestão confirma a baixa em
+      <%= link_to "Pedidos", painel_pedidos_path %> quando receber.
+    </p>
+  </div>
+</section>
+
+<section class="painel-secao">
+  <div class="painel-secao-head">
+    <span class="eyebrow red">// limiares dos alertas</span>
+  </div>
+
+  <div class="painel-panel">
+    <p class="painel-dica">
+      A gestão é avisada no sino quando uma destas condições bate. A verificação
+      roda de hora em hora.
+    </p>
+
+    <%= form_with url: painel_recursos_limiares_path, method: :patch, class: "painel-form" do |f| %>
+      <div class="painel-form-grid">
+        <% @limiares.each do |chave, config| %>
+          <label class="painel-campo">
+            <span><%= config[:label] %></span>
+            <%= number_field_tag chave, Setting.limiar(chave), min: 0, class: "painel-input" %>
+          </label>
+        <% end %>
+      </div>
+      <%= f.submit "Salvar limiares", class: "btn btn-primary btn-sm" %>
+    <% end %>
+  </div>
+</section>
+
+<section class="painel-secao">
+  <div class="painel-secao-head">
+    <span class="eyebrow faint">// últimas mudanças de configuração</span>
+  </div>
+
+  <% if @ultimas.empty? %>
+    <div class="painel-empty"><span class="empty-mono">// nada alterado ainda</span></div>
+  <% else %>
+    <ol class="painel-timeline">
+      <% @ultimas.each do |versao| %>
+        <li class="painel-timeline-item <%= versao.event %>">
+          <span class="painel-timeline-dot"></span>
+          <div class="painel-timeline-corpo">
+            <span class="painel-timeline-texto">
+              <strong><%= @autores[versao.whodunnit]&.name || "Sistema" %></strong>
+              <%= evento_label(versao.event) %> uma configuração
+            </span>
+            <span class="painel-timeline-quando"><%= data_e_hora(versao.created_at) %></span>
+          </div>
+        </li>
+      <% end %>
+    </ol>
+  <% end %>
+</section>

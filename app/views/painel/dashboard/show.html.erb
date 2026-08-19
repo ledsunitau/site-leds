@@ -1,0 +1,157 @@
+<% content_for :title, "Gestão — LEDS" %>
+<% content_for :painel_titulo, "Visão geral" %>
+
+<%# ============================================================= DESTAQUE
+    Quatro números que respondem "como a liga está indo" — grandes, com cor
+    própria e um contexto embaixo. O resto é secundário e vem depois. %>
+<section class="painel-secao">
+  <div class="painel-destaques">
+    <div class="painel-destaque" style="--d-cor: var(--leds-green)">
+      <span class="painel-destaque-label">Comunidade</span>
+      <span class="painel-destaque-valor"><%= @kpis[:usuarios] %></span>
+      <span class="painel-destaque-pe"><%= @kpis[:membros] %> membros da liga</span>
+    </div>
+
+    <div class="painel-destaque" style="--d-cor: var(--leds-blue)">
+      <span class="painel-destaque-label">Ações publicadas</span>
+      <span class="painel-destaque-valor"><%= @kpis[:projetos] + @kpis[:eventos] + @kpis[:artigos] %></span>
+      <span class="painel-destaque-pe">
+        <%= @kpis[:projetos] %> projetos · <%= @kpis[:eventos] %> eventos · <%= @kpis[:artigos] %> artigos
+      </span>
+    </div>
+
+    <div class="painel-destaque" style="--d-cor: var(--leds-red)">
+      <span class="painel-destaque-label">Novidades no ar</span>
+      <span class="painel-destaque-valor"><%= @kpis[:posts] %></span>
+      <span class="painel-destaque-pe"><%= @kpis[:ideias] %> ideias recebidas</span>
+    </div>
+
+    <div class="painel-destaque" style="--d-cor: var(--leds-yellow)">
+      <span class="painel-destaque-label">Receita do mês</span>
+      <span class="painel-destaque-valor"><%= moeda(@kpis[:receita_mes]) %></span>
+      <span class="painel-destaque-pe">
+        <%= @kpis[:pedidos_mes] %> pedidos pagos · <%= @kpis[:produtos] %> produtos ativos
+      </span>
+    </div>
+  </div>
+</section>
+
+<%# ========================================================== ATENÇÃO
+    A faixa mais importante do painel: o que só anda se alguém agir. %>
+<section class="painel-secao">
+  <div class="painel-secao-head">
+    <span class="eyebrow red">// precisa de atenção</span>
+  </div>
+
+  <% alertas = [
+       { rotulo: "Na fila de aprovação", n: @pendencias[:aprovacoes], destino: painel_aprovacoes_path,
+         nivel: "aviso", pe: "novidades e ideias aguardando revisão" },
+       { rotulo: "Denúncias pendentes", n: @pendencias[:denuncias], destino: painel_denuncias_path,
+         nivel: "grave", pe: "comentários reportados sem decisão" },
+       { rotulo: "Leads de parceria", n: @pendencias[:leads], destino: painel_leads_path,
+         nivel: "aviso", pe: "empresas esperando resposta" },
+       { rotulo: "Pedidos a confirmar", n: @pendencias[:pedidos_pagar], destino: painel_pedidos_path(status: "aguardando_pagamento"),
+         nivel: "aviso", pe: "pagamento presencial sem baixa" },
+       { rotulo: "Pedidos a produzir", n: @pendencias[:pedidos_produzir], destino: painel_pedidos_path(status: "pago"),
+         nivel: "aviso", pe: "pagos, aguardando produção" },
+       { rotulo: "Erros graves (24h)", n: @pendencias[:erros_graves_24h], destino: painel_logs_path,
+         nivel: "grave", pe: "falhas de servidor registradas" },
+       { rotulo: "Jobs falhados", n: @pendencias[:jobs_falhados], destino: "/admin/jobs",
+         nivel: "grave", pe: "tarefas em background que não completaram" }
+     ].select { |a| a[:n].to_i.positive? } %>
+
+  <% if alertas.empty? %>
+    <div class="painel-tudo-certo">
+      <span class="painel-tudo-certo-icone" aria-hidden="true">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      </span>
+      <div>
+        <span class="empty-mono">// nada pendente</span>
+        <p>Nenhuma fila, denúncia ou erro grave aguardando a gestão.</p>
+      </div>
+    </div>
+  <% else %>
+    <div class="painel-alertas">
+      <% alertas.each do |a| %>
+        <a href="<%= a[:destino] %>" class="painel-alerta <%= a[:nivel] %>">
+          <span class="painel-alerta-num"><%= a[:n] %></span>
+          <span class="painel-alerta-txt">
+            <span class="painel-alerta-label"><%= a[:rotulo] %></span>
+            <span class="painel-alerta-pe"><%= a[:pe] %></span>
+          </span>
+          <span class="painel-alerta-seta">→</span>
+        </a>
+      <% end %>
+    </div>
+  <% end %>
+</section>
+
+<%# ============================================================ TRÁFEGO
+    Os dois painéis têm a MESMA altura (painel-igual): lado a lado com
+    tamanhos diferentes o olho lê como se um valesse mais que o outro. %>
+<section class="painel-secao">
+  <div class="painel-secao-head">
+    <span class="eyebrow green">// tráfego do site</span>
+    <span class="painel-secao-meta">
+      <%= @trafego[:total] %> eventos · <%= @trafego[:visitantes] %> visitantes únicos
+      · <%= link_to "ver métricas completas →", painel_metricas_path, class: "painel-link" %>
+    </span>
+  </div>
+
+  <div class="painel-grid-2 painel-igual">
+    <div class="painel-panel">
+      <h3 class="painel-panel-title">Eventos por dia</h3>
+      <div class="painel-panel-corpo">
+        <%= render "painel/charts/linha", dados: @trafego[:por_dia], cor: "var(--leds-green)", altura: 200 %>
+      </div>
+      <% if @trafego[:por_dia].empty? %>
+        <p class="painel-dica">
+          A coleta só grava com consentimento de cookies (RN-14). Os primeiros
+          eventos aparecem aqui minutos depois de alguém aceitar.
+        </p>
+      <% end %>
+    </div>
+
+    <div class="painel-panel">
+      <h3 class="painel-panel-title">Páginas mais vistas</h3>
+      <div class="painel-panel-corpo">
+        <%= render "painel/charts/barras", dados: @trafego[:por_rota].first(8), cor: "var(--leds-blue)" %>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%# ======================================================= ATIVIDADE %>
+<section class="painel-secao">
+  <div class="painel-secao-head">
+    <span class="eyebrow blue">// atividade recente</span>
+    <span class="painel-secao-meta">
+      <%= link_to "ver auditoria completa →", painel_auditoria_path, class: "painel-link" %>
+    </span>
+  </div>
+
+  <div class="painel-panel">
+    <% if @atividade.empty? %>
+      <p class="painel-chart-vazio">// nada registrado ainda</p>
+    <% else %>
+      <ol class="painel-timeline painel-timeline-cards">
+        <% @atividade.each do |versao, autor| %>
+          <li class="painel-timeline-item <%= versao.event %>">
+            <span class="painel-timeline-dot"></span>
+            <div class="painel-timeline-corpo">
+              <span class="painel-timeline-texto">
+                <strong><%= autor&.name || "Sistema" %></strong>
+                <span class="painel-evento <%= versao.event %>"><%= evento_label(versao.event) %></span>
+                <em><%= modelo_label(versao.item_type) %> #<%= versao.item_id %></em>
+              </span>
+              <span class="painel-timeline-quando"><%= data_e_hora(versao.created_at) %></span>
+            </div>
+          </li>
+        <% end %>
+      </ol>
+    <% end %>
+  </div>
+</section>

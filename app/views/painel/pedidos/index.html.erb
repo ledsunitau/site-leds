@@ -1,0 +1,93 @@
+<% content_for :title, "Pedidos — Gestão LEDS" %>
+<% content_for :painel_titulo, "Pedidos" %>
+<% content_for :painel_acoes do %>
+  <span class="painel-secao-meta">Receita total: <strong><%= moeda(@receita) %></strong></span>
+<% end %>
+
+<div class="painel-toolbar">
+  <div class="chips">
+    <%= link_to "Todos", painel_pedidos_path, class: "chip #{'active' unless @status}" %>
+    <% Pedido::STATUSES.each do |status| %>
+      <%= link_to "#{pedido_status_label(status)} (#{@por_status[status].to_i})",
+            painel_pedidos_path(status: status),
+            class: "chip #{'active' if @status == status}" %>
+    <% end %>
+  </div>
+</div>
+
+<% if @pedidos.empty? %>
+  <div class="painel-empty"><span class="empty-mono">// nenhum pedido</span></div>
+<% else %>
+  <ul class="painel-fila">
+    <% @pedidos.each do |pedido| %>
+      <li class="painel-fila-item sem-media">
+        <div class="painel-fila-corpo">
+          <span class="painel-fila-tags">
+            <span class="painel-tag-mono">#<%= pedido.id %></span>
+            <span class="painel-badge-status <%= pedido.status %>"><%= pedido_status_label(pedido.status) %></span>
+            <span class="painel-tag-mono"><%= pedido.tipo_entrega.upcase %></span>
+            <span class="painel-fila-espera"><%= data_e_hora(pedido.created_at) %></span>
+          </span>
+
+          <span class="painel-fila-titulo">
+            <%= pedido.comprador&.name || "conta removida" %>
+            <span class="painel-fila-total"><%= moeda(pedido.total) %></span>
+          </span>
+
+          <ul class="painel-itens">
+            <% pedido.itens.each do |item| %>
+              <li>
+                <%= item.quantidade %>× <%= item.produto&.nome || "produto removido" %>
+                <% if item.variante %><span class="painel-td-sub">(<%= item.variante.nome %>)</span><% end %>
+                — <%= moeda(item.preco_unitario) %>
+              </li>
+            <% end %>
+          </ul>
+
+          <span class="painel-fila-meta">
+            <% if pedido.endereco %>
+              <%= pedido.endereco.logradouro %>, <%= pedido.endereco.numero %> ·
+              <%= pedido.endereco.cidade %>/<%= pedido.endereco.uf %> · CEP <%= pedido.endereco.cep %>
+            <% else %>
+              Retirada no campus
+            <% end %>
+            <% if pedido.rastreamento_codigo.present? %>
+              · rastreio <strong><%= pedido.rastreamento_codigo %></strong>
+            <% end %>
+            <% if pedido.contato.present? %>· contato: <%= pedido.contato %><% end %>
+          </span>
+        </div>
+
+        <div class="painel-fila-acoes">
+          <%# Modo "direto": a cobrança acontece pessoalmente, sem webhook — a
+              baixa é manual, senão o pedido expira em 1h (ExpirarPedidosJob). %>
+          <% if pedido.aguardando_pagamento? %>
+            <%= button_to "Confirmar pagamento", marcar_pago_painel_pedido_path(pedido),
+                  class: "btn btn-primary btn-sm",
+                  form: { data: { turbo_confirm: "Confirmar que o pagamento de #{moeda(pedido.total)} foi recebido?" } } %>
+            <%= button_to "Cancelar pedido", cancelar_painel_pedido_path(pedido),
+                  class: "btn btn-secondary btn-sm",
+                  form: { data: { turbo_confirm: "Cancelar o pedido ##{pedido.id}? O estoque volta." } } %>
+          <% end %>
+
+          <% if pedido.pago? %>
+            <%= button_to "Marcar em produção", em_producao_painel_pedido_path(pedido), class: "btn btn-primary btn-sm" %>
+          <% end %>
+
+          <%# envio manual: quando a etiqueta não sai pela API do Melhor Envio %>
+          <% if pedido.pago? || pedido.em_producao? %>
+            <%= form_with url: enviar_painel_pedido_path(pedido), class: "painel-envio-form" do |f| %>
+              <%= text_field_tag :rastreamento_codigo, nil, placeholder: "código de rastreio",
+                    class: "painel-input compacto", required: true %>
+              <%= f.submit "Enviar", class: "painel-mini principal" %>
+            <% end %>
+          <% end %>
+
+          <% if pedido.enviado? %>
+            <%= button_to "Marcar entregue", entregar_painel_pedido_path(pedido), class: "btn btn-primary btn-sm" %>
+          <% end %>
+        </div>
+      </li>
+    <% end %>
+  </ul>
+<% end %>

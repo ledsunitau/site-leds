@@ -1,0 +1,153 @@
+<%# Cadastro de produto. Local: `produto`. %>
+<%= form_with model: produto, url: (produto.persisted? ? painel_produto_path(produto) : painel_produtos_path),
+              method: (produto.persisted? ? :patch : :post), class: "painel-form",
+              data: { controller: "colecao" } do |f| %>
+
+  <section class="painel-form-secao">
+    <h4 class="painel-sub">Produto</h4>
+
+    <div class="painel-form-grid">
+      <label class="painel-campo">
+        <span>Nome</span>
+        <%= f.text_field :nome, class: "painel-input", required: true %>
+      </label>
+      <label class="painel-campo">
+        <span>Categoria</span>
+        <%= f.select :categoria_id, @categorias.map { |c| [ c.nome, c.id ] },
+              { include_blank: "sem categoria" }, class: "painel-input" %>
+      </label>
+    </div>
+
+    <label class="painel-campo">
+      <span>Descrição</span>
+      <%= f.text_area :descricao, rows: 4, class: "painel-input" %>
+    </label>
+
+    <div class="painel-form-grid tres">
+      <label class="painel-campo">
+        <span>Preço</span>
+        <%= f.number_field :preco, step: "0.01", min: 0, class: "painel-input", required: true %>
+      </label>
+      <label class="painel-campo">
+        <span>Preço promocional <em>(vazio = sem promoção)</em></span>
+        <%= f.number_field :preco_promocional, step: "0.01", min: 0, class: "painel-input" %>
+      </label>
+      <label class="painel-campo">
+        <span>Status</span>
+        <%= f.select :status, Produto::STATUSES.map { |s| [ s.capitalize, s ] }, {}, class: "painel-input" %>
+      </label>
+    </div>
+
+    <div class="painel-form-grid tres">
+      <label class="painel-campo">
+        <span>Modo de venda</span>
+        <%= f.select :modo_venda, Produto::MODOS_VENDA.map { |m| [ m.humanize, m ] }, {}, class: "painel-input" %>
+      </label>
+      <label class="painel-campo">
+        <span>Meta de produção <em>(obrigatória em sob demanda)</em></span>
+        <%= f.number_field :quantidade_alvo, min: 1, class: "painel-input" %>
+      </label>
+      <label class="painel-campo">
+        <span>Imagem principal</span>
+        <%= f.file_field :imagem, accept: "image/jpeg,image/png,image/webp", class: "painel-input" %>
+      </label>
+    </div>
+
+    <label class="painel-check">
+      <%= f.check_box :destaque %>
+      <span>Destaque <em>(aparece nos banners da home da loja)</em></span>
+    </label>
+
+    <p class="painel-campo-dica">
+      Marcar como <strong>indisponível</strong> limpa os carrinhos que contêm este
+      produto e cancela as reservas ativas (RN-11); os reservantes são notificados.
+    </p>
+  </section>
+
+  <section class="painel-form-secao">
+    <h4 class="painel-sub">Variantes</h4>
+    <p class="painel-campo-dica">
+      Tamanho/cor. Produto de tamanho único precisa de uma variante padrão.
+      Peso e dimensões só são exigidos na hora de cotar frete de envio.
+      <strong>Não apague</strong> uma variante que já está em carrinho ou pedido — edite-a.
+    </p>
+
+    <fieldset class="painel-fieldset painel-colecao" data-colecao-target="grupo">
+      <legend>Lista</legend>
+      <div class="painel-colecao-linhas" data-colecao-target="linhas">
+        <% produto.variantes.each_with_index do |variante, i| %>
+          <div class="painel-colecao-linha">
+            <%= hidden_field_tag "produto[variantes][#{i}][id]", variante.id %>
+            <label class="painel-campo">
+              <span>Nome</span>
+              <%= text_field_tag "produto[variantes][#{i}][nome]", variante.nome, class: "painel-input", required: true %>
+            </label>
+            <label class="painel-campo">
+              <span>SKU</span>
+              <%= text_field_tag "produto[variantes][#{i}][sku]", variante.sku, class: "painel-input" %>
+            </label>
+            <label class="painel-campo">
+              <span>Estoque</span>
+              <%= number_field_tag "produto[variantes][#{i}][estoque]", variante.estoque, min: 0, class: "painel-input compacto" %>
+            </label>
+            <label class="painel-campo">
+              <span>Peso (kg)</span>
+              <%= number_field_tag "produto[variantes][#{i}][peso]", variante.peso, step: "0.001", class: "painel-input compacto" %>
+            </label>
+            <label class="painel-campo">
+              <span>A × L × C (cm)</span>
+              <span class="painel-dim">
+                <%= number_field_tag "produto[variantes][#{i}][altura]", variante.altura, step: "0.1", class: "painel-input compacto" %>
+                <%= number_field_tag "produto[variantes][#{i}][largura]", variante.largura, step: "0.1", class: "painel-input compacto" %>
+                <%= number_field_tag "produto[variantes][#{i}][comprimento]", variante.comprimento, step: "0.1", class: "painel-input compacto" %>
+              </span>
+            </label>
+            <button type="button" class="painel-mini perigo" data-action="colecao#remover" aria-label="Remover variante">×</button>
+          </div>
+        <% end %>
+      </div>
+
+      <p class="painel-chart-vazio" data-colecao-target="vazio" <%= "hidden" if produto.variantes.any? %>>// nenhuma variante</p>
+      <button type="button" class="painel-mini" data-action="colecao#adicionar">+ adicionar variante</button>
+
+      <%# marcador em branco: sem ele, apagar TODAS as variantes não mandaria a
+          chave e o servidor entenderia "não mexer" (o [] é que esvazia) %>
+      <%= hidden_field_tag "produto[variantes][zzz_marcador][nome]", "" %>
+
+      <template data-colecao-target="molde">
+        <div class="painel-colecao-linha">
+          <label class="painel-campo">
+            <span>Nome</span>
+            <%= text_field_tag "produto[variantes][__IDX__][nome]", nil, class: "painel-input" %>
+          </label>
+          <label class="painel-campo">
+            <span>SKU</span>
+            <%= text_field_tag "produto[variantes][__IDX__][sku]", nil, class: "painel-input" %>
+          </label>
+          <label class="painel-campo">
+            <span>Estoque</span>
+            <%= number_field_tag "produto[variantes][__IDX__][estoque]", 0, min: 0, class: "painel-input compacto" %>
+          </label>
+          <label class="painel-campo">
+            <span>Peso (kg)</span>
+            <%= number_field_tag "produto[variantes][__IDX__][peso]", nil, step: "0.001", class: "painel-input compacto" %>
+          </label>
+          <label class="painel-campo">
+            <span>A × L × C (cm)</span>
+            <span class="painel-dim">
+              <%= number_field_tag "produto[variantes][__IDX__][altura]", nil, step: "0.1", class: "painel-input compacto" %>
+              <%= number_field_tag "produto[variantes][__IDX__][largura]", nil, step: "0.1", class: "painel-input compacto" %>
+              <%= number_field_tag "produto[variantes][__IDX__][comprimento]", nil, step: "0.1", class: "painel-input compacto" %>
+            </span>
+          </label>
+          <button type="button" class="painel-mini perigo" data-action="colecao#remover" aria-label="Remover variante">×</button>
+        </div>
+      </template>
+    </fieldset>
+  </section>
+
+  <div class="painel-form-acoes">
+    <%= f.submit produto.persisted? ? "Salvar alterações" : "Cadastrar produto", class: "btn btn-primary" %>
+    <%= link_to "Cancelar", painel_produtos_path, class: "btn btn-secondary" %>
+  </div>
+<% end %>

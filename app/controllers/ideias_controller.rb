@@ -2,7 +2,11 @@
 # index lista as ideias do próprio usuário (a fila da gestão vive em
 # Admin::ApprovalsController). Throttle da proposta em rack_attack.rb.
 class IdeiasController < ApplicationController
+  include RecursoAtivo
+
   before_action :authenticate_user!
+  # painel → Recursos: desligar Ideias fecha o formulário E a rota
+  exige_recurso "ideias_ativas", only: %i[new create]
 
   def index
     authorize Ideia

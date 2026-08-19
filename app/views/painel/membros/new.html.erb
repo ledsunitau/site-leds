@@ -1,0 +1,10 @@
+<% content_for :title, "Novo membro — Gestão LEDS" %>
+<% content_for :painel_titulo, "Novo membro" %>
+
+<div class="painel-panel painel-form-panel">
+  <p class="painel-dica">
+    O perfil de membro se liga a uma conta que já existe. Depois de criar, adicione
+    o mandato (cargo, diretoria e gestão) na ficha.
+  </p>
+  <%= render "form", membro: @membro %>
+</div>

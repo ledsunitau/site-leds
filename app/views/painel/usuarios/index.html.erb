@@ -1,0 +1,72 @@
+<% content_for :title, "Usuários — Gestão LEDS" %>
+<% content_for :painel_titulo, "Usuários e papéis" %>
+
+<div class="painel-toolbar">
+  <div class="chips">
+    <%= link_to "Todos (#{@contagem.values.sum})", painel_usuarios_path(busca: @busca),
+          class: "chip #{'active' unless @role}" %>
+    <% User::ROLES.each do |role| %>
+      <%= link_to "#{papel_label(role)} (#{@contagem[role].to_i})",
+            painel_usuarios_path(role: role, busca: @busca),
+            class: "chip #{'active' if @role == role}" %>
+    <% end %>
+  </div>
+
+  <%= form_with url: painel_usuarios_path, method: :get, class: "painel-busca" do |f| %>
+    <%= f.hidden_field :role, value: @role %>
+    <%= f.search_field :busca, value: @busca, placeholder: "Nome ou e-mail…", class: "painel-input" %>
+    <%= f.submit "Buscar", class: "btn btn-secondary btn-sm" %>
+  <% end %>
+</div>
+
+<% unless current_user.presidencia? %>
+  <p class="painel-dica painel-aviso">
+    Conceder ou remover papel de <strong>gestão</strong> é da presidência (RN-15).
+    Você concede os demais papéis; ninguém altera o próprio.
+  </p>
+<% end %>
+
+<div class="painel-table-wrap">
+  <table class="painel-table">
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>E-mail</th>
+        <th>Perfil de membro</th>
+        <th>Papel</th>
+        <th class="acoes">Alterar papel</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @usuarios.each do |usuario| %>
+        <tr>
+          <td><%= usuario.name %></td>
+          <td class="painel-td-mono"><%= usuario.email %></td>
+          <td>
+            <% if usuario.member %>
+              <%= link_to "ficha", edit_painel_membro_path(usuario.member) %>
+            <% else %>
+              <span class="painel-td-sub">—</span>
+            <% end %>
+          </td>
+          <td><span class="painel-badge-status"><%= papel_label(usuario.role) %></span></td>
+          <td class="acoes">
+            <%# a UI esconde o que a UserPolicy recusaria; o servidor revalida %>
+            <% permitidos = User::ROLES.select { |r| r != usuario.role && policy(usuario).atualizar_role?(r) } %>
+            <% if permitidos.empty? %>
+              <span class="painel-td-sub">
+                <%= usuario == current_user ? "sua própria conta" : "só a presidência" %>
+              </span>
+            <% else %>
+              <%= form_with model: usuario, url: painel_usuario_path(usuario), method: :patch, class: "painel-inline-form" do |f| %>
+                <%= f.select :role, permitidos.map { |r| [ papel_label(r), r ] },
+                      { include_blank: "escolher…" }, class: "painel-input compacto" %>
+                <%= f.submit "Aplicar", class: "painel-mini principal" %>
+              <% end %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,228 @@
+<%# Formulário de ação. Locals: `acao`, `detalhe`, `tipo` ("projeto"/"evento"/"artigo").
+    As coleções aninhadas usam índice no name (acao[contribuicoes][0][member_id]);
+    o concern EscritaDeAcao normaliza hash-indexado → lista, então a API (que
+    manda array) e o painel escrevem pelo mesmo caminho.
+
+    Semântica de coleção: chave ausente = não mexer; enviada = estado final.
+    O formulário SEMPRE envia a chave, então o que está na tela é o que fica. %>
+<%= form_with model: acao, url: (acao.persisted? ? painel_acao_path(acao) : painel_acoes_path),
+              method: (acao.persisted? ? :patch : :post), class: "painel-form",
+              data: { controller: "colecao" } do |f| %>
+
+  <%= hidden_field_tag "acao[tipo]", tipo %>
+
+  <%# ---- Comum a todos os tipos ---- %>
+  <section class="painel-form-secao">
+    <h4 class="painel-sub">Dados gerais</h4>
+
+    <label class="painel-campo">
+      <span>Título</span>
+      <%= f.text_field :titulo, class: "painel-input", required: true %>
+    </label>
+
+    <label class="painel-campo">
+      <span>Descrição</span>
+      <%= f.text_area :descricao, rows: 4, class: "painel-input" %>
+    </label>
+
+    <div class="painel-form-grid tres">
+      <label class="painel-campo">
+        <span>Status</span>
+        <%= f.select :status, Acao::STATUSES.map { |s| [ s.capitalize, s ] }, {}, class: "painel-input" %>
+      </label>
+
+      <label class="painel-campo">
+        <span>Thumbnail</span>
+        <%= f.file_field :thumbnail, accept: "image/jpeg,image/png,image/webp", class: "painel-input" %>
+      </label>
+
+      <label class="painel-campo">
+        <span>Idealizador <em>(ideia de origem)</em></span>
+        <% if acao.persisted? %>
+          <%# acoes.ideia_id é imutável depois de criada (RF-ACO-07) %>
+          <input type="text" class="painel-input" disabled
+                 value="<%= acao.ideia ? "#{acao.ideia.titulo} — #{acao.ideia.autor&.name}" : "nenhum" %>">
+        <% else %>
+          <%= f.select :ideia_id, @ideias.map { |i| [ "#{i.titulo} — #{i.autor&.name}", i.id ] },
+                { include_blank: "nenhum" }, class: "painel-input" %>
+        <% end %>
+      </label>
+    </div>
+
+    <fieldset class="painel-fieldset">
+      <legend>Parceiros que apoiam</legend>
+      <div class="painel-checks">
+        <% @parceiros.each do |parceiro| %>
+          <label class="painel-check-inline">
+            <%= check_box_tag "acao[parceiro_ids][]", parceiro.id,
+                  acao.parceiro_ids.include?(parceiro.id), id: "parc_#{parceiro.id}" %>
+            <span><%= parceiro.nome %></span>
+          </label>
+        <% end %>
+      </div>
+      <%= hidden_field_tag "acao[parceiro_ids][]", "" %>
+    </fieldset>
+  </section>
+
+  <%# ---- Específico do tipo ---- %>
+  <section class="painel-form-secao">
+    <h4 class="painel-sub">Detalhes de <%= tipo %></h4>
+
+    <% case tipo %>
+    <% when "projeto" %>
+      <%= fields_for "acao[projeto]", detalhe do |p| %>
+        <div class="painel-form-grid tres">
+          <label class="painel-campo">
+            <span>Link do projeto</span>
+            <%= p.url_field :link, class: "painel-input", placeholder: "https://" %>
+          </label>
+          <label class="painel-campo">
+            <span>Repositório</span>
+            <%= p.url_field :repo_url, class: "painel-input", placeholder: "https://github.com/…" %>
+          </label>
+          <label class="painel-campo">
+            <span>Hospedagem</span>
+            <%= p.text_field :hospedagem, class: "painel-input", placeholder: "Vercel, AWS…" %>
+          </label>
+        </div>
+
+        <div class="painel-form-grid">
+          <label class="painel-campo">
+            <span>Situação</span>
+            <%= p.select :situacao, Projeto::SITUACOES.map { |s| [ s.humanize, s ] }, {}, class: "painel-input" %>
+          </label>
+          <label class="painel-campo">
+            <span>Data de finalização <em>(só se finalizado)</em></span>
+            <%= p.date_field :data_finalizacao, class: "painel-input" %>
+          </label>
+        </div>
+      <% end %>
+
+      <fieldset class="painel-fieldset">
+        <legend>Stack</legend>
+        <div class="painel-checks">
+          <% @tecnologias.each do |tec| %>
+            <label class="painel-check-inline">
+              <%= check_box_tag "acao[tecnologia_ids][]", tec.id,
+                    detalhe.persisted? && detalhe.tecnologia_ids.include?(tec.id), id: "tec_a_#{tec.id}" %>
+              <span><%= tec.nome %></span>
+            </label>
+          <% end %>
+        </div>
+        <%= hidden_field_tag "acao[tecnologia_ids][]", "" %>
+      </fieldset>
+
+      <%= render "painel/acoes/colecao",
+            titulo: "Contribuições", chave: "contribuicoes", vazio: "Nenhuma contribuição.",
+            itens: (detalhe.persisted? ? detalhe.contribuicoes.includes(member: :user) : []),
+            campos: [
+              { nome: "member_id", tipo: :select, rotulo: "Membro", opcoes: @membros.map { |m| [ m.name, m.id ] } },
+              { nome: "papel", tipo: :select, rotulo: "Papel", opcoes: Contribuicao::PAPEIS.map { |p| [ p.humanize, p ] } }
+            ] %>
+
+    <% when "evento" %>
+      <%= fields_for "acao[evento]", detalhe do |e| %>
+        <div class="painel-form-grid tres">
+          <label class="painel-campo">
+            <span>Local</span>
+            <%= e.text_field :local, class: "painel-input" %>
+          </label>
+          <label class="painel-campo">
+            <span>Início</span>
+            <%= e.datetime_field :data_inicio, class: "painel-input", required: true %>
+          </label>
+          <label class="painel-campo">
+            <span>Fim <em>(opcional)</em></span>
+            <%= e.datetime_field :data_fim, class: "painel-input" %>
+          </label>
+        </div>
+      <% end %>
+      <p class="painel-campo-dica">
+        O estado do evento (vai acontecer / acontecendo / já aconteceu) é derivado das datas — não se escolhe.
+      </p>
+
+      <%= render "painel/acoes/colecao",
+            titulo: "Membros presentes", chave: "evento_membros", vazio: "Nenhum membro.",
+            itens: (detalhe.persisted? ? detalhe.evento_membros.includes(member: :user) : []),
+            campos: [
+              { nome: "member_id", tipo: :select, rotulo: "Membro", opcoes: @membros.map { |m| [ m.name, m.id ] } },
+              { nome: "papel", tipo: :select, rotulo: "Papel", opcoes: EventoMembro::PAPEIS.map { |p| [ p.humanize, p ] } }
+            ] %>
+
+      <%= render "painel/acoes/colecao",
+            titulo: "Convidados externos", chave: "convidados", vazio: "Nenhum convidado.",
+            itens: (detalhe.persisted? ? detalhe.convidados.includes(:links) : []),
+            campos: [
+              { nome: "nome", tipo: :text, rotulo: "Nome" },
+              { nome: "bio", tipo: :text, rotulo: "Bio" },
+              { nome: "redes_texto", tipo: :text, rotulo: "Redes (uma por linha: rede: url)",
+                valor: ->(c) { c.links.map { |l| "#{l.rede}: #{l.url}" }.join("\n") } }
+            ] %>
+
+    <% when "artigo" %>
+      <%= fields_for "acao[artigo]", detalhe do |a| %>
+        <label class="painel-campo">
+          <span>Abstract</span>
+          <%= a.text_area :abstract, rows: 5, class: "painel-input" %>
+        </label>
+        <div class="painel-form-grid">
+          <label class="painel-campo">
+            <span>Revista</span>
+            <%= a.text_field :revista, class: "painel-input" %>
+          </label>
+          <label class="painel-campo">
+            <span>Publicação (DOI / arXiv)</span>
+            <%= a.url_field :publicacao_url, class: "painel-input", placeholder: "https://doi.org/…" %>
+          </label>
+        </div>
+        <div class="painel-form-grid">
+          <label class="painel-campo">
+            <span>Situação</span>
+            <%= a.select :situacao, Artigo::SITUACOES.map { |s| [ s.humanize, s ] }, {}, class: "painel-input" %>
+          </label>
+          <label class="painel-campo">
+            <span>Data de finalização</span>
+            <%= a.date_field :data_finalizacao, class: "painel-input" %>
+          </label>
+        </div>
+      <% end %>
+
+      <fieldset class="painel-fieldset">
+        <legend>Temas — de 1 a 3 (RN-18)</legend>
+        <div class="painel-checks">
+          <% @temas.each do |tema| %>
+            <label class="painel-check-inline">
+              <%= check_box_tag "acao[tema_ids][]", tema.id,
+                    detalhe.persisted? && detalhe.tema_ids.include?(tema.id), id: "tema_#{tema.id}" %>
+              <span><%= tema.nome %></span>
+            </label>
+          <% end %>
+        </div>
+        <%= hidden_field_tag "acao[tema_ids][]", "" %>
+      </fieldset>
+
+      <%= render "painel/acoes/colecao",
+            titulo: "Autores", chave: "autores", vazio: "Nenhum autor.",
+            itens: (detalhe.persisted? ? detalhe.autores : []),
+            campos: [
+              { nome: "nome", tipo: :text, rotulo: "Nome" },
+              { nome: "member_id", tipo: :select, rotulo: "Membro (se da liga)", opcoes: @membros.map { |m| [ m.name, m.id ] }, opcional: true },
+              { nome: "lattes_url", tipo: :text, rotulo: "Lattes" },
+              { nome: "ordem", tipo: :number, rotulo: "Ordem" }
+            ] %>
+
+      <%= render "painel/acoes/colecao",
+            titulo: "Apresentações em congressos", chave: "apresentacoes", vazio: "Nenhuma apresentação.",
+            itens: (detalhe.persisted? ? detalhe.apresentacoes.includes(:congresso) : []),
+            campos: [
+              { nome: "congresso_id", tipo: :select, rotulo: "Congresso", opcoes: @congressos.map { |c| [ c.nome, c.id ] } },
+              { nome: "ano", tipo: :number, rotulo: "Ano" }
+            ] %>
+    <% end %>
+  </section>
+
+  <div class="painel-form-acoes">
+    <%= f.submit acao.persisted? ? "Salvar alterações" : "Criar ação", class: "btn btn-primary" %>
+    <%= link_to "Cancelar", painel_acoes_path, class: "btn btn-secondary" %>
+  </div>
+<% end %>

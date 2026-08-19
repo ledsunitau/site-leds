@@ -1,0 +1,78 @@
+<% content_for :title, "Auditoria — Gestão LEDS" %>
+<% content_for :painel_titulo, "Auditoria" %>
+
+<p class="painel-dica">
+  Toda criação, edição e remoção auditada do site. Cada cartão mostra
+  <strong>quem</strong> fez, <strong>o que</strong> foi feito, em <strong>qual
+  registro</strong> e <strong>o que mudou</strong> — valor antigo à esquerda,
+  novo à direita. Carimbos de tempo ficam de fora do diff.
+</p>
+
+<div class="painel-toolbar">
+  <%= form_with url: painel_auditoria_path, method: :get, class: "painel-busca" do |f| %>
+    <%= select_tag :item_type, options_for_select([ [ "Qualquer registro", "" ] ] +
+          Painel::AuditoriaController::MODELOS.map { |m| [ modelo_label(m), m ] }, @item_type),
+          class: "painel-input compacto" %>
+    <%= select_tag :evento, options_for_select([ [ "Qualquer ação", "" ],
+          [ "Criou", "create" ], [ "Editou", "update" ], [ "Removeu", "destroy" ] ], @evento),
+          class: "painel-input compacto" %>
+    <%= f.date_field :de, value: params[:de], class: "painel-input compacto" %>
+    <%= f.date_field :ate, value: params[:ate], class: "painel-input compacto" %>
+    <%= f.submit "Filtrar", class: "btn btn-secondary btn-sm" %>
+    <% if @filtros.any? %>
+      <%= link_to "limpar", painel_auditoria_path, class: "painel-mini" %>
+    <% end %>
+  <% end %>
+</div>
+
+<% if @linhas.empty? %>
+  <div class="painel-empty"><span class="empty-mono">// nenhuma alteração no filtro</span></div>
+<% else %>
+  <ul class="painel-auditoria">
+    <% @linhas.each do |linha| %>
+      <% versao = linha[:versao] %>
+      <li class="painel-auditoria-item <%= versao.event %>">
+        <header class="painel-auditoria-head">
+          <span class="painel-evento <%= versao.event %>"><%= evento_label(versao.event).upcase %></span>
+
+          <span class="painel-auditoria-alvo">
+            <strong><%= modelo_label(versao.item_type) %></strong>
+            <span class="painel-auditoria-id">#<%= versao.item_id %></span>
+          </span>
+
+          <span class="painel-auditoria-quem">
+            por <strong><%= linha[:autor]&.name || "Sistema" %></strong>
+          </span>
+
+          <span class="painel-auditoria-quando"><%= data_e_hora(versao.created_at) %></span>
+        </header>
+
+        <% mudancas = linha[:mudancas] %>
+        <% if mudancas.blank? %>
+          <p class="painel-auditoria-sem-diff">
+            <%= versao.event == "destroy" ? "Registro removido." : "Sem alteração de conteúdo registrada." %>
+          </p>
+        <% else %>
+          <table class="painel-diff">
+            <thead>
+              <tr><th>Campo</th><th>Antes</th><th></th><th>Depois</th></tr>
+            </thead>
+            <tbody>
+              <% mudancas.each do |campo, (antes, depois)| %>
+                <tr>
+                  <th><%= campo.to_s.humanize %></th>
+                  <td class="antes"><%= truncate(antes.to_s.presence || "vazio", length: 130) %></td>
+                  <td class="seta">→</td>
+                  <td class="depois"><%= truncate(depois.to_s.presence || "vazio", length: 130) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+
+  <%= render "painel/paginacao", pagina: @pagina, tem_proxima: @tem_proxima,
+        params_base: @filtros.merge(controller: "painel/auditoria", action: "index") %>
+<% end %>
