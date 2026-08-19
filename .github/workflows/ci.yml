@@ -5,9 +5,17 @@ on:
   push:
     branches: [ main ]
 
+# Um push novo cancela a execução anterior da MESMA ref. Sem isto, uma run
+# pendurada (ex.: apt travado num mirror ruim) segue ocupando a fila e
+# bloqueando o merge mesmo depois de o commit seguinte já ter subido.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   scan_ruby:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout code
@@ -26,6 +34,7 @@ jobs:
 
   scan_js:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout code
@@ -41,6 +50,7 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       RUBOCOP_CACHE_ROOT: tmp/rubocop
     steps:
@@ -67,6 +77,10 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    # A suíte roda em ~30s; 15 min é folga grande e ainda assim MUITO abaixo do
+    # teto padrão do GitHub (6 h), que foi o que deixou um apt pendurado queimar
+    # uma tarde inteira sem dar sinal nenhum.
+    timeout-minutes: 15
 
     # Testes rodam contra Postgres real: CHECK constraints e triggers do
     # schema (structure.sql) não existem em nenhum outro banco.
@@ -80,8 +94,33 @@ jobs:
         options: --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
+      # postgresql-client: psql, exigido pelo db:test:prepare com
+      # schema_format = :sql. libvips: variantes do Active Storage.
+      #
+      # Retries e timeouts EXPLÍCITOS: o apt não tem timeout de rede por padrão,
+      # então um mirror do runner que aceita a conexão e não responde (o log
+      # mostrou azure.archive devolvendo Ign em tudo) deixa o passo pendurado
+      # indefinidamente. Três tentativas curtas falham rápido e em vermelho, que
+      # é re-executável — melhor que uma run de 6 h sem diagnóstico.
       - name: Install packages
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libvips postgresql-client
+        timeout-minutes: 6
+        env:
+          APT_OPTS: >-
+            -o Acquire::Retries=3
+            -o Acquire::http::Timeout=15
+            -o Acquire::https::Timeout=15
+        run: |
+          set -u
+          for tentativa in 1 2 3; do
+            if sudo apt-get update $APT_OPTS &&
+               sudo apt-get install --no-install-recommends -y $APT_OPTS libvips postgresql-client; then
+              exit 0
+            fi
+            echo "::warning::apt falhou na tentativa ${tentativa}; repetindo em 10s"
+            sleep 10
+          done
+          echo "::error::apt-get falhou nas 3 tentativas — mirror do runner indisponível"
+          exit 1
 
       - name: Checkout code
         uses: actions/checkout@v7
