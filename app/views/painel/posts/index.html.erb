@@ -6,11 +6,14 @@
 
 <div class="painel-toolbar">
   <div class="chips">
-    <%= link_to "Todas", painel_posts_path(tipo: @tipo, busca: @busca), class: "chip #{'active' unless @status}" %>
+    <%= link_to painel_posts_path(tipo: @tipo, busca: @busca), class: "chip #{'active' unless @status}" do %>
+      Todas <%= painel_contador(@contagem.values.sum) %>
+    <% end %>
     <% Post::STATUSES.each do |status| %>
-      <%= link_to "#{post_status_label(status)} (#{@contagem[status].to_i})",
-            painel_posts_path(status: status, tipo: @tipo, busca: @busca),
-            class: "chip #{'active' if @status == status}" %>
+      <%= link_to painel_posts_path(status: status, tipo: @tipo, busca: @busca),
+            class: "chip #{'active' if @status == status}" do %>
+        <%= post_status_label(status) %> <%= painel_contador(@contagem[status]) %>
+      <% end %>
     <% end %>
   </div>
 
@@ -22,12 +25,9 @@
     <% end %>
   </div>
 
-  <%= form_with url: painel_posts_path, method: :get, class: "painel-busca" do |f| %>
-    <%= f.hidden_field :status, value: @status %>
-    <%= f.hidden_field :tipo, value: @tipo %>
-    <%= f.search_field :busca, value: @busca, placeholder: "Título…", class: "painel-input" %>
-    <%= f.submit "Buscar", class: "btn btn-secondary btn-sm" %>
-  <% end %>
+  <%= render "painel/busca", url: painel_posts_path, valor: @busca,
+        placeholder: "Buscar novidade pelo título…",
+        ocultos: { status: @status, tipo: @tipo } %>
 </div>
 
 <% if @posts.empty? %>

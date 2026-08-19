@@ -1,93 +1,270 @@
 <% content_for :title, "Pedidos — Gestão LEDS" %>
 <% content_for :painel_titulo, "Pedidos" %>
-<% content_for :painel_acoes do %>
-  <span class="painel-secao-meta">Receita total: <strong><%= moeda(@receita) %></strong></span>
-<% end %>
+
+<%# ---- Resumo: quanto entrou e quanto está parado na esteira ----
+     Os números aqui são SEMPRE globais (não seguem a busca), então os links
+     também não a preservam: clicar leva ao retrato inteiro daquele status.
+     Preservar a busca faria o card dizer "12 a produzir" e a lista mostrar 1. %>
+<section class="painel-secao">
+  <div class="painel-ideias-resumo">
+    <div class="painel-resumo" style="--r-cor: var(--leds-green)">
+      <span class="painel-resumo-num" style="color: var(--leds-green)"><%= moeda(@receita) %></span>
+      <span class="painel-resumo-rotulo">Receita confirmada</span>
+      <span class="painel-resumo-pe">pedidos pagos ou além</span>
+    </div>
+
+    <%= link_to painel_pedidos_path(status: "aguardando_pagamento"),
+          class: "painel-resumo #{'ativo' if @status == 'aguardando_pagamento'}",
+          style: "--r-cor: var(--leds-yellow)" do %>
+      <span class="painel-resumo-num" style="color: var(--leds-yellow)"><%= moeda(@a_confirmar) %></span>
+      <span class="painel-resumo-rotulo">A confirmar</span>
+      <span class="painel-resumo-pe"><%= @por_status["aguardando_pagamento"].to_i %> aguardando baixa</span>
+    <% end %>
+
+    <%= link_to painel_pedidos_path(status: "pago"),
+          class: "painel-resumo #{'ativo' if @status == 'pago'}",
+          style: "--r-cor: var(--leds-blue)" do %>
+      <span class="painel-resumo-num" style="color: var(--leds-blue)"><%= @por_status["pago"].to_i %></span>
+      <span class="painel-resumo-rotulo">A produzir</span>
+      <span class="painel-resumo-pe">pagos, esperando a liga</span>
+    <% end %>
+
+    <%= link_to painel_pedidos_path(status: "enviado"),
+          class: "painel-resumo #{'ativo' if @status == 'enviado'}",
+          style: "--r-cor: var(--leds-red)" do %>
+      <span class="painel-resumo-num" style="color: var(--leds-red)"><%= @por_status["enviado"].to_i %></span>
+      <span class="painel-resumo-rotulo">Em trânsito</span>
+      <span class="painel-resumo-pe">enviados, sem entrega confirmada</span>
+    <% end %>
+  </div>
+</section>
 
 <div class="painel-toolbar">
   <div class="chips">
-    <%= link_to "Todos", painel_pedidos_path, class: "chip #{'active' unless @status}" %>
+    <%# a busca segue junto ao trocar de status: filtrar por "Pago" no meio de
+        uma pesquisa não pode zerar a pesquisa %>
+    <%= link_to painel_pedidos_path(busca: @busca), class: "chip #{'active' unless @status}" do %>
+      Todos <%= painel_contador(@por_status.values.sum) %>
+    <% end %>
     <% Pedido::STATUSES.each do |status| %>
-      <%= link_to "#{pedido_status_label(status)} (#{@por_status[status].to_i})",
-            painel_pedidos_path(status: status),
-            class: "chip #{'active' if @status == status}" %>
+      <%= link_to painel_pedidos_path(status: status, busca: @busca),
+            class: "chip chip-cor #{'active' if @status == status}" do %>
+        <span class="chip-ponto <%= status %>"></span>
+        <%= pedido_status_label(status) %> <%= painel_contador(@por_status[status]) %>
+      <% end %>
     <% end %>
   </div>
+
+  <%= render "painel/busca", url: painel_pedidos_path, valor: @busca,
+        placeholder: "Buscar comprador por nome ou e-mail…",
+        ocultos: { status: @status } %>
 </div>
 
+<% if @busca %>
+  <p class="painel-dica">
+    Mostrando pedidos de compradores que casam com <strong>“<%= @busca %>”</strong>
+    <%= "no status #{pedido_status_label(@status).downcase}" if @status %>.
+  </p>
+<% end %>
+
 <% if @pedidos.empty? %>
-  <div class="painel-empty"><span class="empty-mono">// nenhum pedido</span></div>
+  <div class="painel-empty">
+    <span class="empty-mono">// nenhum pedido</span>
+    <% if @busca %>
+      <p class="painel-dica">
+        Nenhum comprador casa com “<%= @busca %>”.
+        <%= link_to "Ver todos os pedidos", painel_pedidos_path %>.
+      </p>
+    <% end %>
+  </div>
 <% else %>
-  <ul class="painel-fila">
+  <div class="painel-pedidos">
     <% @pedidos.each do |pedido| %>
-      <li class="painel-fila-item sem-media">
-        <div class="painel-fila-corpo">
-          <span class="painel-fila-tags">
-            <span class="painel-tag-mono">#<%= pedido.id %></span>
-            <span class="painel-badge-status <%= pedido.status %>"><%= pedido_status_label(pedido.status) %></span>
-            <span class="painel-tag-mono"><%= pedido.tipo_entrega.upcase %></span>
-            <span class="painel-fila-espera"><%= data_e_hora(pedido.created_at) %></span>
+      <article class="painel-pedido <%= pedido.status %>">
+
+        <%# ---- Cabeçalho: identidade, estado e valor ---- %>
+        <header class="painel-pedido-topo">
+          <span class="painel-pedido-id">#<%= pedido.id %></span>
+          <span class="painel-badge-status <%= pedido.status %>"><%= pedido_status_label(pedido.status) %></span>
+          <span class="painel-pedido-entrega <%= pedido.tipo_entrega %>">
+            <%= pedido.retirada? ? "RETIRADA NO CAMPUS" : "ENVIO" %>
           </span>
+          <span class="painel-pedido-data"><%= data_e_hora(pedido.created_at) %></span>
+          <span class="painel-pedido-total"><%= moeda(pedido.total) %></span>
+        </header>
 
-          <span class="painel-fila-titulo">
-            <%= pedido.comprador&.name || "conta removida" %>
-            <span class="painel-fila-total"><%= moeda(pedido.total) %></span>
-          </span>
+        <%# ---- Rastreador: mesmo componente que o comprador vê no perfil,
+             para gestão e cliente lerem o pedido da mesma forma ---- %>
+        <div class="painel-pedido-fluxo">
+          <% if pedido.cancelado? %>
+            <p class="painel-pedido-cancelado">Pedido cancelado — o estoque foi devolvido.</p>
+          <% else %>
+            <% etapas = pedido_etapas(pedido); atual = pedido_etapa_atual(pedido) %>
+            <ol class="pedido-stepper">
+              <% etapas.each_with_index do |etapa, i| %>
+                <li class="pedido-step <%= 'done' if i <= atual %> <%= 'atual' if i == atual %>">
+                  <span class="step-dot"></span>
+                  <span class="step-label"><%= pedido_status_label(etapa) %></span>
+                </li>
+              <% end %>
+            </ol>
+          <% end %>
+        </div>
 
-          <ul class="painel-itens">
-            <% pedido.itens.each do |item| %>
-              <li>
-                <%= item.quantidade %>× <%= item.produto&.nome || "produto removido" %>
-                <% if item.variante %><span class="painel-td-sub">(<%= item.variante.nome %>)</span><% end %>
-                — <%= moeda(item.preco_unitario) %>
-              </li>
-            <% end %>
-          </ul>
+        <%# ---- Itens: uma LINHA por item, com foto, variante e subtotal.
+             Antes era uma lista de texto corrido em que os itens se
+             misturavam; aqui cada um é um bloco próprio. ---- %>
+        <div class="painel-pedido-itens">
+          <div class="painel-pedido-secao-titulo">
+            <%= pluralize(pedido.itens.size, "item", "itens") %>
+          </div>
 
-          <span class="painel-fila-meta">
+          <% pedido.itens.each do |item| %>
+            <div class="painel-item">
+              <span class="painel-item-foto">
+                <% if item.produto %>
+                  <img src="<%= produto_imagem_url(item.produto) %>" alt="" loading="lazy">
+                <% end %>
+              </span>
+
+              <span class="painel-item-desc">
+                <span class="painel-item-nome">
+                  <% if item.produto %>
+                    <%= link_to item.produto.nome, edit_painel_produto_path(item.produto) %>
+                  <% else %>
+                    Produto removido
+                  <% end %>
+                </span>
+                <% if item.variante %>
+                  <span class="painel-item-variante"><%= item.variante.nome %></span>
+                <% end %>
+              </span>
+
+              <span class="painel-item-qtd"><%= item.quantidade %>×</span>
+              <span class="painel-item-unit"><%= moeda(item.preco_unitario) %> cada</span>
+              <span class="painel-item-subtotal"><%= moeda(item.subtotal) %></span>
+            </div>
+          <% end %>
+
+          <% if pedido.frete_valor.to_f.positive? %>
+            <div class="painel-item painel-item-frete">
+              <span class="painel-item-foto frete" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 3h11v13H3zM14 8h4l3 3v5h-7z" /><circle cx="7.5" cy="18.5" r="1.5" /><circle cx="17.5" cy="18.5" r="1.5" />
+                </svg>
+              </span>
+              <span class="painel-item-desc">
+                <span class="painel-item-nome">Frete</span>
+                <% if pedido.transportadora.present? %>
+                  <span class="painel-item-variante"><%= pedido.transportadora %> <%= pedido.servico_frete %></span>
+                <% end %>
+              </span>
+              <span class="painel-item-qtd"></span>
+              <span class="painel-item-unit">
+                <%= "#{pedido.prazo_estimado} dia(s)" if pedido.prazo_estimado.present? %>
+              </span>
+              <span class="painel-item-subtotal"><%= moeda(pedido.frete_valor) %></span>
+            </div>
+          <% end %>
+        </div>
+
+        <%# ---- Quem, para onde, como pagou ---- %>
+        <div class="painel-pedido-dados">
+          <div class="painel-pedido-dado">
+            <span class="painel-pedido-dado-rotulo">Comprador</span>
+            <span class="painel-pedido-comprador">
+              <span class="painel-ideia-avatar"><%= iniciais(pedido.comprador&.name || "?") %></span>
+              <span>
+                <strong><%= pedido.comprador&.name || "conta removida" %></strong>
+                <span class="painel-td-sub"><%= pedido.comprador&.email %></span>
+              </span>
+            </span>
+          </div>
+
+          <div class="painel-pedido-dado">
+            <span class="painel-pedido-dado-rotulo">Entrega</span>
             <% if pedido.endereco %>
-              <%= pedido.endereco.logradouro %>, <%= pedido.endereco.numero %> ·
-              <%= pedido.endereco.cidade %>/<%= pedido.endereco.uf %> · CEP <%= pedido.endereco.cep %>
+              <span class="painel-pedido-dado-valor">
+                <%= pedido.endereco.logradouro %>, <%= pedido.endereco.numero %>
+                <% if pedido.endereco.complemento.present? %> — <%= pedido.endereco.complemento %><% end %><br>
+                <%= pedido.endereco.bairro %> · <%= pedido.endereco.cidade %>/<%= pedido.endereco.uf %><br>
+                <span class="painel-td-mono">CEP <%= pedido.endereco.cep %></span>
+              </span>
             <% else %>
-              Retirada no campus
+              <span class="painel-pedido-dado-valor">Retirada no campus da Unitau</span>
             <% end %>
             <% if pedido.rastreamento_codigo.present? %>
-              · rastreio <strong><%= pedido.rastreamento_codigo %></strong>
+              <span class="painel-pedido-rastreio">
+                Rastreio <strong><%= pedido.rastreamento_codigo %></strong>
+              </span>
             <% end %>
-            <% if pedido.contato.present? %>· contato: <%= pedido.contato %><% end %>
-          </span>
+          </div>
+
+          <div class="painel-pedido-dado">
+            <span class="painel-pedido-dado-rotulo">Pagamento</span>
+            <% if pedido.pagamentos.any? %>
+              <% pedido.pagamentos.each do |pagamento| %>
+                <span class="painel-pedido-dado-valor">
+                  <span class="painel-badge-status <%= pagamento.status %>"><%= pagamento.status %></span>
+                  <%= pagamento.gateway.to_s.humanize %> · <%= moeda(pagamento.valor) %>
+                </span>
+              <% end %>
+            <% else %>
+              <span class="painel-pedido-dado-valor">
+                Sem cobrança pelo site — pagamento combinado direto.
+              </span>
+            <% end %>
+            <% if pedido.contato.present? %>
+              <span class="painel-td-sub">contato: <%= pedido.contato %></span>
+            <% end %>
+          </div>
         </div>
 
-        <div class="painel-fila-acoes">
-          <%# Modo "direto": a cobrança acontece pessoalmente, sem webhook — a
-              baixa é manual, senão o pedido expira em 1h (ExpirarPedidosJob). %>
-          <% if pedido.aguardando_pagamento? %>
-            <%= button_to "Confirmar pagamento", marcar_pago_painel_pedido_path(pedido),
-                  class: "btn btn-primary btn-sm",
-                  form: { data: { turbo_confirm: "Confirmar que o pagamento de #{moeda(pedido.total)} foi recebido?" } } %>
-            <%= button_to "Cancelar pedido", cancelar_painel_pedido_path(pedido),
-                  class: "btn btn-secondary btn-sm",
-                  form: { data: { turbo_confirm: "Cancelar o pedido ##{pedido.id}? O estoque volta." } } %>
-          <% end %>
-
-          <% if pedido.pago? %>
-            <%= button_to "Marcar em produção", em_producao_painel_pedido_path(pedido), class: "btn btn-primary btn-sm" %>
-          <% end %>
-
-          <%# envio manual: quando a etiqueta não sai pela API do Melhor Envio %>
-          <% if pedido.pago? || pedido.em_producao? %>
-            <%= form_with url: enviar_painel_pedido_path(pedido), class: "painel-envio-form" do |f| %>
-              <%= text_field_tag :rastreamento_codigo, nil, placeholder: "código de rastreio",
-                    class: "painel-input compacto", required: true %>
-              <%= f.submit "Enviar", class: "painel-mini principal" %>
+        <%# ---- O que fazer agora ---- %>
+        <% if pedido.cancelado? || pedido.entregue? %>
+          <div class="painel-pedido-acoes concluido">
+            <span class="painel-ideia-encerrada">
+              <%= pedido.entregue? ? "Pedido concluído." : "Pedido encerrado." %>
+            </span>
+          </div>
+        <% else %>
+          <div class="painel-pedido-acoes">
+            <% if pedido.aguardando_pagamento? %>
+              <%= button_to "Confirmar pagamento", marcar_pago_painel_pedido_path(pedido),
+                    class: "btn btn-primary btn-sm",
+                    form: { data: { turbo_confirm: "Confirmar que os #{moeda(pedido.total)} do pedido ##{pedido.id} foram recebidos?" } } %>
+              <%= button_to "Cancelar pedido", cancelar_painel_pedido_path(pedido),
+                    class: "btn btn-secondary btn-sm",
+                    form: { data: { turbo_confirm: "Cancelar o pedido ##{pedido.id}? O estoque volta." } } %>
             <% end %>
-          <% end %>
 
-          <% if pedido.enviado? %>
-            <%= button_to "Marcar entregue", entregar_painel_pedido_path(pedido), class: "btn btn-primary btn-sm" %>
-          <% end %>
-        </div>
-      </li>
+            <% if pedido.pago? %>
+              <%= button_to "Marcar em produção", em_producao_painel_pedido_path(pedido),
+                    class: "btn btn-primary btn-sm" %>
+            <% end %>
+
+            <%# ENVIO: etiqueta manual, para quando não sai pela API do Melhor
+                Envio. Retirada não aparece aqui — não há transporte, e oferecer
+                levava o pedido a um estado fora do rastreador dele. %>
+            <% if pedido.envio? && (pedido.pago? || pedido.em_producao?) %>
+              <%= form_with url: enviar_painel_pedido_path(pedido), class: "painel-envio-form" do |f| %>
+                <%= text_field_tag :rastreamento_codigo, nil, placeholder: "código de rastreio",
+                      class: "painel-input compacto", required: true %>
+                <%= f.submit "Marcar enviado", class: "painel-mini principal" %>
+              <% end %>
+            <% end %>
+
+            <%# RETIRADA: o comprador vem buscar, então "entregue" vem direto.
+                ENVIO: só depois de despachado. %>
+            <% if pedido.enviado? || (pedido.retirada? && (pedido.pago? || pedido.em_producao?)) %>
+              <%= button_to (pedido.retirada? ? "Confirmar retirada" : "Marcar entregue"),
+                    entregar_painel_pedido_path(pedido), class: "btn btn-primary btn-sm",
+                    form: { data: { turbo_confirm: pedido.retirada? ? "Confirmar que #{pedido.comprador&.name || 'o comprador'} retirou o pedido ##{pedido.id}?" : nil } } %>
+            <% end %>
+          </div>
+        <% end %>
+      </article>
     <% end %>
-  </ul>
+  </div>
 <% end %>

@@ -3,19 +3,20 @@
 
 <div class="painel-toolbar">
   <div class="chips">
-    <%= link_to "Todos", painel_comentarios_path(busca: @busca), class: "chip #{'active' unless @status}" %>
+    <%= link_to painel_comentarios_path(busca: @busca), class: "chip #{'active' unless @status}" do %>
+      Todos <%= painel_contador(@contagem.values.sum) %>
+    <% end %>
     <% Comentario::STATUSES.each do |status| %>
-      <%= link_to "#{status.capitalize} (#{@contagem[status].to_i})",
-            painel_comentarios_path(status: status, busca: @busca),
-            class: "chip #{'active' if @status == status}" %>
+      <%= link_to painel_comentarios_path(status: status, busca: @busca),
+            class: "chip #{'active' if @status == status}" do %>
+        <%= status.capitalize %> <%= painel_contador(@contagem[status]) %>
+      <% end %>
     <% end %>
   </div>
 
-  <%= form_with url: painel_comentarios_path, method: :get, class: "painel-busca" do |f| %>
-    <%= f.hidden_field :status, value: @status %>
-    <%= f.search_field :busca, value: @busca, placeholder: "Buscar no texto…", class: "painel-input" %>
-    <%= f.submit "Buscar", class: "btn btn-secondary btn-sm" %>
-  <% end %>
+  <%= render "painel/busca", url: painel_comentarios_path, valor: @busca,
+        placeholder: "Buscar no texto do comentário…",
+        ocultos: { status: @status } %>
 </div>
 
 <% if @comentarios.empty? %>

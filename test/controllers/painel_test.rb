@@ -55,6 +55,30 @@ class PainelTest < ActionDispatch::IntegrationTest
     assert_select "a.drawer-gestao", count: 1
   end
 
+  test "a busca do painel é a lupa, não um botão de texto" do
+    sign_in users(:diretor)
+
+    [ painel_pedidos_path, painel_usuarios_path, painel_comentarios_path,
+      painel_posts_path, painel_acoes_path, painel_produtos_path, painel_logs_path ].each do |rota|
+      get rota
+      assert_select "form.painel-busca button.painel-busca-lupa[type=submit]", { count: 1 },
+                    "#{rota} deveria ter a lupa como submit"
+      assert_select "form.painel-busca input[type=submit]", { count: 0 },
+                    "#{rota} não pode ter botão 'Buscar' de texto"
+    end
+  end
+
+  test "a busca preserva os demais filtros e o limpar zera só o termo" do
+    sign_in users(:diretor)
+
+    get painel_pedidos_path(status: "pago", busca: "Ana")
+    # o status viaja como hidden para o submit não perder o filtro
+    assert_select "form.painel-busca input[type=hidden][name=status][value=pago]"
+    assert_select "input.painel-busca-input[value=Ana]"
+    # limpar mantém o status
+    assert_select "a.painel-busca-limpar[href=?]", painel_pedidos_path(status: "pago")
+  end
+
   test "o contrato JSON do /admin continua 403 para papel comum" do
     sign_in users(:membro_user)
     get admin_approvals_path

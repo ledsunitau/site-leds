@@ -81,6 +81,24 @@ module PainelHelper
 
   def modelo_label(tipo) = MODELO_LABEL[tipo.to_s] || tipo.to_s
 
+  # ---- Contador dos chips de filtro ----
+
+  # Acima de 99 o número vira "99⁺": o "+" é um sufixo sobrescrito, não um
+  # dígito. Assim o contador tem largura previsível e uma liga com 12 mil
+  # pedidos não empurra a fila de chips para fora da tela.
+  TETO_CONTADOR = 99
+
+  def painel_contador(total)
+    total = total.to_i
+    conteudo = if total > TETO_CONTADOR
+      safe_join([ TETO_CONTADOR.to_s, tag.sup("+") ])
+    else
+      total.to_s
+    end
+
+    tag.span(conteudo, class: "painel-contador")
+  end
+
   # ---- Logs ----
 
   # Reusa as cores de .painel-badge-status: info/warning/error/fatal não são

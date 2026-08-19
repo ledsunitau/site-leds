@@ -1,0 +1,44 @@
+<%# Campo de busca do painel. Locals:
+      url         — para onde submeter
+      placeholder — texto de dica
+      valor       — termo atual (nil quando não há busca)
+      ocultos     — hash de filtros a preservar no submit (ex.: status)
+      campo       — nome do parâmetro (default :busca)
+      extras      — bloco opcional com campos adicionais (datas, etc.)
+
+    A lupa É o botão de submit, como no filtro das páginas públicas. Um botão
+    "Buscar" ao lado ocupava o dobro do espaço numa toolbar que já quebra linha
+    por causa dos chips. %>
+<% campo = local_assigns.fetch(:campo, :busca) %>
+<% ocultos = local_assigns.fetch(:ocultos, {}) %>
+
+<%= form_with url: url, method: :get, class: "painel-busca" do |f| %>
+  <% ocultos.each do |nome, conteudo| %>
+    <%= hidden_field_tag nome, conteudo %>
+  <% end %>
+
+  <div class="painel-busca-campo">
+    <button type="submit" class="painel-busca-lupa" aria-label="Buscar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" /><line x1="16.5" y1="16.5" x2="21" y2="21" />
+      </svg>
+    </button>
+
+    <%= search_field_tag campo, valor, placeholder: placeholder,
+          class: "painel-busca-input", autocomplete: "off" %>
+
+    <% if valor.present? %>
+      <%# limpar preserva os demais filtros — só zera o termo %>
+      <%= link_to url_for(ocultos.merge(campo => nil)), class: "painel-busca-limpar",
+            aria: { label: "Limpar busca" } do %>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" />
+        </svg>
+      <% end %>
+    <% end %>
+  </div>
+
+  <%= yield if block_given? %>
+<% end %>

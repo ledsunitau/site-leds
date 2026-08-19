@@ -3,20 +3,20 @@
 
 <div class="painel-toolbar">
   <div class="chips">
-    <%= link_to "Todos (#{@contagem.values.sum})", painel_usuarios_path(busca: @busca),
-          class: "chip #{'active' unless @role}" %>
+    <%= link_to painel_usuarios_path(busca: @busca), class: "chip #{'active' unless @role}" do %>
+      Todos <%= painel_contador(@contagem.values.sum) %>
+    <% end %>
     <% User::ROLES.each do |role| %>
-      <%= link_to "#{papel_label(role)} (#{@contagem[role].to_i})",
-            painel_usuarios_path(role: role, busca: @busca),
-            class: "chip #{'active' if @role == role}" %>
+      <%= link_to painel_usuarios_path(role: role, busca: @busca),
+            class: "chip #{'active' if @role == role}" do %>
+        <%= papel_label(role) %> <%= painel_contador(@contagem[role]) %>
+      <% end %>
     <% end %>
   </div>
 
-  <%= form_with url: painel_usuarios_path, method: :get, class: "painel-busca" do |f| %>
-    <%= f.hidden_field :role, value: @role %>
-    <%= f.search_field :busca, value: @busca, placeholder: "Nome ou e-mail…", class: "painel-input" %>
-    <%= f.submit "Buscar", class: "btn btn-secondary btn-sm" %>
-  <% end %>
+  <%= render "painel/busca", url: painel_usuarios_path, valor: @busca,
+        placeholder: "Buscar conta por nome ou e-mail…",
+        ocultos: { role: @role } %>
 </div>
 
 <% unless current_user.presidencia? %>

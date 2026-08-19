@@ -2366,9 +2366,6 @@ trix-toolbar .trix-input--dialog {
 .painel-dim { display: flex; gap: 5px; }
 .painel-dim .painel-input { width: 100%; min-width: 0; }
 
-.painel-fila-total { font-family: var(--font-mono); font-size: 14px; color: var(--leds-green); margin-left: 8px; }
-.painel-itens { list-style: none; margin: 2px 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
-.painel-itens li { font-size: 13px; color: var(--text-muted); }
 .painel-envio-form { display: flex; gap: 6px; margin: 0; }
 .painel-envio-form .painel-input { flex: 1; min-width: 0; }
 
@@ -2738,4 +2735,202 @@ a.painel-resumo.ativo { box-shadow: inset 0 0 0 1px var(--r-cor); }
 @media (max-width: 560px) {
   .painel-ideias { grid-template-columns: 1fr; }
   .painel-ideias-resumo { grid-template-columns: 1fr 1fr; }
+}
+
+/* =====================================================================
+   PAINEL — PEDIDOS
+   Card com quatro blocos separados por hairline: cabeçalho, rastreador,
+   itens e dados. Antes era um bloco de texto corrido em que os itens se
+   misturavam com o endereço.
+   ===================================================================== */
+
+/* Bolinha de status nos chips de filtro (mesma cor do badge) */
+.chip-ponto.aguardando_pagamento, .chip-ponto.em_producao { background: var(--leds-yellow); }
+.chip-ponto.pago, .chip-ponto.entregue { background: var(--leds-green); }
+.chip-ponto.enviado { background: var(--leds-blue); }
+.chip-ponto.cancelado { background: var(--leds-red); }
+
+.painel-pedidos { display: flex; flex-direction: column; gap: 14px; }
+
+.painel-pedido {
+  border-radius: var(--radius-card); overflow: hidden;
+  background: var(--surface-card-alt);
+  box-shadow: inset 0 0 0 1px var(--border-hair);
+  /* a faixa lateral repete o estado: dá para varrer a coluna sem ler os badges */
+  border-left: 3px solid var(--text-faint);
+}
+.painel-pedido.aguardando_pagamento { border-left-color: var(--leds-yellow); }
+.painel-pedido.pago, .painel-pedido.em_producao { border-left-color: var(--leds-green); }
+.painel-pedido.enviado { border-left-color: var(--leds-blue); }
+.painel-pedido.entregue { border-left-color: color-mix(in srgb, var(--leds-green) 55%, transparent); }
+.painel-pedido.cancelado { border-left-color: var(--leds-red); opacity: .62; }
+.painel-pedido.cancelado:hover, .painel-pedido.entregue:hover { opacity: 1; }
+
+/* ---- Cabeçalho ---- */
+.painel-pedido-topo {
+  display: flex; align-items: center; gap: 11px; flex-wrap: wrap;
+  padding: 15px 18px; border-bottom: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, .022);
+}
+.painel-pedido-id {
+  font-family: var(--font-mono); font-weight: 700; font-size: 16px; color: var(--text-strong);
+}
+.painel-pedido-entrega {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .7px;
+  padding: 3px 8px; border-radius: var(--radius-tag);
+  background: var(--surface-chip); color: var(--text-subtle);
+}
+.painel-pedido-entrega.envio { color: var(--leds-blue); background: color-mix(in srgb, var(--leds-blue) 14%, transparent); }
+.painel-pedido-data { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-faint); }
+.painel-pedido-total {
+  margin-left: auto; font-family: var(--font-mono); font-weight: 700;
+  font-size: 19px; color: var(--leds-green);
+}
+
+/* ---- Rastreador ---- */
+.painel-pedido-fluxo { padding: 18px 18px 4px; border-bottom: 1px solid var(--border-soft); }
+.painel-pedido-fluxo .pedido-stepper { margin: 0 0 14px; }
+.painel-pedido-fluxo .step-dot { background: var(--surface-card-alt); }
+.painel-pedido-cancelado {
+  font-size: 13.5px; color: var(--leds-red); padding-bottom: 14px;
+}
+
+/* ---- Itens: uma linha por item ---- */
+.painel-pedido-itens { padding: 14px 18px; border-bottom: 1px solid var(--border-soft); }
+.painel-pedido-secao-titulo {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .96px;
+  text-transform: uppercase; color: var(--text-faint); margin-bottom: 10px;
+}
+.painel-item {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) auto auto auto;
+  align-items: center; gap: 14px;
+  padding: 9px 11px; border-radius: var(--radius-btn);
+  background: var(--surface-chip);
+}
+.painel-item + .painel-item { margin-top: 7px; }
+.painel-item-foto {
+  width: 46px; height: 46px; border-radius: 9px; overflow: hidden;
+  display: grid; place-items: center; background: rgba(0, 0, 0, .28); color: var(--text-faint);
+}
+.painel-item-foto img { width: 100%; height: 100%; object-fit: cover; }
+.painel-item-desc { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.painel-item-nome { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.painel-item-nome a { color: inherit; text-decoration: underline; text-decoration-color: var(--border-strong); }
+.painel-item-nome a:hover { color: var(--leds-green); }
+.painel-item-variante {
+  align-self: flex-start;
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .5px;
+  padding: 2px 7px; border-radius: var(--radius-tag);
+  background: rgba(255, 255, 255, .07); color: var(--text-subtle);
+}
+.painel-item-qtd {
+  font-family: var(--font-mono); font-weight: 700; font-size: 14px; color: var(--text-strong);
+  min-width: 34px; text-align: right;
+}
+.painel-item-unit { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-faint); white-space: nowrap; }
+.painel-item-subtotal {
+  font-family: var(--font-mono); font-size: 14px; color: var(--text-primary);
+  min-width: 84px; text-align: right;
+}
+/* frete não é produto: fundo neutro para não competir com os itens */
+.painel-item-frete { background: transparent; box-shadow: inset 0 0 0 1px var(--border-soft); }
+.painel-item-foto.frete { background: transparent; }
+
+/* ---- Comprador, entrega e pagamento ---- */
+.painel-pedido-dados {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 18px; padding: 16px 18px;
+}
+.painel-pedido-dado { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.painel-pedido-dado-rotulo {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .96px;
+  text-transform: uppercase; color: var(--text-faint);
+}
+.painel-pedido-dado-valor { font-size: 13px; line-height: 1.6; color: var(--text-muted); }
+.painel-pedido-comprador { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.painel-pedido-comprador strong { display: block; font-size: 13.5px; color: var(--text-primary); }
+.painel-pedido-rastreio {
+  font-family: var(--font-mono); font-size: 11.5px; color: var(--text-subtle);
+  padding: 5px 9px; border-radius: var(--radius-tag);
+  background: color-mix(in srgb, var(--leds-blue) 12%, transparent);
+  align-self: flex-start;
+}
+.painel-pedido-rastreio strong { color: var(--leds-blue); }
+
+/* ---- Ações ---- */
+.painel-pedido-acoes {
+  display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+  padding: 14px 18px; border-top: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, .022);
+}
+.painel-pedido-acoes form { margin: 0; }
+.painel-pedido-acoes.concluido { background: transparent; }
+.painel-pedido-acoes .painel-envio-form { flex: 1; min-width: 240px; }
+
+@media (max-width: 720px) {
+  /* a grade de 5 colunas não cabe: vira foto + descrição em cima, números embaixo */
+  .painel-item { grid-template-columns: 46px minmax(0, 1fr) auto; row-gap: 8px; }
+  .painel-item-unit { grid-column: 2; text-align: left; }
+  .painel-item-subtotal { grid-column: 3; }
+  .painel-pedido-total { margin-left: 0; }
+}
+
+/* ---- Campo de busca do painel ----
+   A lupa É o submit (mesmo idioma do filtro das páginas públicas). Um botão
+   "Buscar" ao lado ocupava o dobro do espaço numa toolbar que já quebra linha
+   por causa dos chips. */
+.painel-busca { display: flex; align-items: center; gap: 8px; margin: 0; flex-wrap: wrap; }
+.painel-busca-campo {
+  display: flex; align-items: center; gap: 2px;
+  background: var(--surface-chip); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill); padding: 0 6px 0 4px;
+  transition: border-color .18s ease;
+  /* largura suficiente para o placeholder inteiro caber sem cortar */
+  flex: 1 1 320px; min-width: 260px; max-width: 420px;
+}
+.painel-busca-campo:focus-within { border-color: rgba(255, 255, 255, .34); }
+.painel-busca-lupa {
+  display: grid; place-items: center; flex: 0 0 auto;
+  width: 32px; height: 32px; border: none; border-radius: 50%;
+  background: transparent; color: var(--text-faint); cursor: pointer;
+  transition: color .18s ease, background .18s ease;
+}
+.painel-busca-lupa:hover { color: var(--text-strong); background: rgba(255, 255, 255, .07); }
+.painel-busca-input {
+  flex: 1; min-width: 0; border: none; background: transparent; outline: none;
+  font-family: var(--font-display); font-size: 14px; color: var(--text-strong);
+  padding: 9px 2px;
+}
+.painel-busca-input::placeholder { color: var(--text-faint); }
+/* o X nativo do <input type=search> some: temos o nosso, que também limpa a URL */
+.painel-busca-input::-webkit-search-cancel-button { display: none; }
+.painel-busca-limpar {
+  display: grid; place-items: center; flex: 0 0 auto;
+  width: 26px; height: 26px; border-radius: 50%;
+  color: var(--text-faint); transition: color .18s ease, background .18s ease;
+}
+.painel-busca-limpar:hover { color: var(--leds-red); background: rgba(255, 255, 255, .07); }
+
+/* ---- Contador dos chips ----
+   Largura previsível: 3 dígitos nunca chegam (o teto é "99+"), então a fila de
+   chips não desloca conforme os números crescem. */
+.painel-contador {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 26px; padding: 2px 6px; margin-left: 6px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, .09);
+  font-family: var(--font-mono); font-size: 10.5px; line-height: 1.4;
+  color: var(--text-subtle);
+}
+.painel-contador sup {
+  font-size: 8px; line-height: 1; margin-left: 1px; align-self: flex-start;
+  margin-top: 1px; opacity: .7;
+}
+.chip.active .painel-contador { background: rgba(0, 0, 0, .12); color: var(--text-on-invert); }
+/* o rótulo do chip não quebra: um filtro em duas linhas desalinha a fila toda */
+.painel-toolbar .chip { white-space: nowrap; }
+
+@media (max-width: 620px) {
+  .painel-busca-campo { flex-basis: 100%; max-width: none; }
 }

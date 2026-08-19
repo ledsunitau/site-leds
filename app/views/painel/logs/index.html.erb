@@ -10,20 +10,26 @@
 
 <div class="painel-toolbar">
   <div class="chips">
-    <%= link_to "Todos", painel_logs_path(rota: @rota), class: "chip #{'active' unless @severidade}" %>
+    <%= link_to painel_logs_path(rota: @rota), class: "chip #{'active' unless @severidade}" do %>
+      Todos <%= painel_contador(@por_severidade.values.sum) %>
+    <% end %>
     <% ErrorLog::SEVERIDADES.each do |sev| %>
-      <%= link_to "#{sev} (#{@por_severidade[sev].to_i})",
-            painel_logs_path(severidade: sev, rota: @rota),
-            class: "chip #{'active' if @severidade == sev}" %>
+      <%= link_to painel_logs_path(severidade: sev, rota: @rota),
+            class: "chip #{'active' if @severidade == sev}" do %>
+        <%= sev %> <%= painel_contador(@por_severidade[sev]) %>
+      <% end %>
     <% end %>
   </div>
 
-  <%= form_with url: painel_logs_path, method: :get, class: "painel-busca" do |f| %>
-    <%= f.hidden_field :severidade, value: @severidade %>
-    <%= f.search_field :rota, value: @rota, placeholder: "Rota (ex.: POST /acoes)…", class: "painel-input" %>
-    <%= f.date_field :de, value: params[:de], class: "painel-input compacto" %>
-    <%= f.date_field :ate, value: params[:ate], class: "painel-input compacto" %>
-    <%= f.submit "Filtrar", class: "btn btn-secondary btn-sm" %>
+  <%# a janela de datas viaja no mesmo form da busca: a lupa submete tudo.
+      `render layout:` (e não `render`) é o que faz o bloco chegar ao yield. %>
+  <%= render layout: "painel/busca", locals: {
+        url: painel_logs_path, campo: :rota, valor: @rota,
+        placeholder: "Buscar por rota (ex.: POST /acoes)…",
+        ocultos: { severidade: @severidade }
+      } do %>
+    <%= date_field_tag :de, params[:de], class: "painel-input compacto" %>
+    <%= date_field_tag :ate, params[:ate], class: "painel-input compacto" %>
   <% end %>
 </div>
 

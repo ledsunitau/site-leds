@@ -62,15 +62,31 @@ class Pedido < ApplicationRecord
     transicionar!("em_producao", de: %w[pago])
   end
 
+  # Só pedido de ENVIO é enviado. Retirada não tem transporte: o fluxo dela é
+  # aguardando → pago → em_producao → entregue, e "entregue" é o balcão.
+  # Sem esta guarda, marcar um pedido de retirada como enviado o levava a um
+  # estado fora do rastreador dele — a tela mostrava o passo 0 de novo e o
+  # pedido ficava sem nenhuma ação possível.
   def marcar_enviado!(codigo, ref: nil)
+    if retirada?
+      errors.add(:tipo_entrega, "pedido de retirada não é enviado — marque como entregue quando o comprador retirar")
+      raise ActiveRecord::RecordInvalid.new(self)
+    end
+
     transicionar!("enviado", de: %w[pago em_producao]) do
       self.rastreamento_codigo = codigo
       self.melhor_envio_ref = ref if ref
     end
   end
 
+  # A origem de "entregue" depende do tipo de entrega:
+  #   envio    → só depois de enviado (o transporte é que entrega)
+  #   retirada → direto de pago ou em_producao (o comprador vem buscar; exigir
+  #              "em produção" para um item de prateleira é cerimônia inútil)
+  # `enviado` também vale na retirada para não deixar preso o pedido que foi
+  # marcado como enviado por engano, antes desta regra existir.
   def marcar_entregue!
-    transicionar!("entregue", de: %w[enviado])
+    transicionar!("entregue", de: retirada? ? %w[pago em_producao enviado] : %w[enviado])
   end
 
   def card_json

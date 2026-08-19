@@ -8,28 +8,30 @@
 
 <div class="painel-toolbar">
   <div class="chips">
-    <%= link_to "Todas", painel_acoes_path(status: @status, busca: @busca), class: "chip #{'active' unless @tipo}" %>
+    <%= link_to painel_acoes_path(status: @status, busca: @busca), class: "chip #{'active' unless @tipo}" do %>
+      Todas <%= painel_contador(@por_tipo.values.sum) %>
+    <% end %>
     <% %w[Projeto Evento Artigo].each do |tipo| %>
-      <%= link_to "#{tipo}s (#{@por_tipo[tipo].to_i})", painel_acoes_path(tipo: tipo, status: @status, busca: @busca),
-            class: "chip #{'active' if @tipo == tipo}" %>
+      <%= link_to painel_acoes_path(tipo: tipo, status: @status, busca: @busca),
+            class: "chip #{'active' if @tipo == tipo}" do %>
+        <%= tipo %>s <%= painel_contador(@por_tipo[tipo]) %>
+      <% end %>
     <% end %>
   </div>
 
   <div class="chips">
     <%= link_to "Qualquer status", painel_acoes_path(tipo: @tipo, busca: @busca), class: "chip #{'active' unless @status}" %>
     <% Acao::STATUSES.each do |status| %>
-      <%= link_to "#{status.capitalize} (#{@por_status[status].to_i})",
-            painel_acoes_path(tipo: @tipo, status: status, busca: @busca),
-            class: "chip #{'active' if @status == status}" %>
+      <%= link_to painel_acoes_path(tipo: @tipo, status: status, busca: @busca),
+            class: "chip #{'active' if @status == status}" do %>
+        <%= status.capitalize %> <%= painel_contador(@por_status[status]) %>
+      <% end %>
     <% end %>
   </div>
 
-  <%= form_with url: painel_acoes_path, method: :get, class: "painel-busca" do |f| %>
-    <%= f.hidden_field :tipo, value: @tipo %>
-    <%= f.hidden_field :status, value: @status %>
-    <%= f.search_field :busca, value: @busca, placeholder: "Título…", class: "painel-input" %>
-    <%= f.submit "Buscar", class: "btn btn-secondary btn-sm" %>
-  <% end %>
+  <%= render "painel/busca", url: painel_acoes_path, valor: @busca,
+        placeholder: "Buscar ação pelo título…",
+        ocultos: { tipo: @tipo, status: @status } %>
 </div>
 
 <% if @acoes.empty? %>

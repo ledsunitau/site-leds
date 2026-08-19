@@ -9,14 +9,19 @@ class Painel::PedidosController < Painel::BaseController
   def index
     @pendencias = PainelMetricas.new.pendencias
     @status = filtro(:status)
+    @busca = filtro(:busca)
 
-    escopo = Pedido.includes(:comprador, :endereco, :pagamentos, itens: %i[produto variante])
+    escopo = Pedido.includes(:comprador, :endereco, :pagamentos,
+                             itens: [ :variante, { produto: { imagem_attachment: :blob } } ])
                    .order(created_at: :desc)
     escopo = escopo.where(status: @status) if @status
+    escopo = escopo.where(user_id: contas_da_busca) if @busca
 
     @pedidos = paginar(escopo, por_pagina: POR_PAGINA)
     @por_status = Pedido.group(:status).count
     @receita = Pedido.where(status: Pedido::PAGOS).sum(:total)
+    # o que trava dinheiro na esteira: aguardando baixa manual (modo direto)
+    @a_confirmar = Pedido.aguardando_pagamento.sum(:total)
   end
 
   # Baixa manual de pagamento. No modo "direto" (Recursos → pagamento da loja) a
@@ -63,5 +68,18 @@ class Painel::PedidosController < Painel::BaseController
     pedido = Pedido.find(params[:id])
     pedido.marcar_entregue!
     voltar_para painel_pedidos_path, "Pedido ##{pedido.id} entregue."
+  end
+
+  private
+
+  # Subconsulta em vez de joins(:comprador): o índice já usa includes para
+  # montar o card, e juntar a mesma associação nos dois lugares faria o AR
+  # duplicar a tabela (alias users_pedidos) e o where cair no join errado.
+  # Também mantém no resultado o pedido de conta removida — que some do
+  # filtro por nome, mas não some da listagem sem busca.
+  def contas_da_busca
+    termo = "%#{User.sanitize_sql_like(@busca)}%"
+    User.where(User.arel_table[:name].matches(termo).or(User.arel_table[:email].matches(termo)))
+        .select(:id)
   end
 end

@@ -6,11 +6,14 @@
 
 <div class="painel-toolbar">
   <div class="chips">
-    <%= link_to "Todos", painel_produtos_path(modo_venda: @modo, busca: @busca), class: "chip #{'active' unless @status}" %>
+    <%= link_to painel_produtos_path(modo_venda: @modo, busca: @busca), class: "chip #{'active' unless @status}" do %>
+      Todos <%= painel_contador(@por_status.values.sum) %>
+    <% end %>
     <% Produto::STATUSES.each do |status| %>
-      <%= link_to "#{status.capitalize} (#{@por_status[status].to_i})",
-            painel_produtos_path(status: status, modo_venda: @modo, busca: @busca),
-            class: "chip #{'active' if @status == status}" %>
+      <%= link_to painel_produtos_path(status: status, modo_venda: @modo, busca: @busca),
+            class: "chip #{'active' if @status == status}" do %>
+        <%= status.capitalize %> <%= painel_contador(@por_status[status]) %>
+      <% end %>
     <% end %>
   </div>
 
@@ -22,12 +25,9 @@
     <% end %>
   </div>
 
-  <%= form_with url: painel_produtos_path, method: :get, class: "painel-busca" do |f| %>
-    <%= f.hidden_field :status, value: @status %>
-    <%= f.hidden_field :modo_venda, value: @modo %>
-    <%= f.search_field :busca, value: @busca, placeholder: "Nome…", class: "painel-input" %>
-    <%= f.submit "Buscar", class: "btn btn-secondary btn-sm" %>
-  <% end %>
+  <%= render "painel/busca", url: painel_produtos_path, valor: @busca,
+        placeholder: "Buscar produto pelo nome…",
+        ocultos: { status: @status, modo_venda: @modo } %>
 </div>
 
 <% if @produtos.empty? %>
