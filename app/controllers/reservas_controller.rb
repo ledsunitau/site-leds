@@ -1,7 +1,12 @@
 # Reservas do modo sob demanda (RF-LOJ-05/06). Do próprio usuário — o escopo
 # em current_user é a autorização (login basta, RN-17).
 class ReservasController < ApplicationController
+  include RecursoAtivo
+
   before_action :authenticate_user!
+  # reservar É comprar: sem esta guarda, desligar a loja fechava catálogo e
+  # checkout mas deixava a reserva sob demanda aceitando pedidos
+  exige_recurso "loja_ativa", only: %i[create pagar]
 
   def index
     reservas = current_user.reservas.includes(produto: { imagem_attachment: :blob }, variante: {})

@@ -1,0 +1,69 @@
+<%# Série temporal. Locals: `dados` [[rótulo, valor], ...], `cor` (CSS var),
+    `altura` opcional. SVG servido pelo servidor — o repo não tem build step e
+    o site já desenha grafo/geneograma assim (shared/_rede_grafo).
+
+    ESCALA UNIFORME (sem preserveAspectRatio="none"): com escala não-uniforme o
+    ponto redondo virava uma elipse esticada — o "círculo flutuante" que
+    aparecia no hover de séries curtas. Aqui o viewBox tem a proporção real e o
+    SVG escala junto, então círculo é círculo. %>
+<% dados = Array(dados)
+   cor = local_assigns.fetch(:cor, "var(--leds-green)")
+   altura = local_assigns.fetch(:altura, 170)
+   # o app não tem locale de data configurado (ver loja_helper#preco_br) — formato explícito
+   rotulo = local_assigns.fetch(:rotulo, ->(k) { k.respond_to?(:strftime) ? k.strftime("%d/%m") : k.to_s }) %>
+
+<% if dados.empty? %>
+  <p class="painel-chart-vazio">// sem dados no período</p>
+<% else %>
+  <% larg = 640.0
+     alt = altura.to_f
+     pad_y = 14.0 # respiro para o ponto do topo não ser cortado
+     valores = dados.map { |(_, v)| v.to_f }
+     topo = [ valores.max, 1 ].max
+     util = alt - (pad_y * 2)
+     y_de = ->(v) { (pad_y + util - (v.to_f / topo * util)).round(2) }
+
+     # Um ponto só: sem segmento para desenhar. Vira uma linha reta na altura do
+     # valor, com o ponto no meio — em vez do polígono degenerado de antes.
+     pontos = if dados.size == 1
+       [ [ (larg / 2).round(2), y_de.call(valores.first) ] ]
+     else
+       passo = larg / (dados.size - 1)
+       dados.each_with_index.map { |(_, v), i| [ (i * passo).round(2), y_de.call(v) ] }
+     end
+
+     linha = pontos.map { |x, y| "#{x},#{y}" }.join(" ")
+     linha = "0,#{pontos.first[1]} #{linha} #{larg},#{pontos.first[1]}" if dados.size == 1
+     area = "0,#{alt} #{linha} #{pontos.last[0]},#{alt}" %>
+
+  <div class="painel-chart" style="--chart-cor: <%= cor %>">
+    <svg viewBox="0 0 <%= larg.to_i %> <%= alt.to_i %>" class="painel-chart-svg" role="img"
+         aria-label="<%= dados.size %> ponto(s), máximo <%= valores.max.to_i %>">
+      <% [ 0.25, 0.5, 0.75 ].each do |f| %>
+        <line x1="0" y1="<%= (pad_y + util * f).round(2) %>" x2="<%= larg.to_i %>" y2="<%= (pad_y + util * f).round(2) %>"
+              class="painel-chart-grade" />
+      <% end %>
+
+      <polygon points="<%= area %>" fill="var(--chart-cor)" opacity="0.13" />
+      <polyline points="<%= linha %>" fill="none" stroke="var(--chart-cor)" stroke-width="2.5"
+                stroke-linejoin="round" stroke-linecap="round" />
+
+      <% dados.each_with_index do |(k, v), i| %>
+        <%# alvo de hover generoso e invisível: o ponto de 4px é pequeno demais
+            para acertar com o mouse, e o <title> precisa de um alvo. %>
+        <g class="painel-chart-ponto">
+          <circle cx="<%= pontos[i][0] %>" cy="<%= pontos[i][1] %>" r="14" fill="transparent" />
+          <circle cx="<%= pontos[i][0] %>" cy="<%= pontos[i][1] %>" r="4" fill="var(--chart-cor)"
+                  stroke="var(--surface-card-alt)" stroke-width="2" class="painel-chart-bolinha" />
+          <title><%= rotulo.call(k) %>: <%= v %></title>
+        </g>
+      <% end %>
+    </svg>
+
+    <div class="painel-chart-eixo">
+      <span><%= rotulo.call(dados.first[0]) %></span>
+      <span class="painel-chart-topo">máx <%= valores.max.to_i %></span>
+      <span><%= rotulo.call(dados.last[0]) %></span>
+    </div>
+  </div>
+<% end %>

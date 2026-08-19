@@ -35,6 +35,13 @@
       </div>
     <% end %>
 
+    <% if user.gestao? %>
+      <nav class="drawer-nav">
+        <span class="drawer-section-title">Gestão</span>
+        <a href="<%= painel_path %>" class="drawer-gestao" data-action="drawer#close">Painel de gestão <span>→</span></a>
+      </nav>
+    <% end %>
+
     <nav class="drawer-nav">
       <span class="drawer-section-title">Atalhos</span>
       <a href="<%= acoes_path %>" data-action="drawer#close">Ações</a>

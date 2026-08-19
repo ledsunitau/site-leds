@@ -2,6 +2,10 @@
 # padrão exclusivo da loja). Cadastro/edição é de membro da liga para cima e
 # fica auditado (RF-LOJ-09/RN-13, via PaperTrail no model).
 class ProdutosController < ApplicationController
+  # Campos aceitos e diff de variantes — compartilhados com o painel de
+  # gestão (Painel::ProdutosController), que cadastra por formulário.
+  include EscritaDeProduto
+
   before_action :authenticate_user!
   # loja desligada pela gestão → comprador vê "indisponível"; quem opera segue.
   before_action :loja_disponivel!, only: %i[index show todos]
@@ -95,47 +99,6 @@ class ProdutosController < ApplicationController
     respond_to do |format|
       format.json { render json: { errors: [ "Loja indisponível no momento." ] }, status: :service_unavailable }
       format.html { render "produtos/indisponivel", status: :service_unavailable }
-    end
-  end
-
-  # require+permit, não expect: expect levanta quando NENHUM escalar esperado
-  # veio, e um PATCH que só troca as variantes é legítimo (400 seria mentira).
-  def produto_params
-    params.require(:produto).permit(:nome, :descricao, :modo_venda, :preco,
-                                    :preco_promocional, :status, :quantidade_alvo, :imagem)
-  end
-
-  # Semântica de editor: a lista enviada é o estado final. Chave ausente = não
-  # mexer; [] = esvaziar de propósito — por isso permit+key?, não expect (que
-  # exigiria a chave e daria 400 num PATCH parcial).
-  #
-  # DIFF por id, não destroy_all+recria (que é o que substitui_colecao faz nas
-  # ações): lá as coleções são folhas, aqui NÃO — itens_carrinho/reservas/
-  # itens_pedido vão apontar para variante_id. Recriar trocaria o id a cada
-  # edição de estoque e derrubaria os carrinhos de todo mundo.
-  # destroy_all nas removidas, nunca delete_all: cada remoção vira versão (RN-13).
-  def substitui_variantes(produto)
-    return unless params.require(:produto).key?(:variantes)
-
-    bruto = params[:produto][:variantes]
-    # permit dropa em silêncio o que não é objeto: variantes: ["M","G"] viraria
-    # [] e apagaria a lista inteira respondendo 200. Lista malformada é 422.
-    unless bruto.is_a?(Array) && bruto.all? { |v| v.is_a?(ActionController::Parameters) }
-      produto.errors.add(:variantes, "precisa ser uma lista de objetos")
-      raise ActiveRecord::RecordInvalid.new(produto)
-    end
-
-    enviadas = params.require(:produto).permit(variantes: %i[id nome sku estoque])[:variantes]
-    mantidos = enviadas.filter_map { |v| v[:id].presence }
-    produto.variantes.where.not(id: mantidos).destroy_all
-
-    enviadas.each do |attrs|
-      atributos = attrs.except(:id)
-      if attrs[:id].present?
-        produto.variantes.find(attrs[:id]).update!(atributos)
-      else
-        produto.variantes.create!(atributos)
-      end
     end
   end
 

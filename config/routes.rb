@@ -1,7 +1,8 @@
 Rails.application.routes.draw do
   devise_for :users, controllers: {
     omniauth_callbacks: "users/omniauth_callbacks",
-    sessions: "users/sessions"
+    sessions: "users/sessions",
+    registrations: "users/registrations"
   }
 
   # Perfil do usuário logado (RF-AUT-06) + desvínculo de contas externas (RF-AUT-05)
@@ -164,6 +165,98 @@ Rails.application.routes.draw do
     resource :loja_config, only: :update
   end
   mount MissionControl::Jobs::Engine, at: "/admin/jobs"
+
+  # Painel de gestão (HTML). Separado de /admin de propósito: /admin é a API
+  # JSON (contrato testado, rescue_from JSON-only); aqui tudo responde HTML.
+  # Mesmo portão de papel — Painel::BaseController.
+  get "painel", to: "painel/dashboard#show", as: :painel
+  namespace :painel do
+    # RF-ADM-04: fila unificada. As transições ficam sob /aprovacoes (e não em
+    # /posts ou /ideias) porque quem age aqui é a gestão e o redirect volta
+    # para a fila — a rota do autor continua sendo a pública.
+    get "aprovacoes", to: "aprovacoes#index", as: :aprovacoes
+    scope "aprovacoes", controller: :aprovacoes, as: :aprovacoes do
+      post "posts/:id/aprovar",  action: :aprovar_post,  as: :aprovar_post
+      post "posts/:id/rejeitar", action: :rejeitar_post, as: :rejeitar_post
+      post "ideias/:id/aprovar",  action: :aprovar_ideia,  as: :aprovar_ideia
+      post "ideias/:id/rejeitar", action: :rejeitar_ideia, as: :rejeitar_ideia
+    end
+
+    resources :denuncias, only: :index do
+      member { post :resolver }
+    end
+    resources :comentarios, only: :index do
+      member { post :moderar }
+    end
+    resources :avaliacoes, only: %i[index destroy]
+
+    # Pessoas: contas/papéis, perfis de membro (com mandatos na própria ficha)
+    # e a estrutura (diretorias + gestões) numa tela só.
+    resources :usuarios, only: %i[index update]
+    resources :membros, only: %i[index new create edit update destroy]
+    resources :mandatos, only: %i[create update destroy]
+    get "estrutura", to: "estrutura#index", as: :estrutura
+    resources :diretorias, only: %i[create update destroy]
+    resources :gestoes, only: %i[create update destroy]
+
+    # Conteúdo: ações (projeto/evento/artigo), novidades e ideias.
+    resources :acoes, only: %i[index new create edit update destroy]
+    resources :posts, only: %i[index new create edit update destroy] do
+      member do
+        get :versoes
+        post :submeter
+      end
+    end
+    resources :ideias, only: :index do
+      member do
+        post :aprovar
+        post :rejeitar
+      end
+    end
+
+    # Loja: catálogo (com variantes), categorias, pedidos e reservas.
+    resources :produtos, only: %i[index new create edit update]
+    resources :categorias, only: %i[index create update destroy]
+    resources :pedidos, only: :index do
+      member do
+        # pagamento presencial (modo "direto"): não há webhook para mover o pedido
+        post :marcar_pago
+        post :cancelar
+        post :em_producao
+        post :enviar
+        post :entregar
+      end
+    end
+    resources :reservas, only: :index
+    post "reservas/disparar/:id", to: "reservas#disparar", as: :disparar_reserva
+
+    # Parceiros, leads e os catálogos reutilizáveis.
+    resources :parceiros, only: %i[index new create edit update destroy]
+    resources :leads, only: %i[index destroy] do
+      member do
+        post :converter
+        post :recusar
+      end
+    end
+    # Tecnologias, temas e congressos têm a mesma forma; o :tipo escolhe qual,
+    # sempre dentro de um mapa fechado no controller (nunca constantize).
+    get "catalogos", to: "catalogos#index", as: :catalogos
+    post "catalogos/:tipo", to: "catalogos#create", as: :criar_catalogo
+    patch "catalogos/:tipo/:id", to: "catalogos#update", as: :catalogo_item
+    delete "catalogos/:tipo/:id", to: "catalogos#destroy"
+
+    # Sistema: recursos (flags), limiares de alerta, logs, auditoria e LGPD.
+    get "recursos", to: "recursos#index", as: :recursos
+    patch "recursos", to: "recursos#update"
+    patch "recursos/modo_pagamento", to: "recursos#modo_pagamento", as: :recursos_modo_pagamento
+    patch "recursos/limiares", to: "recursos#limiares", as: :recursos_limiares
+
+    get "metricas", to: "metricas#show", as: :metricas
+    resources :logs, only: %i[index show]
+    get "auditoria", to: "auditoria#index", as: :auditoria
+    get "lgpd", to: "lgpd#index", as: :lgpd
+    delete "lgpd", to: "lgpd#eliminar"
+  end
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.

@@ -1,0 +1,9 @@
+<% content_for :title, "#{@acao.titulo} — Gestão LEDS" %>
+<% content_for :painel_titulo, @acao.titulo %>
+<% content_for :painel_acoes do %>
+  <span class="painel-badge-status <%= @acao.status %>"><%= @acao.status %></span>
+<% end %>
+
+<div class="painel-panel painel-form-panel">
+  <%= render "form", acao: @acao, detalhe: @detalhe, tipo: @tipo %>
+</div>

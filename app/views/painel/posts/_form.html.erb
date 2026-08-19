@@ -1,0 +1,61 @@
+<%# Editor de novidade. Local: `post`.
+    data-controller="editor" é o que carrega o Trix + Action Text — só nesta
+    tela, não no site inteiro. %>
+<%= form_with model: post, url: (post.persisted? ? painel_post_path(post) : painel_posts_path),
+              method: (post.persisted? ? :patch : :post), class: "painel-form",
+              data: { controller: "editor" } do |f| %>
+
+  <div class="painel-form-grid">
+    <label class="painel-campo">
+      <span>Tipo</span>
+      <%= f.select :tipo, Post::TIPOS.map { |t| [ t.capitalize, t ] }, {}, class: "painel-input" %>
+      <em class="painel-campo-dica">Notícia: membros da liga. Blog: escritores e professores também.</em>
+    </label>
+
+    <label class="painel-campo">
+      <span>Thumbnail</span>
+      <%= f.file_field :thumbnail, accept: "image/jpeg,image/png,image/webp", class: "painel-input" %>
+    </label>
+  </div>
+
+  <label class="painel-campo">
+    <span>Título</span>
+    <%= f.text_field :titulo, class: "painel-input", required: true %>
+  </label>
+
+  <label class="painel-campo">
+    <span>Subtítulo</span>
+    <%= f.text_field :subtitulo, class: "painel-input" %>
+  </label>
+
+  <label class="painel-campo">
+    <span>Chamada <em>(o resumo curto que aparece no card)</em></span>
+    <%= f.text_area :caller, rows: 2, class: "painel-input" %>
+  </label>
+
+  <label class="painel-campo">
+    <span>Texto</span>
+    <%= f.rich_text_area :corpo, class: "painel-trix" %>
+  </label>
+
+  <div class="painel-form-acoes">
+    <%= f.submit post.persisted? ? "Salvar" : "Criar rascunho", class: "btn btn-primary" %>
+    <%= link_to "Cancelar", painel_posts_path, class: "btn btn-secondary" %>
+  </div>
+<% end %>
+
+<% if post.persisted? %>
+  <hr class="painel-sep">
+  <div class="painel-fluxo">
+    <p class="painel-dica">
+      <strong>Status: <%= post_status_label(post.status) %>.</strong>
+      Toda edição de novidade publicada volta para a fila de aprovação (RN-02) —
+      a liberação anterior não vale para o texto novo. Quem escreve não se aprova:
+      a liberação é na tela de <%= link_to "Aprovações", painel_aprovacoes_path %>.
+    </p>
+
+    <% if post.rascunho? || post.rejeitado? %>
+      <%= button_to "Enviar para aprovação", submeter_painel_post_path(post), class: "btn btn-primary btn-sm" %>
+    <% end %>
+  </div>
+<% end %>

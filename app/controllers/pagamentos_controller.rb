@@ -7,6 +7,10 @@
 class PagamentosController < ApplicationController
   skip_forgery_protection
 
+  # O gateway não repete a notificação para sempre: recusar o webhook durante a
+  # manutenção perderia a confirmação de um pagamento já cobrado do comprador.
+  skip_before_action :bloquear_em_manutencao, only: :webhook
+
   def webhook
     return head :unauthorized unless assinatura_valida?
 

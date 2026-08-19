@@ -1,0 +1,9 @@
+<% content_for :title, "#{@parceiro.nome} — Gestão LEDS" %>
+<% content_for :painel_titulo, @parceiro.nome %>
+<% content_for :painel_acoes do %>
+  <span class="painel-badge-status <%= @parceiro.status %>"><%= @parceiro.status %></span>
+<% end %>
+
+<div class="painel-panel painel-form-panel">
+  <%= render "form", parceiro: @parceiro %>
+</div>

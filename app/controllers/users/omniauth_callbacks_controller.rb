@@ -50,7 +50,13 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
       return nil
     end
 
-    user = User.find_by(email: email) || User.create!(
+    existente = User.find_by(email: email)
+    if existente.nil? && !Setting.ativo?("cadastro_publico")
+      redirect_to new_user_session_path, alert: "O cadastro de novas contas está temporariamente fechado."
+      return nil
+    end
+
+    user = existente || User.create!(
       email: email,
       name: auth.info.name.presence || email.split("@").first,
       password: Devise.friendly_token[0, 20]

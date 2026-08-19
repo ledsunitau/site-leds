@@ -1,0 +1,66 @@
+<% content_for :title, "#{@membro.name} — Gestão LEDS" %>
+<% content_for :painel_titulo, @membro.name %>
+<% content_for :painel_acoes do %>
+  <%= link_to "Ver no site →", member_path(@membro), class: "btn btn-secondary btn-sm" %>
+<% end %>
+
+<div class="painel-grid-2">
+  <div class="painel-panel painel-form-panel">
+    <h3 class="painel-panel-title">Perfil</h3>
+    <%= render "form", membro: @membro %>
+  </div>
+
+  <div class="painel-panel">
+    <h3 class="painel-panel-title">Mandatos</h3>
+    <p class="painel-dica">
+      Presidente, vice e orientador <strong>não</strong> têm diretoria; diretor e
+      membro <strong>precisam</strong> de uma (RN-05). Um mandato por gestão.
+    </p>
+
+    <% if @membro.mandatos.any? %>
+      <ul class="painel-mandatos">
+        <% @membro.mandatos.includes(:gestao, :diretoria).sort_by { |m| -m.gestao.ano_inicio }.each do |mandato| %>
+          <li class="painel-mandato">
+            <%= form_with model: mandato, url: painel_mandato_path(mandato), method: :patch, class: "painel-mandato-form" do |f| %>
+              <%= f.hidden_field :member_id, value: @membro.id %>
+              <span class="painel-mandato-anos"><%= mandato.gestao.ano_inicio %>–<%= mandato.gestao.ano_fim %></span>
+              <%= f.select :cargo, Mandato::CARGOS.map { |c| [ cargo_label(c), c ] }, {}, class: "painel-input compacto" %>
+              <%= f.select :diretoria_id, Diretoria.order(:nome).map { |d| [ d.nome, d.id ] },
+                    { include_blank: "sem diretoria" }, class: "painel-input compacto" %>
+              <%= f.submit "Salvar", class: "painel-mini" %>
+            <% end %>
+            <%= button_to "×", painel_mandato_path(mandato), method: :delete, class: "painel-mini perigo",
+                  form: { data: { turbo_confirm: "Remover este mandato?" } } %>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="painel-chart-vazio">// nenhum mandato ainda</p>
+    <% end %>
+
+    <hr class="painel-sep">
+
+    <h4 class="painel-sub">Adicionar mandato</h4>
+    <%= form_with model: @mandato, url: painel_mandatos_path, class: "painel-form" do |f| %>
+      <%= f.hidden_field :member_id, value: @membro.id %>
+      <div class="painel-form-grid tres">
+        <label class="painel-campo">
+          <span>Gestão</span>
+          <%= f.select :gestao_id, Gestao.order(ano_inicio: :desc).map { |g| [ "#{g.ano_inicio}–#{g.ano_fim}", g.id ] },
+                { include_blank: "escolher…" }, class: "painel-input", required: true %>
+        </label>
+        <label class="painel-campo">
+          <span>Cargo</span>
+          <%= f.select :cargo, Mandato::CARGOS.map { |c| [ cargo_label(c), c ] },
+                { include_blank: "escolher…" }, class: "painel-input", required: true %>
+        </label>
+        <label class="painel-campo">
+          <span>Diretoria</span>
+          <%= f.select :diretoria_id, Diretoria.order(:nome).map { |d| [ d.nome, d.id ] },
+                { include_blank: "sem diretoria" }, class: "painel-input" %>
+        </label>
+      </div>
+      <%= f.submit "Adicionar mandato", class: "btn btn-primary btn-sm" %>
+    <% end %>
+  </div>
+</div>

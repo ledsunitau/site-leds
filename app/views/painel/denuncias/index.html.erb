@@ -1,0 +1,68 @@
+<% content_for :title, "Denúncias — Gestão LEDS" %>
+<% content_for :painel_titulo, "Denúncias" %>
+
+<div class="painel-toolbar">
+  <div class="chips">
+    <% [[nil, "Pendentes"], ["resolvida", "Resolvidas"]].each do |valor, label| %>
+      <%= link_to label, painel_denuncias_path(status: valor),
+            class: "chip #{'active' if @status == valor}" %>
+    <% end %>
+  </div>
+</div>
+
+<% if @denuncias.empty? %>
+  <div class="painel-empty">
+    <span class="empty-mono">// nada aqui</span>
+    <p class="painel-dica">Nenhuma denúncia <%= @status == "resolvida" ? "resolvida" : "pendente" %>.</p>
+  </div>
+<% else %>
+  <ul class="painel-fila">
+    <% @denuncias.each do |denuncia| %>
+      <% comentario = denuncia.comentario %>
+      <li class="painel-fila-item sem-media">
+        <div class="painel-fila-corpo">
+          <span class="painel-fila-tags">
+            <span class="painel-tag-mono alerta"><%= denuncia.motivo.to_s.upcase %></span>
+            <span class="painel-fila-espera"><%= ha_quanto_tempo(denuncia.created_at) %></span>
+            <% reincidencia = @por_denunciante[denuncia.user_id].to_i %>
+            <% if reincidencia > 2 %>
+              <%# reincidência: sinaliza a conta que denuncia em série, que some quando cada linha é olhada isolada %>
+              <span class="painel-tag-mono alerta"><%= reincidencia %> DENÚNCIAS DESTA CONTA</span>
+            <% end %>
+          </span>
+
+          <span class="painel-fila-titulo">
+            Comentário de <%= comentario.autor&.name || "conta removida" %>
+            <span class="painel-badge-status <%= comentario.status %>"><%= comentario.status %></span>
+          </span>
+
+          <blockquote class="painel-citacao"><%= comentario.corpo %></blockquote>
+
+          <span class="painel-fila-meta">
+            denunciado por <%= denuncia.denunciante&.name || "—" %>
+            <% if comentario.post %>
+              · em <%= link_to comentario.post.titulo, post_path(comentario.post) %>
+            <% end %>
+            <% if denuncia.resolvida? %>
+              · resolvida por <%= denuncia.resolvedor&.name || "—" %> <%= data_e_hora(denuncia.resolved_at) %>
+            <% end %>
+          </span>
+        </div>
+
+        <% if denuncia.pendente? %>
+          <div class="painel-fila-acoes">
+            <%# moderar o comentário JÁ resolve as denúncias dele (Comentario#moderar!) %>
+            <%= button_to "Ocultar comentário", moderar_painel_comentario_path(comentario, status: "oculto"),
+                  class: "btn btn-primary btn-sm" %>
+            <%= button_to "Remover comentário", moderar_painel_comentario_path(comentario, status: "removido"),
+                  class: "btn btn-secondary btn-sm",
+                  form: { data: { turbo_confirm: "Remover este comentário do ar?" } } %>
+            <%= button_to "Improcedente", resolver_painel_denuncia_path(denuncia),
+                  class: "btn btn-secondary btn-sm",
+                  form: { data: { turbo_confirm: "Resolver sem moderar? O comentário continua visível." } } %>
+          </div>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+<% end %>

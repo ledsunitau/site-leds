@@ -6,6 +6,9 @@ class ParceriaLeadsController < ApplicationController
   # o CSRF só quebraria o cliente legítimo.
   skip_forgery_protection
 
+  include RecursoAtivo
+  exige_recurso "parceria_ativa", only: :create
+
   def create
     @lead = ParceriaLead.new(params.expect(parceria_lead: %i[empresa contato_nome contato_email tipo descricao]))
     if @lead.save

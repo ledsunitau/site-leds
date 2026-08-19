@@ -1,0 +1,33 @@
+<% content_for :title, "Categorias — Gestão LEDS" %>
+<% content_for :painel_titulo, "Categorias de produto" %>
+
+<div class="painel-panel painel-form-panel">
+  <p class="painel-dica">
+    As categorias agrupam a vitrine no catálogo expandido. Apagar uma categoria
+    não apaga produto — só os deixa sem agrupamento.
+  </p>
+
+  <ul class="painel-linhas">
+    <% @categorias.each do |categoria| %>
+      <li class="painel-linha">
+        <%= form_with model: categoria, url: painel_categoria_path(categoria), method: :patch, class: "painel-linha-form" do |f| %>
+          <%= f.text_field :nome, class: "painel-input", required: true %>
+          <%= f.submit "Salvar", class: "painel-mini" %>
+        <% end %>
+        <span class="painel-linha-meta"><%= @contagem[categoria.id].to_i %> produtos</span>
+        <%= button_to "×", painel_categoria_path(categoria), method: :delete, class: "painel-mini perigo",
+              form: { data: { turbo_confirm: "Apagar “#{categoria.nome}”? Os produtos ficam sem categoria." } } %>
+      </li>
+    <% end %>
+  </ul>
+
+  <% if @categorias.empty? %>
+    <p class="painel-chart-vazio">// nenhuma categoria ainda</p>
+  <% end %>
+
+  <hr class="painel-sep">
+  <%= form_with model: Categoria.new, url: painel_categorias_path, class: "painel-linha-form" do |f| %>
+    <%= f.text_field :nome, placeholder: "Nova categoria", class: "painel-input", required: true %>
+    <%= f.submit "Criar", class: "btn btn-primary btn-sm" %>
+  <% end %>
+</div>

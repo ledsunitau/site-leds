@@ -1,0 +1,63 @@
+<%# Ficha do membro. Locals: `membro`. Usado por new e edit. %>
+<%= form_with model: membro, url: (membro.persisted? ? painel_membro_path(membro) : painel_membros_path),
+              method: (membro.persisted? ? :patch : :post), class: "painel-form" do |f| %>
+
+  <div class="painel-form-grid">
+    <label class="painel-campo">
+      <span>Conta do usuário</span>
+      <% if membro.persisted? %>
+        <%# user_id é único e o vínculo é a identidade do perfil — trocar a
+            conta de um membro existente é criar outro membro, não editar este. %>
+        <input type="text" class="painel-input" value="<%= membro.name %> · <%= membro.email %>" disabled>
+      <% else %>
+        <%= f.select :user_id, @contas.map { |u| [ "#{u.name} · #{u.email}", u.id ] },
+              { include_blank: "escolher conta…" }, class: "painel-input", required: true %>
+      <% end %>
+    </label>
+
+    <label class="painel-campo">
+      <span>Padrinho <em>(quem trouxe para a liga)</em></span>
+      <%= f.select :padrinho_id, @padrinhos.map { |m| [ m.name, m.id ] },
+            { include_blank: "nenhum" }, class: "painel-input" %>
+    </label>
+  </div>
+
+  <label class="painel-campo">
+    <span>Bio <em>(aparece no card)</em></span>
+    <%= f.text_area :bio, rows: 4, class: "painel-input", placeholder: "Uma ou duas frases sobre o membro." %>
+  </label>
+
+  <div class="painel-form-grid">
+    <label class="painel-campo">
+      <span>Foto institucional</span>
+      <%= f.file_field :foto, accept: "image/jpeg,image/png,image/webp", class: "painel-input" %>
+      <em class="painel-campo-dica">JPEG, PNG ou WebP até 5 MB. Sem foto aqui, o card usa a foto de perfil da conta.</em>
+    </label>
+
+    <label class="painel-check">
+      <%= f.check_box :founder %>
+      <span>Fundador <em>(tag independente do cargo — RN-04)</em></span>
+    </label>
+  </div>
+
+  <fieldset class="painel-fieldset">
+    <legend>Skills do card</legend>
+    <div class="painel-checks">
+      <% @tecnologias.each do |tec| %>
+        <label class="painel-check-inline">
+          <%= check_box_tag "member[tecnologia_ids][]", tec.id,
+                membro.tecnologia_ids.include?(tec.id), id: "tec_#{tec.id}" %>
+          <span><%= tec.nome %></span>
+        </label>
+      <% end %>
+    </div>
+    <%# hidden garante que desmarcar TUDO envie a chave — sem ele o params
+        não teria tecnologia_ids e as skills antigas continuariam. %>
+    <%= hidden_field_tag "member[tecnologia_ids][]", "" %>
+  </fieldset>
+
+  <div class="painel-form-acoes">
+    <%= f.submit membro.persisted? ? "Salvar alterações" : "Criar perfil", class: "btn btn-primary" %>
+    <%= link_to "Cancelar", painel_membros_path, class: "btn btn-secondary" %>
+  </div>
+<% end %>

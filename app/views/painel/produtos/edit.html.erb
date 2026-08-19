@@ -1,0 +1,10 @@
+<% content_for :title, "#{@produto.nome} — Gestão LEDS" %>
+<% content_for :painel_titulo, @produto.nome %>
+<% content_for :painel_acoes do %>
+  <span class="painel-badge-status <%= @produto.status %>"><%= @produto.status %></span>
+  <%= link_to "Ver na loja →", produto_path(@produto), class: "btn btn-secondary btn-sm" %>
+<% end %>
+
+<div class="painel-panel painel-form-panel">
+  <%= render "form", produto: @produto %>
+</div>

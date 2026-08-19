@@ -1,0 +1,21 @@
+<% content_for :title, "Catálogos — Gestão LEDS" %>
+<% content_for :painel_titulo, "Catálogos" %>
+
+<p class="painel-dica">
+  Listas reutilizáveis. <strong>Tecnologias</strong> alimentam a stack dos projetos
+  e as skills dos membros; <strong>temas</strong> classificam artigos (de 1 a 3 por
+  artigo); <strong>congressos</strong> entram nas apresentações.
+  O número ao lado é quantas vezes o item está em uso — apagar remove essa
+  classificação de quem a usa.
+</p>
+
+<div class="painel-grid-3">
+  <%= render "painel/catalogos/lista", tipo: "tecnologias", titulo: "Tecnologias",
+        itens: @tecnologias, uso: @uso["tecnologias"], icone: true %>
+
+  <%= render "painel/catalogos/lista", tipo: "temas", titulo: "Temas",
+        itens: @temas, uso: @uso["temas"], icone: true %>
+
+  <%= render "painel/catalogos/lista", tipo: "congressos", titulo: "Congressos",
+        itens: @congressos, uso: @uso["congressos"], icone: false %>
+</div>

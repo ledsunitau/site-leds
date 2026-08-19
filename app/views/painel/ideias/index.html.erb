@@ -1,0 +1,148 @@
+<% content_for :title, "Ideias — Gestão LEDS" %>
+<% content_for :painel_titulo, "Ideias da comunidade" %>
+
+<%# ---- Resumo: onde as ideias estão no funil ---- %>
+<section class="painel-secao">
+  <div class="painel-ideias-resumo">
+    <% [
+         { rotulo: "Pendentes", n: @contagem["pendente"].to_i, cor: "var(--leds-yellow)",
+           pe: "aguardam sua revisão", filtro: "pendente" },
+         { rotulo: "Aprovadas", n: @contagem["aprovada"].to_i, cor: "var(--leds-green)",
+           pe: "podem virar ação", filtro: "aprovada" },
+         { rotulo: "Viraram ação", n: @viraram_acao, cor: "var(--leds-blue)",
+           pe: "com idealizador creditado", filtro: nil },
+         { rotulo: "Rejeitadas", n: @contagem["rejeitada"].to_i, cor: "var(--text-faint)",
+           pe: "encerradas", filtro: "rejeitada" }
+       ].each do |item| %>
+      <% conteudo = capture do %>
+        <span class="painel-resumo-num" style="color: <%= item[:cor] %>"><%= item[:n] %></span>
+        <span class="painel-resumo-rotulo"><%= item[:rotulo] %></span>
+        <span class="painel-resumo-pe"><%= item[:pe] %></span>
+      <% end %>
+
+      <% if item[:filtro] %>
+        <%= link_to painel_ideias_path(status: item[:filtro], tipo: @tipo),
+              class: "painel-resumo #{'ativo' if @status == item[:filtro]}",
+              style: "--r-cor: #{item[:cor]}" do %><%= conteudo %><% end %>
+      <% else %>
+        <div class="painel-resumo" style="--r-cor: <%= item[:cor] %>"><%= conteudo %></div>
+      <% end %>
+    <% end %>
+  </div>
+</section>
+
+<%# ---- Filtros ---- %>
+<div class="painel-toolbar">
+  <div class="chips">
+    <%= link_to "Todos os status", painel_ideias_path(tipo: @tipo), class: "chip #{'active' unless @status}" %>
+    <% Ideia::STATUSES.each do |status| %>
+      <%= link_to "#{status.capitalize} (#{@contagem[status].to_i})",
+            painel_ideias_path(status: status, tipo: @tipo),
+            class: "chip #{'active' if @status == status}" %>
+    <% end %>
+  </div>
+
+  <div class="chips">
+    <%= link_to "Qualquer tipo", painel_ideias_path(status: @status), class: "chip #{'active' unless @tipo}" %>
+    <% Ideia::TIPOS.each do |tipo| %>
+      <%# a bolinha da cor do tipo é o mesmo código do card — o filtro e o
+          conteúdo falam a mesma língua visual %>
+      <%= link_to painel_ideias_path(tipo: tipo, status: @status),
+            class: "chip chip-cor #{'active' if @tipo == tipo}" do %>
+        <span class="chip-ponto" style="background: <%= Ideia::TIPO_COR[tipo] %>"></span>
+        <%= Ideia::TIPO_LABEL[tipo] %> (<%= @por_tipo[tipo].to_i %>)
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<% if @ideias.empty? %>
+  <div class="painel-empty">
+    <span class="empty-mono">// nenhuma ideia encontrada</span>
+    <p class="painel-dica">
+      As ideias chegam pelo portal público. Quando alguém envia, ela aparece aqui como pendente.
+    </p>
+  </div>
+<% else %>
+  <div class="painel-ideias">
+    <% @ideias.each do |ideia| %>
+      <article class="painel-ideia <%= ideia.status %>" style="--i-cor: <%= Ideia::TIPO_COR[ideia.tipo] %>">
+        <header class="painel-ideia-topo">
+          <span class="painel-ideia-icone"><%= render "ideias/tipo_icon", tipo: ideia.tipo %></span>
+          <span class="painel-ideia-tipo"><%= Ideia::TIPO_LABEL[ideia.tipo].upcase %></span>
+          <span class="painel-badge-status <%= ideia.status %>"><%= ideia.status %></span>
+        </header>
+
+        <div class="painel-ideia-corpo">
+          <h3 class="painel-ideia-titulo"><%= ideia.titulo %></h3>
+
+          <%# <details> nativo: ideia longa não pode ser cortada sem recurso (é
+              o texto que a gestão precisa ler para decidir), mas também não
+              pode esticar um card e desalinhar a grade inteira. %>
+          <% if ideia.descricao.to_s.length > 240 %>
+            <details class="painel-ideia-desc">
+              <summary>
+                <span class="painel-ideia-resumo"><%= truncate(ideia.descricao, length: 240) %></span>
+                <span class="painel-ideia-mais">ler ideia completa</span>
+              </summary>
+              <p class="painel-ideia-completa"><%= simple_format(ideia.descricao) %></p>
+            </details>
+          <% else %>
+            <p class="painel-ideia-resumo"><%= ideia.descricao %></p>
+          <% end %>
+        </div>
+
+        <footer class="painel-ideia-pe">
+          <span class="painel-ideia-autor">
+            <span class="painel-ideia-avatar"><%= iniciais(ideia.autor&.name || "?") %></span>
+            <span class="painel-ideia-autor-txt">
+              <strong><%= ideia.autor&.name || "conta removida" %></strong>
+              <span><%= ha_quanto_tempo(ideia.created_at) %></span>
+            </span>
+          </span>
+
+          <% if ideia.revisor %>
+            <span class="painel-ideia-revisao">
+              <%= ideia.aprovada? ? "aprovada" : "rejeitada" %> por <%= ideia.revisor.name %>
+            </span>
+          <% end %>
+        </footer>
+
+        <%# ---- Barra de ação: sempre no rodapé, largura toda, separada do
+             conteúdo. Antes o "criar ação" era um botãozinho perdido no meio
+             do texto — sendo o desfecho mais importante da ideia. ---- %>
+        <div class="painel-ideia-acoes">
+          <% if ideia.pendente? %>
+            <%= button_to "Aprovar", aprovar_painel_ideia_path(ideia), class: "btn btn-primary btn-sm" %>
+            <%= button_to "Rejeitar", rejeitar_painel_ideia_path(ideia), class: "btn btn-secondary btn-sm",
+                  form: { data: { turbo_confirm: "Rejeitar “#{ideia.titulo}”? O autor é notificado." } } %>
+
+          <% elsif ideia.aprovada? && ideia.acao.nil? %>
+            <%# RF-ACO-07: o vínculo é fixado na CRIAÇÃO da ação (acoes.ideia_id
+                é imutável depois), então daqui se abre o formulário já com a
+                ideia escolhida — é o que credita o autor como idealizador. %>
+            <%= link_to new_painel_acao_path(
+                  tipo: (ideia.evento? || ideia.palestra? ? "evento" : "projeto"), ideia_id: ideia.id
+                ), class: "btn btn-primary btn-sm painel-ideia-cta" do %>
+              Criar <%= ideia.evento? || ideia.palestra? ? "evento" : "projeto" %> a partir dela →
+            <% end %>
+
+          <% elsif ideia.acao %>
+            <span class="painel-ideia-virou">
+              <span class="painel-ideia-check" aria-hidden="true">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
+              Virou <%= link_to ideia.acao.titulo, edit_painel_acao_path(ideia.acao) %>
+            </span>
+
+          <% else %>
+            <span class="painel-ideia-encerrada">Ideia encerrada.</span>
+          <% end %>
+        </div>
+      </article>
+    <% end %>
+  </div>
+<% end %>

@@ -1,0 +1,84 @@
+<% content_for :title, "Produtos — Gestão LEDS" %>
+<% content_for :painel_titulo, "Produtos" %>
+<% content_for :painel_acoes do %>
+  <%= link_to "Novo produto", new_painel_produto_path, class: "btn btn-primary btn-sm" %>
+<% end %>
+
+<div class="painel-toolbar">
+  <div class="chips">
+    <%= link_to "Todos", painel_produtos_path(modo_venda: @modo, busca: @busca), class: "chip #{'active' unless @status}" %>
+    <% Produto::STATUSES.each do |status| %>
+      <%= link_to "#{status.capitalize} (#{@por_status[status].to_i})",
+            painel_produtos_path(status: status, modo_venda: @modo, busca: @busca),
+            class: "chip #{'active' if @status == status}" %>
+    <% end %>
+  </div>
+
+  <div class="chips">
+    <%= link_to "Qualquer modo", painel_produtos_path(status: @status, busca: @busca), class: "chip #{'active' unless @modo}" %>
+    <% Produto::MODOS_VENDA.each do |modo| %>
+      <%= link_to modo.humanize, painel_produtos_path(modo_venda: modo, status: @status, busca: @busca),
+            class: "chip #{'active' if @modo == modo}" %>
+    <% end %>
+  </div>
+
+  <%= form_with url: painel_produtos_path, method: :get, class: "painel-busca" do |f| %>
+    <%= f.hidden_field :status, value: @status %>
+    <%= f.hidden_field :modo_venda, value: @modo %>
+    <%= f.search_field :busca, value: @busca, placeholder: "Nome…", class: "painel-input" %>
+    <%= f.submit "Buscar", class: "btn btn-secondary btn-sm" %>
+  <% end %>
+</div>
+
+<% if @produtos.empty? %>
+  <div class="painel-empty"><span class="empty-mono">// nenhum produto encontrado</span></div>
+<% else %>
+  <div class="painel-table-wrap">
+    <table class="painel-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Produto</th>
+          <th>Categoria</th>
+          <th>Modo</th>
+          <th>Preço</th>
+          <th>Estoque / meta</th>
+          <th>Status</th>
+          <th class="acoes"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @produtos.each do |produto| %>
+          <tr>
+            <td><span class="painel-foto"><img src="<%= produto_imagem_url(produto) %>" alt=""></span></td>
+            <td>
+              <%= produto.nome %>
+              <% if produto.destaque? %><span class="painel-tag-mono">DESTAQUE</span><% end %>
+            </td>
+            <td><%= produto.categoria&.nome || "—" %></td>
+            <td class="painel-td-mono"><%= produto.modo_venda.humanize %></td>
+            <td class="painel-td-mono">
+              <% if produto.em_promocao? %>
+                <span class="painel-preco-velho"><%= moeda(produto.preco) %></span>
+                <strong><%= moeda(produto.preco_promocional) %></strong>
+              <% else %>
+                <%= moeda(produto.preco) %>
+              <% end %>
+            </td>
+            <td class="painel-td-mono">
+              <% if produto.sob_demanda? %>
+                meta <%= produto.quantidade_alvo %>
+              <% else %>
+                <%= produto.variantes.sum(&:estoque) %> un · <%= produto.variantes.size %> variante(s)
+              <% end %>
+            </td>
+            <td><span class="painel-badge-status <%= produto.status %>"><%= produto.status %></span></td>
+            <td class="acoes">
+              <%= link_to "Editar", edit_painel_produto_path(produto), class: "painel-mini" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

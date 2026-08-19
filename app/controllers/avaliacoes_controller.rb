@@ -1,7 +1,10 @@
 # Avaliações de produto (#LOJA4). Login obrigatório; só quem comprou avalia
 # (regra no model). Conteúdo do usuário — sem edição pela gestão.
 class AvaliacoesController < ApplicationController
+  include RecursoAtivo
+
   before_action :authenticate_user!
+  exige_recurso "avaliacoes_ativas", only: :create
 
   def create
     produto = Produto.find(params[:produto_id])

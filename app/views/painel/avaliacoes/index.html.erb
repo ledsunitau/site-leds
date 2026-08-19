@@ -1,0 +1,64 @@
+<% content_for :title, "Avaliações — Gestão LEDS" %>
+<% content_for :painel_titulo, "Avaliações" %>
+
+<section class="painel-secao">
+  <div class="painel-grid-2">
+    <div class="painel-panel">
+      <h3 class="painel-panel-title">Distribuição das notas</h3>
+      <%= render "painel/charts/barras",
+            dados: (1..5).map { |n| [ "#{n} estrela#{'s' if n > 1}", @por_nota[n].to_i ] }.reverse,
+            cor: "var(--leds-yellow)" %>
+    </div>
+    <div class="painel-panel">
+      <h3 class="painel-panel-title">Nota média</h3>
+      <p class="painel-numerao"><%= @media || "—" %></p>
+      <p class="painel-dica">
+        Avaliação é conteúdo do usuário: a gestão não edita nota nem texto.
+        A única ação possível aqui é remover, para casos de abuso.
+      </p>
+    </div>
+  </div>
+</section>
+
+<div class="painel-toolbar">
+  <div class="chips">
+    <%= link_to "Todas", painel_avaliacoes_path, class: "chip #{'active' unless @nota}" %>
+    <% (1..5).to_a.reverse.each do |n| %>
+      <%= link_to "#{n}★", painel_avaliacoes_path(nota: n), class: "chip #{'active' if @nota == n.to_s}" %>
+    <% end %>
+  </div>
+</div>
+
+<% if @avaliacoes.empty? %>
+  <div class="painel-empty"><span class="empty-mono">// nenhuma avaliação</span></div>
+<% else %>
+  <div class="painel-table-wrap">
+    <table class="painel-table">
+      <thead>
+        <tr>
+          <th>Nota</th>
+          <th>Produto</th>
+          <th>Comentário</th>
+          <th>Autor</th>
+          <th>Quando</th>
+          <th class="acoes"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @avaliacoes.each do |a| %>
+          <tr>
+            <td class="painel-td-mono painel-estrelas"><%= "★" * a.nota %><span><%= "★" * (5 - a.nota) %></span></td>
+            <td><%= link_to a.produto.nome, produto_path(a.produto) %></td>
+            <td class="painel-td-texto"><%= a.comentario.presence || "—" %></td>
+            <td><%= a.autor&.name || "—" %></td>
+            <td class="painel-td-mono"><%= data_e_hora(a.created_at) %></td>
+            <td class="acoes">
+              <%= button_to "Remover", painel_avaliacao_path(a), method: :delete, class: "painel-mini perigo",
+                    form: { data: { turbo_confirm: "Remover esta avaliação? Não há como desfazer." } } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

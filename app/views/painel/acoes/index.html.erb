@@ -1,0 +1,83 @@
+<% content_for :title, "Ações — Gestão LEDS" %>
+<% content_for :painel_titulo, "Ações" %>
+<% content_for :painel_acoes do %>
+  <%= link_to "Novo projeto", new_painel_acao_path(tipo: "projeto"), class: "btn btn-primary btn-sm" %>
+  <%= link_to "Novo evento", new_painel_acao_path(tipo: "evento"), class: "btn btn-secondary btn-sm" %>
+  <%= link_to "Novo artigo", new_painel_acao_path(tipo: "artigo"), class: "btn btn-secondary btn-sm" %>
+<% end %>
+
+<div class="painel-toolbar">
+  <div class="chips">
+    <%= link_to "Todas", painel_acoes_path(status: @status, busca: @busca), class: "chip #{'active' unless @tipo}" %>
+    <% %w[Projeto Evento Artigo].each do |tipo| %>
+      <%= link_to "#{tipo}s (#{@por_tipo[tipo].to_i})", painel_acoes_path(tipo: tipo, status: @status, busca: @busca),
+            class: "chip #{'active' if @tipo == tipo}" %>
+    <% end %>
+  </div>
+
+  <div class="chips">
+    <%= link_to "Qualquer status", painel_acoes_path(tipo: @tipo, busca: @busca), class: "chip #{'active' unless @status}" %>
+    <% Acao::STATUSES.each do |status| %>
+      <%= link_to "#{status.capitalize} (#{@por_status[status].to_i})",
+            painel_acoes_path(tipo: @tipo, status: status, busca: @busca),
+            class: "chip #{'active' if @status == status}" %>
+    <% end %>
+  </div>
+
+  <%= form_with url: painel_acoes_path, method: :get, class: "painel-busca" do |f| %>
+    <%= f.hidden_field :tipo, value: @tipo %>
+    <%= f.hidden_field :status, value: @status %>
+    <%= f.search_field :busca, value: @busca, placeholder: "Título…", class: "painel-input" %>
+    <%= f.submit "Buscar", class: "btn btn-secondary btn-sm" %>
+  <% end %>
+</div>
+
+<% if @acoes.empty? %>
+  <div class="painel-empty"><span class="empty-mono">// nenhuma ação encontrada</span></div>
+<% else %>
+  <div class="painel-table-wrap">
+    <table class="painel-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Título</th>
+          <th>Tipo</th>
+          <th>Status</th>
+          <th>Quando</th>
+          <th>Idealizador</th>
+          <th class="acoes"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @acoes.each do |acao| %>
+          <tr>
+            <td>
+              <span class="painel-foto"><img src="<%= card_image_url(acao) %>" alt=""></span>
+            </td>
+            <td>
+              <%= acao.titulo %>
+              <span class="painel-td-sub">por <%= acao.criador&.name || "—" %></span>
+            </td>
+            <td>
+              <span class="tag solid" style="--tag-color:var(--cat-<%= acao.detalhe_type.downcase %>)">
+                <%= acao.detalhe_type.upcase %>
+              </span>
+            </td>
+            <td><span class="painel-badge-status <%= acao.status %>"><%= acao.status %></span></td>
+            <td class="painel-td-mono"><%= data_da_acao(acao) %></td>
+            <td>
+              <% if acao.ideia %>
+                <span class="painel-td-sub"><%= acao.ideia.autor&.name || "—" %></span>
+              <% else %>—<% end %>
+            </td>
+            <td class="acoes">
+              <%= link_to "Editar", edit_painel_acao_path(acao), class: "painel-mini" %>
+              <%= button_to "Apagar", painel_acao_path(acao), method: :delete, class: "painel-mini perigo",
+                    form: { data: { turbo_confirm: "Apagar “#{acao.titulo}”? O detalhe (#{acao.detalhe_type.downcase}) vai junto." } } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

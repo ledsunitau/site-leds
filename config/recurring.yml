@@ -18,6 +18,12 @@ production:
   prune_error_logs:
     command: "ErrorLog.where(occurred_at: ...90.days.ago).in_batches.delete_all"
     schedule: every day at 4am
+  # analytics_events também é insert-only e cresceria para sempre depois que o
+  # beacon entrou no ar. Mesma retenção dos error_logs (90 dias) — as métricas
+  # do painel olham janelas curtas; histórico longo não é agregado em lugar nenhum.
+  prune_analytics_events:
+    command: "AnalyticsEvent.where(ocorrido_em: ...90.days.ago).in_batches.delete_all"
+    schedule: every day at 4am
   # RF-LOJ-04: pedido não pago em 1h libera o estoque retido (cancelamento).
   expirar_pedidos:
     class: ExpirarPedidosJob
@@ -26,3 +32,8 @@ production:
   rastreio_update:
     class: RastreioUpdateJob
     schedule: every hour
+  # Painel → Alertas: fila parada, denúncias acumulando, pico de erros e
+  # pedidos travados. Limiares configuráveis (linhas de Setting).
+  alertas:
+    class: AlertasJob
+    schedule: every hour at minute 40

@@ -61,7 +61,8 @@
             <%= f.text_area :descricao, rows: 5, placeholder: "Conta os detalhes: o problema, quem se beneficia, como você imagina…" %>
           </label>
 
-          <%= f.submit "Enviar ideia →", class: "btn btn-primary ideias-submit" %>
+          <%= f.submit "Enviar ideia →", class: "btn btn-primary ideias-submit",
+                data: { action: "analytics#rastrear", evento: "ideia_enviada" } %>
         <% end %>
       </div>
 

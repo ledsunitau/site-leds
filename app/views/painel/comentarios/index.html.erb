@@ -1,0 +1,66 @@
+<% content_for :title, "Comentários — Gestão LEDS" %>
+<% content_for :painel_titulo, "Comentários" %>
+
+<div class="painel-toolbar">
+  <div class="chips">
+    <%= link_to "Todos", painel_comentarios_path(busca: @busca), class: "chip #{'active' unless @status}" %>
+    <% Comentario::STATUSES.each do |status| %>
+      <%= link_to "#{status.capitalize} (#{@contagem[status].to_i})",
+            painel_comentarios_path(status: status, busca: @busca),
+            class: "chip #{'active' if @status == status}" %>
+    <% end %>
+  </div>
+
+  <%= form_with url: painel_comentarios_path, method: :get, class: "painel-busca" do |f| %>
+    <%= f.hidden_field :status, value: @status %>
+    <%= f.search_field :busca, value: @busca, placeholder: "Buscar no texto…", class: "painel-input" %>
+    <%= f.submit "Buscar", class: "btn btn-secondary btn-sm" %>
+  <% end %>
+</div>
+
+<% if @comentarios.empty? %>
+  <div class="painel-empty"><span class="empty-mono">// nenhum comentário encontrado</span></div>
+<% else %>
+  <div class="painel-table-wrap">
+    <table class="painel-table">
+      <thead>
+        <tr>
+          <th>Comentário</th>
+          <th>Autor</th>
+          <th>Novidade</th>
+          <th>Quando</th>
+          <th>Status</th>
+          <th class="acoes">Moderar</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @comentarios.each do |c| %>
+          <tr>
+            <td class="painel-td-texto"><%= truncate(c.corpo, length: 190) %></td>
+            <td><%= c.autor&.name || "—" %></td>
+            <td>
+              <% if c.post %><%= link_to truncate(c.post.titulo, length: 40), post_path(c.post) %><% else %>—<% end %>
+            </td>
+            <td class="painel-td-mono"><%= data_e_hora(c.created_at) %></td>
+            <td>
+              <span class="painel-badge-status <%= c.status %>"><%= c.status %></span>
+              <% if c.moderador %>
+                <span class="painel-td-sub">por <%= c.moderador.name %></span>
+              <% end %>
+            </td>
+            <td class="acoes">
+              <%# moderar só avança (visivel → oculto → removido); o model recusa o resto %>
+              <% if c.visivel? %>
+                <%= button_to "Ocultar", moderar_painel_comentario_path(c, status: "oculto"), class: "painel-mini" %>
+              <% end %>
+              <% unless c.removido? %>
+                <%= button_to "Remover", moderar_painel_comentario_path(c, status: "removido"), class: "painel-mini perigo",
+                      form: { data: { turbo_confirm: "Remover este comentário do ar?" } } %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

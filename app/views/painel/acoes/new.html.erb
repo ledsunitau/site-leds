@@ -1,0 +1,6 @@
+<% content_for :title, "Nova ação — Gestão LEDS" %>
+<% content_for :painel_titulo, "Nova ação · #{@tipo}" %>
+
+<div class="painel-panel painel-form-panel">
+  <%= render "form", acao: @acao, detalhe: @detalhe, tipo: @tipo %>
+</div>
