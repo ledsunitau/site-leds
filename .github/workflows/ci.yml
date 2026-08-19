@@ -94,32 +94,57 @@ jobs:
         options: --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-      # postgresql-client: psql, exigido pelo db:test:prepare com
-      # schema_format = :sql. libvips: variantes do Active Storage.
+      # psql é OBRIGATÓRIO: o db:test:prepare com schema_format = :sql carrega o
+      # structure.sql por ele. libvips é opcional — ruby-vips é `require: false`
+      # justamente para o app subir sem ele (ver comentário no Gemfile); sem
+      # libvips o Active Storage só deixa de gerar variante, e nenhum teste gera.
       #
-      # Retries e timeouts EXPLÍCITOS: o apt não tem timeout de rede por padrão,
-      # então um mirror do runner que aceita a conexão e não responde (o log
-      # mostrou azure.archive devolvendo Ign em tudo) deixa o passo pendurado
-      # indefinidamente. Três tentativas curtas falham rápido e em vermelho, que
-      # é re-executável — melhor que uma run de 6 h sem diagnóstico.
+      # O runner resolve os repositórios por uma MIRRORLIST
+      # (/etc/apt/apt-mirrors.txt) que põe azure.archive.ubuntu.com em primeiro.
+      # Quando esse mirror não responde, cada retry do apt insiste nele antes de
+      # cair no archive.ubuntu.com — retry aqui ATRASA o failover em vez de
+      # ajudar. Por isso: mirror bom fixado na lista, Retries=1 e, antes de
+      # tudo, nem tocar na rede se as ferramentas já vieram na imagem.
       - name: Install packages
         timeout-minutes: 6
         env:
           APT_OPTS: >-
-            -o Acquire::Retries=3
-            -o Acquire::http::Timeout=15
-            -o Acquire::https::Timeout=15
+            -o Acquire::Retries=1
+            -o Acquire::http::Timeout=10
+            -o Acquire::https::Timeout=10
         run: |
           set -u
-          for tentativa in 1 2 3; do
-            if sudo apt-get update $APT_OPTS &&
-               sudo apt-get install --no-install-recommends -y $APT_OPTS libvips postgresql-client; then
-              exit 0
-            fi
-            echo "::warning::apt falhou na tentativa ${tentativa}; repetindo em 10s"
-            sleep 10
-          done
-          echo "::error::apt-get falhou nas 3 tentativas — mirror do runner indisponível"
+
+          faltando=""
+          command -v psql >/dev/null || faltando="postgresql-client"
+          ldconfig -p | grep -q libvips || faltando="${faltando} libvips"
+
+          if [ -z "${faltando# }" ]; then
+            echo "psql e libvips já vieram na imagem do runner — apt não é necessário"
+            exit 0
+          fi
+          echo "instalando:${faltando}"
+
+          # Só o mirror que responde. O arquivo é específico do runner; noutro
+          # ambiente o if é falso e a configuração original fica intacta.
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            echo "http://archive.ubuntu.com/ubuntu/" | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+          fi
+
+          # shellcheck disable=SC2086 -- listas de opções/pacotes, split proposital
+          if sudo apt-get update $APT_OPTS &&
+             sudo apt-get install --no-install-recommends -y $APT_OPTS $faltando; then
+            exit 0
+          fi
+
+          # O apt falhou. Só é fatal se faltar o que a suíte REALMENTE precisa:
+          # sem psql o db:test:prepare não carrega o structure.sql. Sem libvips
+          # o Active Storage apenas não gera variante — e nenhum teste gera.
+          if command -v psql >/dev/null; then
+            echo "::warning::apt indisponível; seguindo sem libvips (ruby-vips é require:false)"
+            exit 0
+          fi
+          echo "::error::apt falhou e não há psql — o db:test:prepare precisa dele para o structure.sql"
           exit 1
 
       - name: Checkout code
