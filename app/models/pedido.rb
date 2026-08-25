@@ -39,6 +39,10 @@ class Pedido < ApplicationRecord
   # pagamento aprovado → avisa o comprador (RF-LOJ-04); e, se for ENVIO, compra a
   # etiqueta em background (RF-LOJ-11). Enviado/entregue avisam o comprador.
   after_update_commit :notificar_pago, if: -> { saved_change_to_status? && pago? }
+  # RF-EMB: emblema de lançamento ("os 10 primeiros que comprarem"). Conta na
+  # CONFIRMAÇÃO DO PAGAMENTO, não na entrega — e marcar_pago! é idempotente e
+  # travado, então webhook repetido não concede duas vezes.
+  after_update_commit :conceder_emblemas_de_compra, if: -> { saved_change_to_status? && pago? }
   after_update_commit :agendar_etiqueta, if: -> { saved_change_to_status? && pago? && envio? }
   after_update_commit :notificar_enviado, if: -> { saved_change_to_status? && enviado? }
   after_update_commit :notificar_entregue, if: -> { saved_change_to_status? && entregue? }
@@ -128,6 +132,17 @@ class Pedido < ApplicationRecord
 
   def notificar_pago
     PedidoPagoNotifier.with(record: self).deliver(comprador) if comprador
+  end
+
+  # Um emblema por produto comprado. O teto de donos (limite_donos) é decidido
+  # dentro de Emblema#conceder!, sob lock — aqui só se enfileira a intenção.
+  def conceder_emblemas_de_compra
+    return if comprador.nil?
+
+    Emblema.ativos.where(produto_id: itens.select(:produto_id)).find_each do |emblema|
+      emblema.conceder!(comprador, origem: "compra", pedido: self,
+                                   descricao: "Compra ##{id}")
+    end
   end
 
   def agendar_etiqueta

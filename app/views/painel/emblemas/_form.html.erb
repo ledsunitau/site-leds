@@ -1,0 +1,147 @@
+<%# Cadastro de emblema. Local: `emblema`.
+    O Stimulus (emblema_controller) mantém a prévia e mostra/esconde o que cada
+    tipo usa — escalonável não tem meta, único não tem rank. %>
+<%= form_with model: emblema, url: (emblema.persisted? ? painel_emblema_path(emblema) : painel_emblemas_path),
+              method: (emblema.persisted? ? :patch : :post),
+              class: "painel-form emblema-form",
+              data: { controller: "emblema", emblema_tipo_value: emblema.tipo } do |f| %>
+
+  <%# ================= 1. Aparência (prévia à esquerda, campos à direita) ===== %>
+  <section class="painel-form-secao">
+    <h4 class="painel-sub"><span class="passo">1</span> Aparência</h4>
+
+    <div class="emblema-editor">
+      <div class="emblema-editor-previa">
+        <div class="emblema-previa" data-emblema-target="previa"
+             style="--emblema-cor: <%= emblema.cor %>">
+          <%= emblema.icone_svg.present? ? emblema_svg(emblema) : medalha %>
+        </div>
+        <span class="emblema-previa-legenda" data-emblema-target="legenda"><%= emblema.cor %></span>
+        <p class="painel-campo-dica" style="text-align:center">
+          Cor e efeito mudam aqui na hora.<br>
+          O desenho aparece depois de salvar — já limpo pelo servidor, que é o que o site mostra.
+        </p>
+      </div>
+
+      <div class="emblema-editor-campos">
+        <div class="painel-form-grid">
+          <label class="painel-campo">
+            <span>Nome</span>
+            <%= f.text_field :nome, class: "painel-input", required: true, placeholder: "Maratonista" %>
+          </label>
+          <label class="painel-campo">
+            <span>Cor</span>
+            <%= f.color_field :cor, class: "painel-input painel-cor",
+                  data: { emblema_target: "cor", action: "input->emblema#pintar" } %>
+          </label>
+        </div>
+
+        <label class="painel-campo">
+          <span>Descrição <em>(uma linha, aparece no card)</em></span>
+          <%= f.text_area :descricao, rows: 2, class: "painel-input" %>
+        </label>
+
+        <label class="painel-campo">
+          <span>Efeito</span>
+          <%= f.select :efeito, Emblema::EFEITOS.map { |e| [ Emblema::EFEITO_LABEL[e], e ] }, {},
+                class: "painel-input",
+                data: { emblema_target: "efeito", action: "change->emblema#pintar" } %>
+        </label>
+
+        <label class="painel-campo">
+          <span>Ícone (SVG)</span>
+          <%= f.text_area :icone_svg, rows: 6, class: "painel-input painel-mono", required: true %>
+        </label>
+        <p class="painel-campo-dica">
+          Use <code>fill="currentColor"</code> nos traços que devem receber a cor.
+          <code>script</code>, <code>style</code>, <code>on*</code> e links externos são
+          <strong>removidos ao salvar</strong>. Máximo 20&nbsp;KB.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <%# ================= 2. Tipo — dois cartões, não um select ================= %>
+  <section class="painel-form-secao">
+    <h4 class="painel-sub"><span class="passo">2</span> Tipo</h4>
+
+    <div class="emblema-tipos">
+      <% [ [ "unico", "Único", "Você tem ou não tem.", "Ex.: “Fundador honorário”, “Comprador pioneiro”." ],
+           [ "escalonavel", "Escalonável", "Sobe de rank a cada vez que a pessoa cumpre de novo.",
+             "Ex.: “Maratonista” — bronze na 1ª maratona, prata na 2ª, ouro na 4ª." ] ].each do |valor, titulo, resumo, exemplo| %>
+        <label class="emblema-tipo">
+          <%= f.radio_button :tipo, valor, data: { action: "change->emblema#trocarTipo" } %>
+          <span class="emblema-tipo-corpo">
+            <strong><%= titulo %></strong>
+            <span><%= resumo %></span>
+            <em><%= exemplo %></em>
+          </span>
+        </label>
+      <% end %>
+    </div>
+  </section>
+
+  <%# ================= 3. Como se ganha ====================================== %>
+  <section class="painel-form-secao">
+    <h4 class="painel-sub"><span class="passo">3</span> Como se ganha</h4>
+
+    <label class="painel-campo">
+      <span>Critério automático</span>
+      <%= f.select :criterio,
+            Emblema::CRITERIOS.map { |chave, config| [ config[:label], chave ] },
+            { include_blank: "nenhum — só concessão, link ou compra" },
+            class: "painel-input", data: { emblema_target: "criterio", action: "change->emblema#trocarTipo" } %>
+    </label>
+
+    <%# só no tipo único: o escalonável usa os limiares de cada rank %>
+    <label class="painel-campo" data-emblema-target="campoMeta">
+      <span>Meta <em>(quantos para ganhar)</em></span>
+      <%= f.number_field :meta, min: 1, class: "painel-input compacto" %>
+    </label>
+
+    <p class="painel-nota" data-emblema-target="nota"></p>
+
+    <div class="painel-form-grid tres">
+      <label class="painel-campo">
+        <span>Peso <em>(quanto vale no elo)</em></span>
+        <%= f.number_field :peso, min: 1, class: "painel-input compacto" %>
+      </label>
+      <label class="painel-campo">
+        <span>Teto de donos <em>(vazio = sem teto)</em></span>
+        <%= f.number_field :limite_donos, min: 1, class: "painel-input compacto", placeholder: "ex.: 10" %>
+      </label>
+      <label class="painel-campo">
+        <span>Concedido ao comprar</span>
+        <%= f.select :produto_id, @produtos.map { |p| [ p.nome, p.id ] },
+              { include_blank: "nenhum produto" }, class: "painel-input" %>
+      </label>
+    </div>
+    <p class="painel-campo-dica">
+      Produto + teto de donos é o combo de lançamento: “os 10 primeiros que comprarem”.
+      Conta na <strong>confirmação do pagamento</strong>, não na entrega.
+    </p>
+  </section>
+
+  <%# ================= 4. Visibilidade ======================================= %>
+  <section class="painel-form-secao">
+    <h4 class="painel-sub"><span class="passo">4</span> Visibilidade</h4>
+
+    <label class="painel-check">
+      <%= f.check_box :exclusivo %>
+      <span>Exclusivo <em>(fica escondido do catálogo até a pessoa desbloquear — emblema-surpresa)</em></span>
+    </label>
+    <label class="painel-check">
+      <%= f.check_box :ativo %>
+      <span>Ativo <em>(desligado, para de ser concedido e some do catálogo; quem já tem continua com ele)</em></span>
+    </label>
+    <p class="painel-campo-dica">
+      A raridade <strong>não</strong> se escolhe: sai do % de contas que têm o emblema.
+      A varredura roda de hora em hora e também quando a pessoa abre a própria tela de emblemas.
+    </p>
+  </section>
+
+  <div class="painel-form-acoes">
+    <%= f.submit emblema.persisted? ? "Salvar alterações" : "Cadastrar emblema", class: "btn btn-primary" %>
+    <%= link_to "Cancelar", painel_emblemas_path, class: "btn btn-secondary" %>
+  </div>
+<% end %>

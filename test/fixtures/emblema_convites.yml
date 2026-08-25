@@ -1,0 +1,31 @@
+# Links exclusivos. Token fixo nas fixtures: o has_secure_token só gera no
+# create, e o teste precisa saber a URL para abrir.
+beta_valido:
+  emblema: convidado_beta
+  token: tokenvalidodobetafechado0123456789
+  ativo: true
+
+beta_desligado:
+  emblema: convidado_beta
+  token: tokendesligadopelagestao0123456789
+  ativo: false
+
+beta_vencido:
+  emblema: convidado_beta
+  token: tokenvencidoontem00000123456789012
+  ativo: true
+  expira_em: <%= 1.day.ago.iso8601 %>
+
+# link com VAGAS: o teste de concorrência resgata em paralelo
+beta_com_vagas:
+  emblema: convidado_beta
+  token: tokencomduasvagasapenas0123456789
+  ativo: true
+  usos_max: 2
+
+# link de maratona: a descrição vira o texto do registro no hover
+maratona_link:
+  emblema: maratonista
+  token: tokendamaratonasbc2026000123456789
+  ativo: true
+  descricao: Maratona SBC 2026

@@ -54,7 +54,9 @@ class ProdutosController < ApplicationController
       format.html do
         # #LOJA3/#LOJA4: detalhe + avaliações (cliente pagina)
         @produto = produto
-        @avaliacoes = produto.avaliacoes.recentes.includes(:autor)
+        # emblema_destaque junto: o card mostra o nome pintado e o ícone do
+        # emblema, e sem o preload seria uma consulta por avaliação
+        @avaliacoes = produto.avaliacoes.recentes.includes(autor: :emblema_destaque)
         @pode_avaliar = produto.comprado_por?(current_user)
         @ja_avaliou = produto.avaliacoes.exists?(user_id: current_user.id)
       end

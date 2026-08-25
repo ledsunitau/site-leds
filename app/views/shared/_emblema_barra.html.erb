@@ -1,0 +1,5 @@
+<%# Barra de progresso rumo a um alvo. Locais: `atual`, `alvo`. %>
+<span class="emblema-progresso">
+  <span class="emblema-barra" style="--pct: <%= pct_do_progresso(atual, alvo) %>%"></span>
+  <em><%= atual %> / <%= alvo %></em>
+</span>

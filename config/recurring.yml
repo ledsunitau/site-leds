@@ -37,3 +37,8 @@ production:
   alertas:
     class: AlertasJob
     schedule: every hour at minute 40
+  # RF-EMB: concede os emblemas de meta a quem bateu o número. Minuto 20 para
+  # não dividir a hora cheia com os alertas.
+  emblemas:
+    class: EmblemasJob
+    schedule: every hour at minute 20

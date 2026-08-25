@@ -40,6 +40,10 @@ class Setting < ApplicationRecord
       label: "Formulário de parceria", default: true,
       descricao: "Recebimento de novos leads na página de Parceiros."
     },
+    "emblemas_ativos" => {
+      label: "Emblemas", default: true,
+      descricao: "Conquista de emblemas por meta e resgate de link exclusivo. Desligado, ninguém ganha emblema novo; os já conquistados continuam equipados e visíveis."
+    },
     "cadastro_publico" => {
       label: "Cadastro de novas contas", default: true,
       descricao: "Criar conta por e-mail e por Google/Discord. Desligado, só quem já tem conta entra."

@@ -1,0 +1,248 @@
+<% content_for :title, "#{@emblema.nome} — Gestão LEDS" %>
+<% content_for :painel_titulo, @emblema.nome %>
+<% content_for :painel_acoes do %>
+  <%= link_to "Voltar", painel_emblemas_path, class: "btn btn-secondary btn-sm" %>
+<% end %>
+
+<%# Resumo de estado: o que este emblema É, de relance, antes de qualquer campo. %>
+<div class="emblema-resumo">
+  <%= emblema_icone(@emblema, tamanho: "lg") %>
+  <div class="emblema-resumo-info">
+    <h2><%= @emblema.nome %></h2>
+    <p><%= @emblema.como_conseguir %></p>
+    <div class="emblema-resumo-chips">
+      <span class="painel-badge-status <%= @emblema.ativo? ? 'ativo' : 'inativo' %>">
+        <%= @emblema.ativo? ? "ativo" : "inativo" %>
+      </span>
+      <span class="chip-mono"><%= @emblema.escalonavel? ? "escalonável" : "único" %></span>
+      <% if @emblema.exclusivo? %><span class="chip-mono">exclusivo</span><% end %>
+      <span class="emblema-raridade r-<%= @emblema.raridade %>"><%= raridade_label(@emblema) %></span>
+    </div>
+  </div>
+  <dl class="emblema-resumo-numeros">
+    <div><dt>Donos</dt><dd><%= @emblema.usuarios_count %><% if @emblema.limite_donos %><em>/<%= @emblema.limite_donos %></em><% end %></dd></div>
+    <div><dt>Peso</dt><dd><%= @emblema.peso %></dd></div>
+    <% if @emblema.escalonavel? %>
+      <div><dt>Ranks</dt><dd><%= @niveis.size %></dd></div>
+    <% end %>
+    <div><dt>Links</dt><dd><%= @convites.size %></dd></div>
+  </dl>
+</div>
+
+<%= render "form", emblema: @emblema %>
+
+<%# ---- Níveis (só escalonável) ---- %>
+<% if @emblema.escalonavel? %>
+  <section class="painel-form-secao">
+    <h4 class="painel-sub">Ranks deste emblema</h4>
+    <p class="painel-campo-dica">
+      Em que número cada rank entra. <%= @emblema.por_registro? ? "Conta os registros lançados por link ou a dedo." : "Conta a métrica “#{@emblema.criterio_config[:label]}”." %>
+      Mexer num limiar reavalia na hora quem já tem o emblema.
+      <% if @ranks.empty? %>
+        <strong>Nenhum rank no catálogo ainda</strong> —
+        <%= link_to "crie os ranks primeiro", painel_emblema_ranks_path %>.
+      <% end %>
+    </p>
+
+    <% if @ranks.any? %>
+      <%= form_with model: EmblemaNivel.new, url: painel_emblema_niveis_path(@emblema),
+            class: "painel-linha-form" do |f| %>
+        <label class="painel-campo">
+          <span>Rank</span>
+          <%= f.select :rank_id, @ranks.map { |r| [ r.nome, r.id ] }, {}, class: "painel-input" %>
+        </label>
+        <label class="painel-campo">
+          <span>A partir de</span>
+          <%= f.number_field :limiar, min: 1, class: "painel-input compacto", required: true %>
+        </label>
+        <label class="painel-campo">
+          <span>Cargo no Discord</span>
+          <%= f.text_field :discord_role_id, class: "painel-input" %>
+        </label>
+        <%= f.submit "Adicionar rank", class: "btn btn-primary btn-sm" %>
+      <% end %>
+    <% end %>
+
+    <% if @niveis.any? %>
+      <%# A escada real: o MESMO desenho do emblema em cada cor de rank, na
+          ordem em que a pessoa vai subir. É o que responde "como fica no ouro?"
+          sem precisar conceder a ninguém. %>
+      <ol class="nivel-escada">
+        <% @niveis.each do |nivel| %>
+          <li class="nivel-degrau">
+            <span class="emblema emblema-lg <%= "emblema-fx-#{nivel.efeito}" unless nivel.efeito == 'nenhum' %>"
+                  style="--emblema-cor: <%= nivel.cor %>"><%= emblema_svg(@emblema) %></span>
+            <span class="nivel-rank" style="--emblema-cor: <%= nivel.cor %>"><%= nivel.nome %></span>
+            <span class="nivel-limiar">a partir de <strong><%= nivel.limiar %></strong></span>
+            <span class="nivel-meta">
+              <%= nivel.emblema_usuarios.size %> pessoa<%= "s" if nivel.emblema_usuarios.size != 1 %>
+              <% if nivel.discord_role_id.present? %>
+                · cargo <%= nivel.discord_role_id %>
+              <% end %>
+            </span>
+            <%= button_to "×", painel_emblema_nivel_path(@emblema, nivel), method: :delete,
+                  class: "painel-mini perigo",
+                  form: { data: { turbo_confirm: "Remover o rank #{nivel.nome} deste emblema? Quem estava nele cai para o rank abaixo." } } %>
+          </li>
+        <% end %>
+      </ol>
+    <% else %>
+      <div class="painel-empty"><span class="empty-mono">// nenhum rank definido — o emblema não sobe de nível</span></div>
+    <% end %>
+  </section>
+<% end %>
+
+<%# ---- Links exclusivos ---- %>
+<section class="painel-form-secao">
+  <h4 class="painel-sub">Links exclusivos</h4>
+  <p class="painel-campo-dica">
+    Quem abrir o link ganha o emblema. Se ainda não tiver conta, cria a conta e já
+    sai com ele. Desligar, vencer o prazo ou esgotar as vagas recusa novos resgates
+    sem tirar de ninguém. A <strong>descrição</strong> vira o texto do registro no perfil
+    (“Maratona SBC 2026”) — é ela que aparece no hover do emblema.
+  </p>
+
+  <%= form_with url: painel_emblema_convites_path(@emblema), method: :post, class: "painel-linha-form" do %>
+    <label class="painel-campo">
+      <span>Descrição do registro</span>
+      <%= text_field_tag :descricao, nil, class: "painel-input", placeholder: "Maratona SBC 2026" %>
+    </label>
+    <label class="painel-campo">
+      <span>Expira em <em>(vazio = sem prazo)</em></span>
+      <%= datetime_local_field_tag :expira_em, nil, class: "painel-input" %>
+    </label>
+    <label class="painel-campo">
+      <span>Vagas <em>(vazio = ilimitado)</em></span>
+      <%= number_field_tag :usos_max, nil, min: 1, class: "painel-input compacto", placeholder: "10" %>
+    </label>
+    <%= submit_tag "Gerar link", class: "btn btn-primary btn-sm" %>
+  <% end %>
+
+  <% if @convites.any? %>
+    <div class="painel-table-wrap">
+      <table class="painel-table">
+        <thead>
+          <tr><th>Link</th><th>Descrição</th><th>Prazo</th><th>Resgates</th><th>Situação</th><th class="acoes"></th></tr>
+        </thead>
+        <tbody>
+          <% @convites.each do |convite| %>
+            <tr>
+              <td class="painel-td-mono">
+                <%= link_to emblema_convite_url(convite.token), emblema_convite_path(convite.token) %>
+              </td>
+              <td><%= convite.descricao.presence || "—" %></td>
+              <td class="painel-td-mono"><%= convite.expira_em ? data_e_hora(convite.expira_em) : "sem prazo" %></td>
+              <td class="painel-td-mono">
+                <%= convite.usos %><% if convite.usos_max %> / <%= convite.usos_max %><% end %>
+              </td>
+              <td>
+                <span class="painel-badge-status <%= convite.valido? ? 'ativo' : 'inativo' %>">
+                  <% if !convite.ativo? %>desligado
+                  <% elsif convite.expirado? %>expirado
+                  <% elsif convite.esgotado? %>esgotado
+                  <% else %>válido<% end %>
+                </span>
+              </td>
+              <td class="acoes">
+                <%= form_with url: painel_emblema_convite_path(@emblema, convite), method: :patch,
+                      class: "painel-linha-form compacto" do %>
+                  <%= hidden_field_tag :ativo, convite.ativo? ? "0" : "1" %>
+                  <%= submit_tag convite.ativo? ? "Desativar" : "Ativar", class: "painel-mini" %>
+                <% end %>
+                <%= button_to "Remover", painel_emblema_convite_path(@emblema, convite), method: :delete,
+                      class: "painel-mini perigo",
+                      form: { data: { turbo_confirm: "Remover este link? Quem já resgatou continua com o emblema." } } %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="painel-empty"><span class="empty-mono">// nenhum link gerado</span></div>
+  <% end %>
+</section>
+
+<%# ---- Donos + concessão a dedo ---- %>
+<section class="painel-form-secao">
+  <h4 class="painel-sub">
+    Quem tem este emblema — <%= @emblema.usuarios_count %><%= " / #{@emblema.limite_donos}" if @emblema.limite_donos %>
+  </h4>
+
+  <p class="painel-campo-dica">
+    <% if @emblema.escalonavel? %>
+      Conceder de novo à mesma pessoa <strong>acrescenta um registro</strong> e pode subir o rank.
+    <% else %>
+      Emblema único: conceder à mesma pessoa duas vezes não faz nada.
+    <% end %>
+    A data pode ser retroativa, para lançar evento antigo.
+  </p>
+
+  <%= form_with url: conceder_painel_emblema_path(@emblema), method: :post, class: "painel-linha-form" do %>
+    <label class="painel-campo">
+      <span>E-mail da conta</span>
+      <%= email_field_tag :email, nil, class: "painel-input", required: true,
+            placeholder: "pessoa@exemplo.com" %>
+    </label>
+    <label class="painel-campo">
+      <span>Descrição do registro</span>
+      <%= text_field_tag :descricao, nil, class: "painel-input", placeholder: "Maratona SBC 2026" %>
+    </label>
+    <label class="painel-campo">
+      <span>Quando <em>(vazio = agora)</em></span>
+      <%= datetime_local_field_tag :ocorrido_em, nil, class: "painel-input" %>
+    </label>
+    <%= submit_tag "Registrar", class: "btn btn-primary btn-sm" %>
+  <% end %>
+
+  <% if @donos.any? %>
+    <div class="painel-table-wrap">
+      <table class="painel-table">
+        <thead>
+          <tr><th>Pessoa</th><th>Rank</th><th>Registros</th><th>Desde</th><th class="acoes"></th></tr>
+        </thead>
+        <tbody>
+          <% @donos.each do |dono| %>
+            <tr>
+              <td><%= link_to dono.user.name, usuario_path(dono.user) %></td>
+              <td>
+                <% if dono.nivel %>
+                  <span class="emblema-rank" style="--emblema-cor: <%= dono.nivel.cor %>"><%= dono.nivel.nome %></span>
+                <% else %>
+                  <span class="painel-td-mono">—</span>
+                <% end %>
+              </td>
+              <td class="painel-td-mono">
+                <%= dono.conquistas_count %>
+                <% descricoes = dono.conquistas.filter_map(&:descricao).first(3) %>
+                <% if descricoes.any? %><em>(<%= descricoes.to_sentence %>)</em><% end %>
+              </td>
+              <td class="painel-td-mono"><%= data_e_hora(dono.conquistas.map(&:ocorrido_em).min) %></td>
+              <td class="acoes">
+                <%= button_to "Revogar", revogar_painel_emblema_path(@emblema, user_id: dono.user_id),
+                      method: :delete, class: "painel-mini perigo",
+                      form: { data: { turbo_confirm: "Tirar “#{@emblema.nome}” de #{dono.user.name}? Todos os registros e o cargo do Discord saem junto." } } %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="painel-empty"><span class="empty-mono">// ninguém ainda</span></div>
+  <% end %>
+</section>
+
+<%# Excluir só enquanto ninguém tem — depois disso seria apagar conquista alheia. %>
+<% if policy(@emblema).destroy? %>
+  <section class="painel-form-secao">
+    <h4 class="painel-sub">Excluir</h4>
+    <p class="painel-campo-dica">
+      Ninguém tem este emblema ainda, então dá para apagá-lo. Depois do primeiro dono,
+      só resta desativar.
+    </p>
+    <%= button_to "Excluir emblema", painel_emblema_path(@emblema), method: :delete,
+          class: "btn btn-secondary perigo",
+          form: { data: { turbo_confirm: "Excluir “#{@emblema.nome}”?" } } %>
+  </section>
+<% end %>

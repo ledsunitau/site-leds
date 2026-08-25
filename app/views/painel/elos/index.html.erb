@@ -1,0 +1,93 @@
+<% content_for :title, "Elos — Gestão LEDS" %>
+<% content_for :painel_titulo, "Elos" %>
+
+<section class="painel-panel">
+  <h3 class="painel-panel-title">A escada de elo</h3>
+  <p class="painel-dica" style="margin-top:0">
+    Os pontos saem dos emblemas — <strong>peso do emblema × peso do rank alcançado</strong> — e
+    o elo é o maior degrau que couber. O de maior pontuação é o <strong>final</strong>: é dentro
+    dele que o ranking vira top&nbsp;1..N. Salvar qualquer linha recalcula a base inteira.
+  </p>
+
+  <% if @elos.any? %>
+    <div class="escada elos">
+      <div class="escada-linha cabecalho">
+        <span></span><span>Elo</span><span>A partir de</span><span>Cor</span><span>Efeito</span>
+        <span>Cargo no Discord</span><span>Pessoas</span><span></span><span></span>
+      </div>
+
+      <% @elos.reverse.each do |elo| %>
+        <div class="escada-linha <%= 'final' if elo.final? %>">
+          <span class="escada-degrau"><%= elo_icone(elo, tamanho: "sm") %></span>
+
+          <%= form_with model: elo, url: painel_elo_path(elo), method: :patch,
+                class: "escada-form" do |f| %>
+            <%= f.text_field :nome, class: "painel-input", required: true, "aria-label": "Nome do elo" %>
+            <span class="escada-pontos">
+              <%= f.number_field :pontos_minimos, min: 0, class: "painel-input compacto",
+                    required: true, "aria-label": "Pontos mínimos" %>
+              <em>pts</em>
+            </span>
+            <%= f.color_field :cor, class: "painel-input painel-cor", "aria-label": "Cor" %>
+            <%= f.select :efeito, Emblema::EFEITOS.map { |e| [ Emblema::EFEITO_LABEL[e], e ] }, {},
+                  class: "painel-input", "aria-label": "Efeito" %>
+            <%= f.text_field :discord_role_id, class: "painel-input", placeholder: "sem cargo",
+                  "aria-label": "Cargo no Discord" %>
+            <span class="escada-uso">
+              <%= @por_elo[elo.id].to_i %>
+              <% if elo.final? %><span class="painel-tag-mono">FINAL</span><% end %>
+            </span>
+            <%= f.submit "Salvar", class: "painel-mini" %>
+
+            <%# o SVG é longo demais para caber na linha: abre embaixo, ocupando
+                a largura toda, e continua dentro do MESMO formulário %>
+            <details class="escada-svg" <%= "open" if elo.icone_svg.blank? %>>
+              <summary><%= elo.icone_svg.present? ? "Trocar ícone" : "Sem ícone — usa a inicial do nome" %></summary>
+              <%= f.text_area :icone_svg, rows: 3, class: "painel-input painel-mono",
+                    placeholder: '<svg viewBox="0 0 24 24" fill="currentColor">…' %>
+            </details>
+          <% end %>
+
+          <%= button_to "×", painel_elo_path(elo), method: :delete, class: "painel-mini perigo escada-x",
+                form: { data: { turbo_confirm: "Remover “#{elo.nome}”? Quem estava nele cai para o degrau abaixo." } } %>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="painel-empty"><span class="empty-mono">// nenhum elo cadastrado</span></div>
+  <% end %>
+
+  <hr class="painel-sep">
+
+  <h4 class="painel-sub">Novo elo</h4>
+  <%= form_with model: @elo, url: painel_elos_path, class: "painel-form" do |f| %>
+    <div class="painel-linha-form">
+      <label class="painel-campo">
+        <span>Nome</span>
+        <%= f.text_field :nome, class: "painel-input", required: true, placeholder: "Diamante" %>
+      </label>
+      <label class="painel-campo compacto">
+        <span>Pontos</span>
+        <%= f.number_field :pontos_minimos, min: 0, class: "painel-input compacto", required: true %>
+      </label>
+      <label class="painel-campo compacto">
+        <span>Cor</span>
+        <%= f.color_field :cor, class: "painel-input painel-cor" %>
+      </label>
+      <label class="painel-campo">
+        <span>Efeito</span>
+        <%= f.select :efeito, Emblema::EFEITOS.map { |e| [ Emblema::EFEITO_LABEL[e], e ] }, {},
+              class: "painel-input" %>
+      </label>
+      <label class="painel-campo">
+        <span>Cargo no Discord</span>
+        <%= f.text_field :discord_role_id, class: "painel-input", placeholder: "opcional" %>
+      </label>
+      <%= f.submit "Criar elo", class: "btn btn-primary btn-sm" %>
+    </div>
+    <label class="painel-campo" style="margin-top:12px">
+      <span>Ícone (SVG) <em>(opcional — sem ele, o elo mostra a inicial do nome)</em></span>
+      <%= f.text_area :icone_svg, rows: 3, class: "painel-input painel-mono" %>
+    </label>
+  <% end %>
+</section>

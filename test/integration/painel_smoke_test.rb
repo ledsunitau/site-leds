@@ -12,7 +12,7 @@ class PainelSmokeTest < ActionDispatch::IntegrationTest
   ROTAS_COM_ID = %w[
     /painel/logs/:id /painel/membros/:id/edit /painel/acoes/:id/edit
     /painel/posts/:id/edit /painel/posts/:id/versoes /painel/produtos/:id/edit
-    /painel/parceiros/:id/edit
+    /painel/parceiros/:id/edit /painel/emblemas/:id/edit
   ].freeze
 
   def rotas_get
@@ -54,6 +54,11 @@ class PainelSmokeTest < ActionDispatch::IntegrationTest
       versoes_painel_post_path(posts(:noticia_publicada)),
       edit_painel_produto_path(produtos(:camiseta)),
       edit_painel_parceiro_path(parceiros(:tech_corp)),
+      # os três lados da ficha de emblema: com links de convite, com donos e o
+      # escalonável (que mostra a tabela de ranks)
+      edit_painel_emblema_path(emblemas(:convidado_beta)),
+      edit_painel_emblema_path(emblemas(:fundador_honorario)),
+      edit_painel_emblema_path(emblemas(:maratonista)),
       new_painel_membro_path,
       new_painel_produto_path,
       new_painel_parceiro_path,

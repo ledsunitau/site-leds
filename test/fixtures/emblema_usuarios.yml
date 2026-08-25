@@ -1,0 +1,18 @@
+# Vínculo "tem o emblema" + rank atual. O COMO e o QUANDO ficam em
+# emblema_conquistas.yml — uma conquista por vínculo, no mínimo.
+escritora_primeira_novidade:
+  emblema: primeira_novidade
+  user: escritor_user
+  conquistas_count: 1
+
+ana_fundadora:
+  emblema: fundador_honorario
+  user: ana
+  conquistas_count: 1
+
+# duas maratonas → rank prata (ver emblema_conquistas.yml)
+ana_maratonista:
+  emblema: maratonista
+  user: ana
+  nivel: maratonista_prata
+  conquistas_count: 2

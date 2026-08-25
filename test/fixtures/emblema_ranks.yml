@@ -1,0 +1,29 @@
+# Catálogo global de ranks. peso é o multiplicador dos pontos do elo.
+bronze:
+  nome: Bronze
+  cor: "#CD7F32"
+  efeito: nenhum
+  peso: 1
+  ordem: 1
+
+prata:
+  nome: Prata
+  cor: "#C0C0C0"
+  efeito: brilho
+  peso: 3
+  ordem: 2
+
+ouro:
+  nome: Ouro
+  cor: "#FFEE04"
+  efeito: brilho
+  peso: 6
+  ordem: 3
+
+# usado só para provar que rank sem nível nenhum pode ser apagado
+elite:
+  nome: Elite
+  cor: "#F84A54"
+  efeito: arco_iris
+  peso: 25
+  ordem: 4

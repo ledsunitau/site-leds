@@ -3,6 +3,9 @@
 # altera o próprio papel. A regra mora aqui para qualquer caminho futuro
 # que toque role (convites, promoções) reusar em vez de reimplementar.
 class UserPolicy < ApplicationPolicy
+  # Página pública de perfil (RF-EMB): visível para quem está logado.
+  def show? = user.present?
+
   def atualizar_role?(novo_role)
     return false unless gestor?
     return false if user == record # escalada/lockout acidental

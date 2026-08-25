@@ -1,0 +1,40 @@
+<%# Catálogo de emblemas (RF-EMB): "ver todos os emblemas", da aba do perfil.
+    Ordenado do mais raro para o mais comum. Emblema exclusivo que o usuário
+    ainda não tem nem chega aqui — o controller o filtra. %>
+<% content_for :title, "Emblemas — LEDS" %>
+
+<%= render "shared/page_bg" %>
+
+<div class="page">
+  <%= render "shared/navbar" %>
+
+  <main class="content wrap emblemas-page">
+    <header class="emblemas-head">
+      <span class="eyebrow faint">// conquistas</span>
+      <h1 class="leds-h1">Emblemas</h1>
+      <p class="lead">
+        A raridade vem da conta: quanto menos gente tem um emblema, mais raro ele é.
+        <%= link_to "Ver o ranking", ranking_emblemas_path %> ·
+        <%= link_to "Voltar ao meu perfil", profile_path(anchor: "emblemas") %>.
+      </p>
+      <%= render "shared/elo", user: current_user %>
+    </header>
+
+    <% if @emblemas.any? %>
+      <div class="emblema-grid catalogo">
+        <% @emblemas.each do |emblema| %>
+          <% vinculo = @vinculos[emblema.id] %>
+          <%= render "shared/emblema", emblema: emblema, vinculo: vinculo, tamanho: "lg",
+                bloqueado: vinculo.nil?, progresso: emblema.progresso_de(current_user) %>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="empty-state">
+        <span class="empty-mono">// nenhum emblema disponível</span>
+        <p>A gestão ainda não cadastrou emblemas.</p>
+      </div>
+    <% end %>
+  </main>
+
+  <%= render "shared/footer" %>
+</div>

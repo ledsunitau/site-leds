@@ -53,12 +53,20 @@ class Comentario < ApplicationRecord
       id: id,
       corpo: corpo,
       status: status,
-      autor: autor && { id: autor.id, name: autor.name },
+      # emblema em destaque (RF-EMB): a cor do nome e o anel do avatar do
+      # comentário saem daqui. A view HTML dos comentários ainda não existe —
+      # o dado já vai no contrato para ela não nascer tendo que pedir de novo.
+      autor: autor && { id: autor.id, name: autor.name, emblema: emblema_do_autor },
       criado_em: created_at
     }
   end
 
   private
+
+  def emblema_do_autor
+    emblema = autor&.emblema_destaque
+    emblema && { nome: emblema.nome, cor: emblema.cor, efeito: emblema.efeito }
+  end
 
   def escalada?(novo_status)
     MODERADOS.include?(novo_status) &&

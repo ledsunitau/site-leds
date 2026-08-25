@@ -1,0 +1,66 @@
+<%# Card de emblema (RF-EMB). Locais: `emblema`; opcionais `vinculo`
+    (EmblemaUsuario, quando a pessoa tem), `bloqueado`, `tamanho`, `progresso`.
+
+    O hover que lista os registros é CSS puro (:hover + :focus-within, para
+    funcionar por teclado) — o conteúdo já vem renderizado, nada de JS. %>
+<% bloqueado = local_assigns.fetch(:bloqueado, false) %>
+<% tamanho = local_assigns.fetch(:tamanho, "md") %>
+<% vinculo = local_assigns[:vinculo] %>
+<% registros = vinculo&.conquistas&.sort_by(&:ocorrido_em)&.reverse || [] %>
+
+<article class="emblema-card <%= 'bloqueado' if bloqueado %>" tabindex="0">
+  <%= emblema_icone(emblema, tamanho: tamanho, bloqueado: bloqueado, vinculo: vinculo) %>
+
+  <div class="emblema-info">
+    <h4 class="emblema-nome">
+      <%= emblema.nome %>
+      <% if vinculo&.nivel %>
+        <span class="emblema-rank" style="--emblema-cor: <%= vinculo.nivel.cor %>"><%= vinculo.nivel.nome %></span>
+      <% end %>
+    </h4>
+
+    <span class="emblema-raridade r-<%= emblema.raridade %>"><%= raridade_label(emblema) %></span>
+    <% if vinculo&.nivel %>
+      <span class="emblema-raridade-rank">
+        <%= vinculo.nivel.nome %> — <%= percentual_br(vinculo.nivel.percentual) %>% chegaram aqui
+      </span>
+    <% end %>
+
+    <% if emblema.descricao.present? %>
+      <p class="emblema-desc"><%= emblema.descricao %></p>
+    <% end %>
+
+    <%# --- Progresso: até a meta (bloqueado) ou até o próximo rank --- %>
+    <% if bloqueado %>
+      <span class="emblema-como"><%= emblema.como_conseguir %></span>
+      <% if local_assigns[:progresso] && emblema.meta %>
+        <%= render "shared/emblema_barra", atual: local_assigns[:progresso], alvo: emblema.meta %>
+      <% end %>
+    <% elsif vinculo && (proximo = vinculo.proximo_nivel) %>
+      <span class="emblema-como">Próximo: <%= proximo.nome %> em <%= proximo.limiar %></span>
+      <%= render "shared/emblema_barra",
+            atual: (emblema.por_registro? ? vinculo.conquistas_count : local_assigns[:progresso].to_i),
+            alvo: proximo.limiar %>
+    <% end %>
+
+    <%# --- Registros: o que a pessoa fez para chegar aqui --- %>
+    <% if registros.size > 1 || registros.first&.descricao.present? %>
+      <span class="emblema-registros-dica"><%= registros.size %> registro<%= "s" if registros.size != 1 %></span>
+      <div class="emblema-registros" role="note">
+        <ul>
+          <% registros.first(8).each do |registro| %>
+            <li>
+              <span class="emblema-registro-nome"><%= registro.resumo %></span>
+              <span class="emblema-registro-data"><%= data_por_extenso(registro.ocorrido_em) %></span>
+            </li>
+          <% end %>
+        </ul>
+        <% if registros.size > 8 %>
+          <span class="emblema-registros-mais">e mais <%= registros.size - 8 %></span>
+        <% end %>
+      </div>
+    <% elsif registros.any? %>
+      <span class="emblema-registro-data">Desde <%= data_por_extenso(registros.first.ocorrido_em) %></span>
+    <% end %>
+  </div>
+</article>

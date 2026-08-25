@@ -1,0 +1,91 @@
+<%# Ranking de elo (RF-EMB). A escada inteira, não só um pódio: o degrau em que
+    você está, quanto falta para o próximo, e o top 1..N DENTRO do elo mais alto
+    — que é o que faz o último degrau valer a pena. %>
+<% content_for :title, "Ranking — LEDS" %>
+
+<%= render "shared/page_bg" %>
+
+<div class="page">
+  <%= render "shared/navbar" %>
+
+  <main class="content wrap emblemas-page">
+    <header class="emblemas-head">
+      <span class="eyebrow faint">// competição</span>
+      <h1 class="leds-h1">Ranking</h1>
+      <p class="lead">
+        Cada emblema vale pontos; emblema com rank vale mais conforme sobe.
+        <%= link_to "Ver os emblemas", emblemas_path %>.
+      </p>
+    </header>
+
+    <% if @elos.any? %>
+      <%# ---- Onde você está ---- %>
+      <section class="ranking-voce">
+        <%= render "shared/elo", user: current_user, tamanho: "lg" %>
+        <div class="ranking-voce-info">
+          <% if current_user.elo %>
+            <h2 class="perfil-card-title"><%= current_user.elo.nome %></h2>
+          <% else %>
+            <h2 class="perfil-card-title">Sem elo ainda</h2>
+          <% end %>
+          <% proximo = current_user.elo ? current_user.elo.proximo : @elos.first %>
+          <% if proximo %>
+            <p class="perfil-card-sub">
+              Faltam <strong><%= proximo.pontos_minimos - current_user.pontos_emblemas %></strong>
+              pontos para <strong><%= proximo.nome %></strong>.
+            </p>
+            <%= render "shared/emblema_barra", atual: current_user.pontos_emblemas,
+                  alvo: proximo.pontos_minimos %>
+          <% else %>
+            <p class="perfil-card-sub">Você está no degrau mais alto. Agora é manter.</p>
+          <% end %>
+        </div>
+      </section>
+
+      <%# ---- A escada ---- %>
+      <section class="perfil-secao">
+        <h2 class="perfil-secao-title">Os degraus</h2>
+        <ol class="ranking-escada">
+          <% @elos.reverse.each do |elo| %>
+            <li class="ranking-degrau <%= 'atual' if current_user.elo_id == elo.id %>">
+              <%= elo_icone(elo, tamanho: "sm") %>
+              <span class="ranking-degrau-nome" style="--emblema-cor: <%= elo.cor %>"><%= elo.nome %></span>
+              <span class="ranking-degrau-pts"><%= elo.pontos_minimos %>+ pts</span>
+              <span class="ranking-degrau-gente"><%= @por_elo[elo.id].to_i %> pessoa<%= "s" if @por_elo[elo.id].to_i != 1 %></span>
+            </li>
+          <% end %>
+        </ol>
+      </section>
+
+      <%# ---- O topo ---- %>
+      <% if @elo_final %>
+        <section class="perfil-secao">
+          <h2 class="perfil-secao-title">Topo — <%= @elo_final.nome %></h2>
+          <% if @topo.any? %>
+            <ol class="ranking-topo">
+              <% @topo.each_with_index do |usuario, i| %>
+                <li class="ranking-linha">
+                  <span class="ranking-pos">#<%= i + 1 %></span>
+                  <span class="ranking-avatar"><%= render "shared/avatar", user: usuario %></span>
+                  <%= link_to usuario_path(usuario), class: "ranking-nome" do %>
+                    <%= nome_com_emblema(usuario) %>
+                  <% end %>
+                  <span class="ranking-pts"><%= usuario.pontos_emblemas %> pts</span>
+                </li>
+              <% end %>
+            </ol>
+          <% else %>
+            <p class="empty-mono">// ninguém chegou ao <%= @elo_final.nome %> ainda</p>
+          <% end %>
+        </section>
+      <% end %>
+    <% else %>
+      <div class="empty-state">
+        <span class="empty-mono">// ranking ainda não configurado</span>
+        <p>A gestão ainda não criou os degraus de elo.</p>
+      </div>
+    <% end %>
+  </main>
+
+  <%= render "shared/footer" %>
+</div>

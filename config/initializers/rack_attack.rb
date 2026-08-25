@@ -83,6 +83,12 @@ class Rack::Attack
   throttle("checkout/ip", limit: 30, period: 1.minute) do |req|
     req.ip if req.post? && normalized_path(req) == "/checkout"
   end
+
+  # Resgate de link de emblema (RF-EMB): é GET, mas ESCREVE (concede o emblema)
+  # e o token é o único segredo. Sem teto, dá para varrer tokens à força bruta.
+  throttle("emblema_convites/ip", limit: 20, period: 1.hour) do |req|
+    req.ip if req.get? && normalized_path(req).match?(%r{\A/e/[^/]+\z})
+  end
 end
 
 Rack::Attack.enabled = !Rails.env.test?

@@ -25,7 +25,7 @@
                 <div class="carrossel-info">
                   <p class="carrossel-titulo"><%= p.caller.presence || p.titulo %></p>
                   <div class="carrossel-meta">
-                    <span><%= p.autor&.name || "LEDS" %></span>
+                    <%= nome_com_emblema(p.autor, fallback: "LEDS") %>
                     <span class="meta-mono"><%= data_por_extenso(p.published_at) %></span>
                   </div>
                 </div>
