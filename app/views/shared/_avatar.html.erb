@@ -1,6 +1,11 @@
-<%# Avatar do usuário: foto se houver, senão as iniciais. Local `user`. %>
+<%# Avatar do usuário: foto se houver, senão as iniciais. Local `user`.
+    O anel do emblema em destaque (RF-EMB) entra AQUI porque este partial é o
+    ponto por onde todo avatar do site passa — perfil, drawer da conta e topbar
+    do painel ganham o efeito de uma vez só. %>
+<% anel = anel_do_emblema(user) %>
 <% if user.foto.attached? %>
-  <img class="avatar-img" src="<%= FotoUrl.para(user.foto) %>" alt="<%= user.name %>">
+  <img class="avatar-img <%= anel[:class] %>" style="<%= anel[:style] %>"
+       src="<%= FotoUrl.para(user.foto) %>" alt="<%= user.name %>">
 <% else %>
-  <span class="avatar-initials"><%= iniciais(user.name) %></span>
+  <span class="avatar-initials <%= anel[:class] %>" style="<%= anel[:style] %>"><%= iniciais(user.name) %></span>
 <% end %>

@@ -17,8 +17,10 @@
 
 # Nomes de domínio em português que o inflector inglês erra:
 #   - "-ao" ganha "s" simples (gestao -> "gestaos");
-#   - "-ia" é tratado como plural latino e fica IGUAL (diretoria -> "diretoria",
-#     regra default /([ti])a$/ para criteria/media).
+#   - "-ia" E "-ta" são tratados como plural latino e ficam IGUAIS (a regra
+#     default é /([ti])a$/, para criteria/media): diretoria -> "diretoria",
+#     conquista -> "conquista";
+#   - "-l" ganha "s" em vez de "-is" (nivel -> "nivels").
 # Toda branch que criar tabela com nome em português DEVE conferir o plural aqui.
 ActiveSupport::Inflector.inflections(:en) do |inflect|
   inflect.irregular "item_carrinho", "itens_carrinho"
@@ -34,4 +36,9 @@ ActiveSupport::Inflector.inflections(:en) do |inflect|
   inflect.irregular "autor", "autores"
   inflect.irregular "avaliacao", "avaliacoes"
   inflect.irregular "categoria", "categorias" # senão /([ti])a$/ o deixa igual
+  # palavras soltas (não o nome composto da tabela): a regra casa a ÚLTIMA
+  # palavra, então "emblema_nivel" → "emblema_niveis" sai de graça, e
+  # `resources :niveis` acha o helper singular certo
+  inflect.irregular "conquista", "conquistas" # idem, por "-ta"
+  inflect.irregular "nivel", "niveis"
 end

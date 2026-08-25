@@ -11,6 +11,12 @@ class ProfilesController < ApplicationController
       format.html do
         @user = current_user
         @member = current_user.member
+        # avalia na hora: bater a meta e não ver o emblema na aba seria confuso
+        Emblema.avaliar!(current_user)
+        @vinculos = EmblemaUsuario.where(user: current_user)
+                                  .includes(:conquistas, { nivel: :rank },
+                                            { emblema: { niveis: :rank } })
+                                  .sort_by { |v| [ v.emblema.usuarios_count, v.emblema.nome ] }
         @acoes = current_user.acoes_creditadas.includes(:detalhe, thumbnail_attachment: :blob)
         @posts = Post.includes(thumbnail_attachment: :blob).where(autor: current_user).order(updated_at: :desc)
         @pedidos = current_user.pedidos.includes(itens: %i[produto variante]).order(created_at: :desc)

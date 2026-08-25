@@ -1,0 +1,79 @@
+<% content_for :title, "Ranks — Gestão LEDS" %>
+<% content_for :painel_titulo, "Ranks de emblema" %>
+
+<section class="painel-panel">
+  <h3 class="painel-panel-title">A escada</h3>
+  <p class="painel-dica" style="margin-top:0">
+    Os degraus que um emblema escalonável percorre. Definidos <strong>uma vez</strong> aqui e
+    reusados por todos: mudar a cor do ouro muda em todos de uma vez. O <strong>peso</strong>
+    multiplica os pontos de elo de quem está nesse rank, e a <strong>ordem</strong> é só a
+    posição na escada — quem manda no “quando sobe” é o limiar, definido dentro de cada emblema.
+  </p>
+
+  <% if @ranks.any? %>
+    <div class="escada">
+      <div class="escada-linha cabecalho">
+        <span></span><span>Rank</span><span>Cor</span><span>Efeito</span>
+        <span>Peso</span><span>Ordem</span><span>Em uso</span><span></span><span></span>
+      </div>
+
+      <% @ranks.each do |rank| %>
+        <div class="escada-linha">
+          <span class="escada-degrau"><%= rank.ordem %></span>
+
+          <%= form_with model: rank, url: painel_emblema_rank_path(rank), method: :patch,
+                class: "escada-form" do |f| %>
+            <span class="escada-nome">
+              <span class="emblema emblema-sm <%= "emblema-fx-#{rank.efeito}" unless rank.efeito == 'nenhum' %>"
+                    style="--emblema-cor: <%= rank.cor %>"><%= medalha %></span>
+              <%= f.text_field :nome, class: "painel-input", required: true, "aria-label": "Nome do rank" %>
+            </span>
+            <%= f.color_field :cor, class: "painel-input painel-cor", "aria-label": "Cor" %>
+            <%= f.select :efeito, Emblema::EFEITOS.map { |e| [ Emblema::EFEITO_LABEL[e], e ] }, {},
+                  class: "painel-input", "aria-label": "Efeito" %>
+            <%= f.number_field :peso, min: 1, class: "painel-input compacto", "aria-label": "Peso" %>
+            <%= f.number_field :ordem, class: "painel-input compacto", "aria-label": "Ordem" %>
+            <span class="escada-uso">
+              <%= rank.niveis.size %> emblema<%= "s" if rank.niveis.size != 1 %>
+            </span>
+            <%= f.submit "Salvar", class: "painel-mini" %>
+          <% end %>
+
+          <%= button_to "×", painel_emblema_rank_path(rank), method: :delete,
+                class: "painel-mini perigo escada-x",
+                form: { data: { turbo_confirm: "Remover “#{rank.nome}” do catálogo? Só sai se nenhum emblema o usar." } } %>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="painel-empty"><span class="empty-mono">// nenhum rank cadastrado</span></div>
+  <% end %>
+
+  <hr class="painel-sep">
+
+  <h4 class="painel-sub">Novo rank</h4>
+  <%= form_with model: @rank, url: painel_emblema_ranks_path, class: "painel-linha-form" do |f| %>
+    <label class="painel-campo">
+      <span>Nome</span>
+      <%= f.text_field :nome, class: "painel-input", required: true, placeholder: "Esmeralda" %>
+    </label>
+    <label class="painel-campo compacto">
+      <span>Cor</span>
+      <%= f.color_field :cor, class: "painel-input painel-cor" %>
+    </label>
+    <label class="painel-campo">
+      <span>Efeito</span>
+      <%= f.select :efeito, Emblema::EFEITOS.map { |e| [ Emblema::EFEITO_LABEL[e], e ] }, {},
+            class: "painel-input" %>
+    </label>
+    <label class="painel-campo compacto">
+      <span>Peso</span>
+      <%= f.number_field :peso, min: 1, class: "painel-input compacto" %>
+    </label>
+    <label class="painel-campo compacto">
+      <span>Ordem</span>
+      <%= f.number_field :ordem, class: "painel-input compacto" %>
+    </label>
+    <%= f.submit "Criar rank", class: "btn btn-primary btn-sm" %>
+  <% end %>
+</section>

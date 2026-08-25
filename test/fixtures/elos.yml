@@ -1,0 +1,20 @@
+# Degraus de pontuação. O de maior pontos_minimos é o FINAL (top 1..N).
+ferro:
+  nome: Ferro
+  cor: "#9A9AA2"
+  efeito: nenhum
+  pontos_minimos: 0
+
+prata_elo:
+  nome: Prata
+  cor: "#C0C0C0"
+  efeito: nenhum
+  pontos_minimos: 5
+  discord_role_id: "222000222000222000"
+
+lenda:
+  nome: Lenda
+  cor: "#FFEE04"
+  efeito: arco_iris
+  pontos_minimos: 20
+  discord_role_id: "333000333000333000"

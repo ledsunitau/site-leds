@@ -1,0 +1,55 @@
+<%# Aba Emblemas (RF-EMB): os desbloqueados + escolher destaque e secundário. %>
+<div class="perfil-secao">
+  <div class="emblema-equipar-head">
+    <div>
+      <h3 class="perfil-card-title">Meus emblemas</h3>
+      <p class="perfil-card-sub">
+        O <strong>destaque</strong> pinta seu nome e o anel do seu avatar pelo site.
+        O <strong>secundário</strong> aparece só na sua página pública.
+      </p>
+      <%= render "shared/elo", user: current_user %>
+    </div>
+    <div class="emblema-equipar-acoes">
+      <%= link_to "Ranking →", ranking_emblemas_path, class: "btn btn-secondary btn-sm" %>
+      <%= link_to "Ver todos os emblemas →", emblemas_path, class: "btn btn-secondary btn-sm" %>
+    </div>
+  </div>
+
+  <% if @vinculos.any? %>
+    <%# o nome do emblema com o rank alcançado: "Maratonista — Ouro" %>
+    <% opcoes = @vinculos.map { |v| [ [ v.emblema.nome, v.nivel&.nome ].compact.join(" — "), v.emblema_id ] } %>
+    <%= form_with model: current_user, url: equipar_emblemas_path, method: :patch, class: "emblema-equipar" do |f| %>
+      <div class="emblema-equipar-campos">
+        <label class="auth-field">
+          <span>Emblema destaque</span>
+          <%= f.select :emblema_destaque_id, opcoes, { include_blank: "nenhum" } %>
+        </label>
+        <label class="auth-field">
+          <span>Sub-emblema</span>
+          <%= f.select :emblema_secundario_id, opcoes, { include_blank: "nenhum" } %>
+        </label>
+        <%= f.submit "Equipar", class: "btn btn-primary" %>
+      </div>
+    <% end %>
+
+    <div class="emblema-grid">
+      <% @vinculos.each do |vinculo| %>
+        <div class="emblema-slot">
+          <%= render "shared/emblema", emblema: vinculo.emblema, vinculo: vinculo,
+                progresso: vinculo.emblema.progresso_de(current_user) %>
+          <% if current_user.emblema_destaque_id == vinculo.emblema_id %>
+            <span class="emblema-equipado destaque">Destaque</span>
+          <% elsif current_user.emblema_secundario_id == vinculo.emblema_id %>
+            <span class="emblema-equipado">Secundário</span>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="empty-state">
+      <span class="empty-mono">// nenhum emblema ainda</span>
+      <p>Participe de projetos, publique novidades ou proponha ideias — os emblemas aparecem aqui.</p>
+      <%= link_to "Ver o que dá para conquistar", emblemas_path, class: "btn btn-secondary" %>
+    </div>
+  <% end %>
+</div>

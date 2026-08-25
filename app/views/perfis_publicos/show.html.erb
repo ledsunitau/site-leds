@@ -1,0 +1,89 @@
+<%# Página pública de um usuário (RF-EMB). Sem e-mail: quem quiser contato usa
+    a ficha de membro. Exige login, como a loja (RN-17). %>
+<% content_for :title, "#{@usuario.name} — LEDS" %>
+
+<%= render "shared/page_bg" %>
+
+<div class="page">
+  <%= render "shared/navbar" %>
+
+  <main class="content wrap perfil-publico">
+    <header class="perfil-head">
+      <span class="perfil-avatar"><%= render "shared/avatar", user: @usuario %></span>
+
+      <div class="perfil-id">
+        <% if @usuario.member %>
+          <span class="perfil-tag membro"><%= cargo_label(@usuario.member.mandato_vigente&.cargo) %></span>
+        <% else %>
+          <span class="perfil-tag"><%= papel_label(@usuario.role) %></span>
+        <% end %>
+        <h1 class="perfil-nome"><%= nome_com_emblema(@usuario) %></h1>
+        <%= render "shared/elo", user: @usuario %>
+        <% if @usuario.bio.present? %>
+          <p class="perfil-bio"><%= @usuario.bio %></p>
+        <% end %>
+      </div>
+
+      <%# Destaque grande + secundário menor ao lado — o par equipado. %>
+      <div class="perfil-equipados">
+        <% if @usuario.emblema_destaque %>
+          <%= emblema_icone(@usuario.emblema_destaque, tamanho: "lg") %>
+        <% end %>
+        <% if @usuario.emblema_secundario %>
+          <%= emblema_icone(@usuario.emblema_secundario, tamanho: "sm") %>
+        <% end %>
+      </div>
+    </header>
+
+    <section class="perfil-secao">
+      <h2 class="perfil-secao-title">Emblemas — <%= @vinculos.size %></h2>
+      <% if @vinculos.any? %>
+        <div class="emblema-grid">
+          <% @vinculos.each do |vinculo| %>
+            <%= render "shared/emblema", emblema: vinculo.emblema, vinculo: vinculo %>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="empty-mono">// nenhum emblema ainda</p>
+      <% end %>
+    </section>
+
+    <section class="perfil-secao">
+      <h2 class="perfil-secao-title">Projetos e ações — <%= @acoes.size %></h2>
+      <% if @acoes.any? %>
+        <div class="acoes-list">
+          <% @acoes.each do |a| %>
+            <%= render "acoes/card", a: a %>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="empty-mono">// nada publicado ainda</p>
+      <% end %>
+    </section>
+
+    <section class="perfil-secao">
+      <h2 class="perfil-secao-title">Avaliações de produto — <%= @avaliacoes.size %></h2>
+      <% if @avaliacoes.any? %>
+        <div class="perfil-avaliacoes">
+          <% @avaliacoes.each do |avaliacao| %>
+            <article class="avaliacao-card">
+              <div class="avaliacao-corpo">
+                <div class="avaliacao-topo">
+                  <strong><%= link_to avaliacao.produto.nome, produto_path(avaliacao.produto) %></strong>
+                  <%= estrelas(avaliacao.nota) %>
+                </div>
+                <% if avaliacao.comentario.present? %>
+                  <p><%= avaliacao.comentario %></p>
+                <% end %>
+              </div>
+            </article>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="empty-mono">// nenhuma avaliação ainda</p>
+      <% end %>
+    </section>
+  </main>
+
+  <%= render "shared/footer" %>
+</div>

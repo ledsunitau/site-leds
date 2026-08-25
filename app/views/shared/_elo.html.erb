@@ -1,0 +1,14 @@
+<%# Selo do elo do usuário. Local `user`; opcional `tamanho`. Silencioso quando
+    o usuário ainda não alcançou nenhum degrau — nem todo mundo tem elo. %>
+<% if user.elo %>
+  <span class="elo-selo">
+    <%= elo_icone(user.elo, tamanho: local_assigns.fetch(:tamanho, "sm")) %>
+    <span class="elo-id">
+      <strong style="--emblema-cor: <%= user.elo.cor %>"><%= user.elo.nome %></strong>
+      <em>
+        <%= user.pontos_emblemas %> pts
+        <% if (posicao = user.posicao_no_topo) %>· top <%= posicao %><% end %>
+      </em>
+    </span>
+  </span>
+<% end %>

@@ -1,0 +1,67 @@
+<% content_for :title, "Emblemas — Gestão LEDS" %>
+<% content_for :painel_titulo, "Emblemas" %>
+<% content_for :painel_acoes do %>
+  <%= link_to "Novo emblema", new_painel_emblema_path, class: "btn btn-primary btn-sm" %>
+<% end %>
+
+<div class="painel-toolbar">
+  <div class="chips">
+    <span class="chip active">Todos <%= painel_contador(@total) %></span>
+    <span class="chip">Contas cadastradas <%= painel_contador(@total_usuarios) %></span>
+  </div>
+
+  <%= render "painel/busca", url: painel_emblemas_path, valor: @busca,
+        placeholder: "Buscar emblema pelo nome…" %>
+</div>
+
+<% if @emblemas.empty? %>
+  <div class="painel-empty"><span class="empty-mono">// nenhum emblema encontrado</span></div>
+<% else %>
+  <div class="painel-table-wrap">
+    <table class="painel-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Emblema</th>
+          <th>Tipo</th>
+          <th>Como se ganha</th>
+          <th>Donos</th>
+          <th>Raridade</th>
+          <th>Discord</th>
+          <th>Status</th>
+          <th class="acoes"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @emblemas.each do |emblema| %>
+          <tr>
+            <td><%= emblema_icone(emblema, tamanho: "mini") %></td>
+            <td>
+              <%= emblema.nome %>
+              <% if emblema.exclusivo? %><span class="painel-tag-mono">EXCLUSIVO</span><% end %>
+            </td>
+            <td class="painel-td-mono">
+              <%= emblema.escalonavel? ? "escalonável" : "único" %>
+              <% if emblema.escalonavel? %><em>(<%= emblema.niveis.size %> ranks)</em><% end %>
+            </td>
+            <td class="painel-td-mono">
+              <%= emblema.como_conseguir %>
+              <% if emblema.produto %><br><em>compra: <%= emblema.produto.nome %></em><% end %>
+            </td>
+            <td class="painel-td-mono">
+              <%= emblema.usuarios_count %><% if emblema.limite_donos %> / <%= emblema.limite_donos %><% end %>
+            </td>
+            <td><span class="emblema-raridade r-<%= emblema.raridade %>"><%= emblema.raridade_label %></span></td>
+            <td class="painel-td-mono"><%= emblema.discord_role_id.presence || "—" %></td>
+            <td><span class="painel-badge-status <%= emblema.ativo? ? 'ativo' : 'inativo' %>">
+              <%= emblema.ativo? ? "ativo" : "inativo" %>
+            </span></td>
+            <td class="acoes">
+              <%= link_to "Editar", edit_painel_emblema_path(emblema), class: "painel-mini" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

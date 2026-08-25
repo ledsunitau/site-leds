@@ -9,6 +9,23 @@ Rails.application.routes.draw do
   resource :profile, only: %i[show update]
   resources :oauth_identities, only: :destroy
 
+  # Emblemas (RF-EMB): catálogo com raridade + equipar destaque/secundário +
+  # o ranking de elo (a escada e o top do elo mais alto).
+  resources :emblemas, only: :index do
+    collection do
+      patch :equipar
+      get :ranking
+    end
+  end
+  # Link exclusivo. Caminho curto porque é feito para colar em chat; deslogado,
+  # o authenticate_user! guarda o stored_location e o Devise devolve para cá
+  # depois do login OU do cadastro (cobre e-mail/senha, Google e Discord).
+  get "e/:token", to: "emblema_convites#show", as: :emblema_convite
+
+  # Página pública de um usuário (emblemas equipados, projetos, avaliações).
+  # Exige login, como a loja (RN-17) — as avaliações citam produto e nota.
+  resources :usuarios, only: :show, controller: "perfis_publicos"
+
   # Membros: cards com filtros (RF-MEM), grafo (RF-GRA) e geneograma (RF-GEN)
   resources :members, only: %i[index show] do
     collection do
@@ -193,6 +210,22 @@ Rails.application.routes.draw do
     # Pessoas: contas/papéis, perfis de membro (com mandatos na própria ficha)
     # e a estrutura (diretorias + gestões) numa tela só.
     resources :usuarios, only: %i[index update]
+    # Emblemas: a ficha de edição concentra donos, concessão a dedo e os links
+    # exclusivos — mesmo espírito de "variantes dentro do produto".
+    resources :emblemas, only: %i[index new create edit update destroy] do
+      member do
+        post :conceder
+        delete :revogar
+      end
+      resources :convites, only: %i[create update destroy], controller: "emblema_convites"
+      # níveis do emblema escalonável: qual rank entra em qual limiar
+      resources :niveis, only: %i[create destroy], controller: "emblema_niveis"
+    end
+    # Catálogo de ranks (bronze…elite) e degraus de elo: as duas escadas que a
+    # gestão calibra. Salvar qualquer uma reenfileira o EmblemasJob, porque
+    # mexer em peso ou limiar muda a pontuação da base inteira.
+    resources :emblema_ranks, only: %i[index create update destroy]
+    resources :elos, only: %i[index create update destroy]
     resources :membros, only: %i[index new create edit update destroy]
     resources :mandatos, only: %i[create update destroy]
     get "estrutura", to: "estrutura#index", as: :estrutura

@@ -821,6 +821,278 @@ ALTER SEQUENCE public.diretorias_id_seq OWNED BY public.diretorias.id;
 
 
 --
+-- Name: elos; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.elos (
+    id bigint NOT NULL,
+    nome character varying NOT NULL,
+    cor character varying DEFAULT '#00C55B'::character varying NOT NULL,
+    efeito character varying DEFAULT 'nenhum'::character varying NOT NULL,
+    icone_svg text,
+    pontos_minimos integer NOT NULL,
+    discord_role_id character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT elos_efeito_check CHECK (((efeito)::text = ANY ((ARRAY['nenhum'::character varying, 'brilho'::character varying, 'neon'::character varying, 'arco_iris'::character varying, 'pulso'::character varying])::text[]))),
+    CONSTRAINT elos_pontos_check CHECK ((pontos_minimos >= 0))
+);
+
+
+--
+-- Name: elos_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.elos_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: elos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.elos_id_seq OWNED BY public.elos.id;
+
+
+--
+-- Name: emblema_conquistas; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.emblema_conquistas (
+    id bigint NOT NULL,
+    emblema_usuario_id bigint NOT NULL,
+    descricao character varying,
+    origem character varying NOT NULL,
+    convite_id bigint,
+    concedido_por_id bigint,
+    pedido_id bigint,
+    ocorrido_em timestamp(6) without time zone NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT emblema_conquistas_origem_check CHECK (((origem)::text = ANY ((ARRAY['meta'::character varying, 'concessao'::character varying, 'convite'::character varying, 'compra'::character varying])::text[])))
+);
+
+
+--
+-- Name: emblema_conquistas_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.emblema_conquistas_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: emblema_conquistas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.emblema_conquistas_id_seq OWNED BY public.emblema_conquistas.id;
+
+
+--
+-- Name: emblema_convites; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.emblema_convites (
+    id bigint NOT NULL,
+    emblema_id bigint NOT NULL,
+    token character varying NOT NULL,
+    expira_em timestamp(6) without time zone,
+    ativo boolean DEFAULT true NOT NULL,
+    usos integer DEFAULT 0 NOT NULL,
+    criado_por_id bigint,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    usos_max integer,
+    descricao character varying,
+    CONSTRAINT emblema_convites_usos_max_check CHECK (((usos_max IS NULL) OR (usos_max > 0)))
+);
+
+
+--
+-- Name: emblema_convites_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.emblema_convites_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: emblema_convites_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.emblema_convites_id_seq OWNED BY public.emblema_convites.id;
+
+
+--
+-- Name: emblema_niveis; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.emblema_niveis (
+    id bigint NOT NULL,
+    emblema_id bigint NOT NULL,
+    rank_id bigint NOT NULL,
+    limiar integer NOT NULL,
+    discord_role_id character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT emblema_niveis_limiar_check CHECK ((limiar > 0))
+);
+
+
+--
+-- Name: emblema_niveis_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.emblema_niveis_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: emblema_niveis_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.emblema_niveis_id_seq OWNED BY public.emblema_niveis.id;
+
+
+--
+-- Name: emblema_ranks; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.emblema_ranks (
+    id bigint NOT NULL,
+    nome character varying NOT NULL,
+    cor character varying DEFAULT '#CD7F32'::character varying NOT NULL,
+    efeito character varying DEFAULT 'nenhum'::character varying NOT NULL,
+    peso integer DEFAULT 1 NOT NULL,
+    ordem integer NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT emblema_ranks_efeito_check CHECK (((efeito)::text = ANY ((ARRAY['nenhum'::character varying, 'brilho'::character varying, 'neon'::character varying, 'arco_iris'::character varying, 'pulso'::character varying])::text[]))),
+    CONSTRAINT emblema_ranks_peso_check CHECK ((peso > 0))
+);
+
+
+--
+-- Name: emblema_ranks_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.emblema_ranks_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: emblema_ranks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.emblema_ranks_id_seq OWNED BY public.emblema_ranks.id;
+
+
+--
+-- Name: emblema_usuarios; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.emblema_usuarios (
+    id bigint NOT NULL,
+    emblema_id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    nivel_id bigint,
+    conquistas_count integer DEFAULT 0 NOT NULL
+);
+
+
+--
+-- Name: emblema_usuarios_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.emblema_usuarios_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: emblema_usuarios_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.emblema_usuarios_id_seq OWNED BY public.emblema_usuarios.id;
+
+
+--
+-- Name: emblemas; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.emblemas (
+    id bigint NOT NULL,
+    nome character varying NOT NULL,
+    descricao text,
+    icone_svg text NOT NULL,
+    cor character varying DEFAULT '#00C55B'::character varying NOT NULL,
+    efeito character varying DEFAULT 'nenhum'::character varying NOT NULL,
+    criterio character varying,
+    meta integer,
+    exclusivo boolean DEFAULT false NOT NULL,
+    discord_role_id character varying,
+    ativo boolean DEFAULT true NOT NULL,
+    usuarios_count integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    tipo character varying DEFAULT 'unico'::character varying NOT NULL,
+    peso integer DEFAULT 1 NOT NULL,
+    limite_donos integer,
+    produto_id bigint,
+    CONSTRAINT emblemas_criterio_check CHECK (((criterio IS NULL) OR ((criterio)::text = ANY ((ARRAY['novidades_publicadas'::character varying, 'ideias_aprovadas'::character varying, 'acoes_participadas'::character varying, 'comentarios'::character varying, 'avaliacoes'::character varying, 'pedidos_pagos'::character varying, 'dias_de_conta'::character varying])::text[])))),
+    CONSTRAINT emblemas_criterio_meta_check CHECK (((((tipo)::text = 'escalonavel'::text) AND (meta IS NULL)) OR (((tipo)::text = 'unico'::text) AND (((criterio IS NULL) AND (meta IS NULL)) OR ((criterio IS NOT NULL) AND (meta > 0)))))),
+    CONSTRAINT emblemas_efeito_check CHECK (((efeito)::text = ANY ((ARRAY['nenhum'::character varying, 'brilho'::character varying, 'neon'::character varying, 'arco_iris'::character varying, 'pulso'::character varying])::text[]))),
+    CONSTRAINT emblemas_limite_donos_check CHECK (((limite_donos IS NULL) OR (limite_donos > 0))),
+    CONSTRAINT emblemas_peso_check CHECK ((peso > 0)),
+    CONSTRAINT emblemas_tipo_check CHECK (((tipo)::text = ANY ((ARRAY['unico'::character varying, 'escalonavel'::character varying])::text[])))
+);
+
+
+--
+-- Name: emblemas_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.emblemas_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: emblemas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.emblemas_id_seq OWNED BY public.emblemas.id;
+
+
+--
 -- Name: enderecos; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1863,6 +2135,10 @@ CREATE TABLE public.users (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     bio text,
+    emblema_destaque_id bigint,
+    emblema_secundario_id bigint,
+    pontos_emblemas integer DEFAULT 0 NOT NULL,
+    elo_id bigint,
     CONSTRAINT users_role_check CHECK (((role)::text = ANY ((ARRAY['comunidade'::character varying, 'escritor'::character varying, 'parceiro'::character varying, 'membro'::character varying, 'diretoria'::character varying, 'presidencia'::character varying])::text[])))
 );
 
@@ -2116,6 +2392,55 @@ ALTER TABLE ONLY public.denuncias ALTER COLUMN id SET DEFAULT nextval('public.de
 --
 
 ALTER TABLE ONLY public.diretorias ALTER COLUMN id SET DEFAULT nextval('public.diretorias_id_seq'::regclass);
+
+
+--
+-- Name: elos id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.elos ALTER COLUMN id SET DEFAULT nextval('public.elos_id_seq'::regclass);
+
+
+--
+-- Name: emblema_conquistas id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblema_conquistas ALTER COLUMN id SET DEFAULT nextval('public.emblema_conquistas_id_seq'::regclass);
+
+
+--
+-- Name: emblema_convites id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblema_convites ALTER COLUMN id SET DEFAULT nextval('public.emblema_convites_id_seq'::regclass);
+
+
+--
+-- Name: emblema_niveis id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblema_niveis ALTER COLUMN id SET DEFAULT nextval('public.emblema_niveis_id_seq'::regclass);
+
+
+--
+-- Name: emblema_ranks id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblema_ranks ALTER COLUMN id SET DEFAULT nextval('public.emblema_ranks_id_seq'::regclass);
+
+
+--
+-- Name: emblema_usuarios id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblema_usuarios ALTER COLUMN id SET DEFAULT nextval('public.emblema_usuarios_id_seq'::regclass);
+
+
+--
+-- Name: emblemas id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblemas ALTER COLUMN id SET DEFAULT nextval('public.emblemas_id_seq'::regclass);
 
 
 --
@@ -2517,6 +2842,62 @@ ALTER TABLE ONLY public.denuncias
 
 ALTER TABLE ONLY public.diretorias
     ADD CONSTRAINT diretorias_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: elos elos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.elos
+    ADD CONSTRAINT elos_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: emblema_conquistas emblema_conquistas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblema_conquistas
+    ADD CONSTRAINT emblema_conquistas_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: emblema_convites emblema_convites_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblema_convites
+    ADD CONSTRAINT emblema_convites_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: emblema_niveis emblema_niveis_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblema_niveis
+    ADD CONSTRAINT emblema_niveis_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: emblema_ranks emblema_ranks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblema_ranks
+    ADD CONSTRAINT emblema_ranks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: emblema_usuarios emblema_usuarios_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblema_usuarios
+    ADD CONSTRAINT emblema_usuarios_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: emblemas emblemas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblemas
+    ADD CONSTRAINT emblemas_pkey PRIMARY KEY (id);
 
 
 --
@@ -3042,6 +3423,160 @@ CREATE UNIQUE INDEX index_diretorias_on_nome ON public.diretorias USING btree (n
 
 
 --
+-- Name: index_elos_on_nome; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_elos_on_nome ON public.elos USING btree (nome);
+
+
+--
+-- Name: index_elos_on_pontos_minimos; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_elos_on_pontos_minimos ON public.elos USING btree (pontos_minimos);
+
+
+--
+-- Name: index_emblema_conquistas_on_concedido_por_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_emblema_conquistas_on_concedido_por_id ON public.emblema_conquistas USING btree (concedido_por_id);
+
+
+--
+-- Name: index_emblema_conquistas_on_convite_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_emblema_conquistas_on_convite_id ON public.emblema_conquistas USING btree (convite_id);
+
+
+--
+-- Name: index_emblema_conquistas_on_emblema_usuario_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_emblema_conquistas_on_emblema_usuario_id ON public.emblema_conquistas USING btree (emblema_usuario_id);
+
+
+--
+-- Name: index_emblema_conquistas_on_ocorrido_em; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_emblema_conquistas_on_ocorrido_em ON public.emblema_conquistas USING btree (ocorrido_em);
+
+
+--
+-- Name: index_emblema_conquistas_on_pedido_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_emblema_conquistas_on_pedido_id ON public.emblema_conquistas USING btree (pedido_id);
+
+
+--
+-- Name: index_emblema_convites_on_criado_por_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_emblema_convites_on_criado_por_id ON public.emblema_convites USING btree (criado_por_id);
+
+
+--
+-- Name: index_emblema_convites_on_emblema_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_emblema_convites_on_emblema_id ON public.emblema_convites USING btree (emblema_id);
+
+
+--
+-- Name: index_emblema_convites_on_token; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_emblema_convites_on_token ON public.emblema_convites USING btree (token);
+
+
+--
+-- Name: index_emblema_niveis_on_emblema_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_emblema_niveis_on_emblema_id ON public.emblema_niveis USING btree (emblema_id);
+
+
+--
+-- Name: index_emblema_niveis_on_rank_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_emblema_niveis_on_rank_id ON public.emblema_niveis USING btree (rank_id);
+
+
+--
+-- Name: index_emblema_niveis_por_limiar; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_emblema_niveis_por_limiar ON public.emblema_niveis USING btree (emblema_id, limiar);
+
+
+--
+-- Name: index_emblema_niveis_por_rank; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_emblema_niveis_por_rank ON public.emblema_niveis USING btree (emblema_id, rank_id);
+
+
+--
+-- Name: index_emblema_ranks_on_nome; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_emblema_ranks_on_nome ON public.emblema_ranks USING btree (nome);
+
+
+--
+-- Name: index_emblema_ranks_on_ordem; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_emblema_ranks_on_ordem ON public.emblema_ranks USING btree (ordem);
+
+
+--
+-- Name: index_emblema_usuarios_on_emblema_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_emblema_usuarios_on_emblema_id ON public.emblema_usuarios USING btree (emblema_id);
+
+
+--
+-- Name: index_emblema_usuarios_on_nivel_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_emblema_usuarios_on_nivel_id ON public.emblema_usuarios USING btree (nivel_id);
+
+
+--
+-- Name: index_emblema_usuarios_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_emblema_usuarios_on_user_id ON public.emblema_usuarios USING btree (user_id);
+
+
+--
+-- Name: index_emblema_usuarios_unicos; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_emblema_usuarios_unicos ON public.emblema_usuarios USING btree (user_id, emblema_id);
+
+
+--
+-- Name: index_emblemas_on_nome; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_emblemas_on_nome ON public.emblemas USING btree (nome);
+
+
+--
+-- Name: index_emblemas_on_produto_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_emblemas_on_produto_id ON public.emblemas USING btree (produto_id);
+
+
+--
 -- Name: index_enderecos_on_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3490,10 +4025,38 @@ CREATE UNIQUE INDEX index_temas_on_nome ON public.temas USING btree (nome);
 
 
 --
+-- Name: index_users_on_elo_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_users_on_elo_id ON public.users USING btree (elo_id);
+
+
+--
 -- Name: index_users_on_email; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE UNIQUE INDEX index_users_on_email ON public.users USING btree (email);
+
+
+--
+-- Name: index_users_on_emblema_destaque_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_users_on_emblema_destaque_id ON public.users USING btree (emblema_destaque_id);
+
+
+--
+-- Name: index_users_on_emblema_secundario_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_users_on_emblema_secundario_id ON public.users USING btree (emblema_secundario_id);
+
+
+--
+-- Name: index_users_on_pontos_emblemas; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_users_on_pontos_emblemas ON public.users USING btree (pontos_emblemas DESC);
 
 
 --
@@ -3555,6 +4118,14 @@ ALTER TABLE ONLY public.convidados
 
 
 --
+-- Name: emblema_usuarios fk_rails_0b33da7d07; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblema_usuarios
+    ADD CONSTRAINT fk_rails_0b33da7d07 FOREIGN KEY (nivel_id) REFERENCES public.emblema_niveis(id) ON DELETE SET NULL;
+
+
+--
 -- Name: members fk_rails_1848f16cd8; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3584,6 +4155,14 @@ ALTER TABLE ONLY public.autores
 
 ALTER TABLE ONLY public.avaliacoes
     ADD CONSTRAINT fk_rails_1c3cc7b61c FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: emblemas fk_rails_1c5191a217; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblemas
+    ADD CONSTRAINT fk_rails_1c5191a217 FOREIGN KEY (produto_id) REFERENCES public.produtos(id) ON DELETE SET NULL;
 
 
 --
@@ -3640,6 +4219,14 @@ ALTER TABLE ONLY public.acoes
 
 ALTER TABLE ONLY public.denuncias
     ADD CONSTRAINT fk_rails_3dd1374548 FOREIGN KEY (comentario_id) REFERENCES public.comentarios(id) ON DELETE CASCADE;
+
+
+--
+-- Name: emblema_convites fk_rails_3e62cfae60; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblema_convites
+    ADD CONSTRAINT fk_rails_3e62cfae60 FOREIGN KEY (emblema_id) REFERENCES public.emblemas(id) ON DELETE CASCADE;
 
 
 --
@@ -3723,6 +4310,14 @@ ALTER TABLE ONLY public.member_tecnologias
 
 
 --
+-- Name: users fk_rails_55bde8a16d; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT fk_rails_55bde8a16d FOREIGN KEY (emblema_secundario_id) REFERENCES public.emblemas(id) ON DELETE SET NULL;
+
+
+--
 -- Name: analytics_events fk_rails_5b319ff5df; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3747,11 +4342,27 @@ ALTER TABLE ONLY public.comentarios
 
 
 --
+-- Name: emblema_convites fk_rails_5e0643cc0a; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblema_convites
+    ADD CONSTRAINT fk_rails_5e0643cc0a FOREIGN KEY (criado_por_id) REFERENCES public.members(id) ON DELETE SET NULL;
+
+
+--
 -- Name: member_tecnologias fk_rails_5e4ca4fcce; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.member_tecnologias
     ADD CONSTRAINT fk_rails_5e4ca4fcce FOREIGN KEY (tecnologia_id) REFERENCES public.tecnologias(id) ON DELETE CASCADE;
+
+
+--
+-- Name: emblema_niveis fk_rails_61d4088252; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblema_niveis
+    ADD CONSTRAINT fk_rails_61d4088252 FOREIGN KEY (rank_id) REFERENCES public.emblema_ranks(id) ON DELETE RESTRICT;
 
 
 --
@@ -3768,6 +4379,14 @@ ALTER TABLE ONLY public.autores
 
 ALTER TABLE ONLY public.comentarios
     ADD CONSTRAINT fk_rails_644fc17ed7 FOREIGN KEY (moderated_by) REFERENCES public.members(id) ON DELETE SET NULL;
+
+
+--
+-- Name: emblema_conquistas fk_rails_67efdfdf39; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblema_conquistas
+    ADD CONSTRAINT fk_rails_67efdfdf39 FOREIGN KEY (concedido_por_id) REFERENCES public.members(id) ON DELETE SET NULL;
 
 
 --
@@ -3843,6 +4462,30 @@ ALTER TABLE ONLY public.produtos
 
 
 --
+-- Name: emblema_conquistas fk_rails_8945affd52; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblema_conquistas
+    ADD CONSTRAINT fk_rails_8945affd52 FOREIGN KEY (pedido_id) REFERENCES public.pedidos(id) ON DELETE SET NULL;
+
+
+--
+-- Name: users fk_rails_8ad8c94f77; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT fk_rails_8ad8c94f77 FOREIGN KEY (elo_id) REFERENCES public.elos(id) ON DELETE SET NULL;
+
+
+--
+-- Name: emblema_conquistas fk_rails_8dff3145cd; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblema_conquistas
+    ADD CONSTRAINT fk_rails_8dff3145cd FOREIGN KEY (convite_id) REFERENCES public.emblema_convites(id) ON DELETE SET NULL;
+
+
+--
 -- Name: itens_carrinho fk_rails_91c14758da; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3899,11 +4542,27 @@ ALTER TABLE ONLY public.error_logs
 
 
 --
+-- Name: emblema_niveis fk_rails_a7a50297f2; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblema_niveis
+    ADD CONSTRAINT fk_rails_a7a50297f2 FOREIGN KEY (emblema_id) REFERENCES public.emblemas(id) ON DELETE CASCADE;
+
+
+--
 -- Name: itens_pedido fk_rails_af79b49747; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.itens_pedido
     ADD CONSTRAINT fk_rails_af79b49747 FOREIGN KEY (produto_id) REFERENCES public.produtos(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: emblema_usuarios fk_rails_b2808ef382; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblema_usuarios
+    ADD CONSTRAINT fk_rails_b2808ef382 FOREIGN KEY (emblema_id) REFERENCES public.emblemas(id) ON DELETE CASCADE;
 
 
 --
@@ -3995,11 +4654,27 @@ ALTER TABLE ONLY public.itens_pedido
 
 
 --
+-- Name: emblema_usuarios fk_rails_d950f2971e; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblema_usuarios
+    ADD CONSTRAINT fk_rails_d950f2971e FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: produtos fk_rails_dc32f10a74; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.produtos
     ADD CONSTRAINT fk_rails_dc32f10a74 FOREIGN KEY (categoria_id) REFERENCES public.categorias(id) ON DELETE SET NULL;
+
+
+--
+-- Name: emblema_conquistas fk_rails_dceb20582b; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.emblema_conquistas
+    ADD CONSTRAINT fk_rails_dceb20582b FOREIGN KEY (emblema_usuario_id) REFERENCES public.emblema_usuarios(id) ON DELETE CASCADE;
 
 
 --
@@ -4024,6 +4699,14 @@ ALTER TABLE ONLY public.mandatos
 
 ALTER TABLE ONLY public.apresentacoes
     ADD CONSTRAINT fk_rails_ec8f774d5b FOREIGN KEY (artigo_id) REFERENCES public.artigos(id) ON DELETE CASCADE;
+
+
+--
+-- Name: users fk_rails_f3af151dcf; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT fk_rails_f3af151dcf FOREIGN KEY (emblema_destaque_id) REFERENCES public.emblemas(id) ON DELETE SET NULL;
 
 
 --
@@ -4065,6 +4748,8 @@ ALTER TABLE ONLY public.itens_pedido
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260825000000'),
+('20260824000000'),
 ('20260818000005'),
 ('20260818000004'),
 ('20260818000003'),

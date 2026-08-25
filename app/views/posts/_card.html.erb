@@ -10,7 +10,7 @@
   <div class="novidade-body">
     <p class="novidade-desc"><%= post.caller.presence || post.titulo %></p>
     <div class="novidade-meta">
-      <span><%= post.autor&.name || "LEDS" %></span>
+      <%= nome_com_emblema(post.autor, fallback: "LEDS") %>
       <span class="meta-mono"><%= data_por_extenso(post.published_at) %></span>
     </div>
   </div>

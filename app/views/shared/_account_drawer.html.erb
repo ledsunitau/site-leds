@@ -16,7 +16,7 @@
     <div class="drawer-user">
       <span class="drawer-avatar"><%= render "shared/avatar", user: user %></span>
       <div class="drawer-id">
-        <span class="drawer-name"><%= user.name %></span>
+        <span class="drawer-name"><%= nome_com_emblema(user) %></span>
         <span class="drawer-email"><%= user.email %></span>
       </div>
       <span class="drawer-role"><%= papel_label(user.role) %></span>
@@ -48,6 +48,7 @@
       <a href="<%= members_path %>" data-action="drawer#close">Membros</a>
       <a href="<%= posts_path %>" data-action="drawer#close">Novidades</a>
       <a href="<%= profile_path %>" data-action="drawer#close">Meu perfil</a>
+      <a href="<%= emblemas_path %>" data-action="drawer#close">Emblemas</a>
       <a href="<%= comunidade_path %>" data-action="drawer#close">Comunidade</a>
     </nav>
 

@@ -799,6 +799,26 @@ h1, h2, h3, p { margin: 0; }
 .auth-field input::placeholder { color: var(--text-faint); }
 .auth-field input:focus { outline: none; border-color: rgba(255,255,255,.42); }
 
+/* Select do tema (perfil, equipar emblema). appearance:none tira o controle
+   nativo — que no dark mode vem branco e quebra a página inteira — e a seta
+   volta como background-image em SVG inline, sem markup extra nem JS.
+   padding-right abre espaço para ela; o data: URI usa currentColor não, mas
+   a cor fixa do tema (o SVG de background não herda currentColor). */
+.auth-field select {
+  width: 100%; padding: 11px 40px 11px 14px; border-radius: var(--radius-btn);
+  background: var(--surface-chip); color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  font-family: var(--font-display); font-size: 14px; line-height: 1.3;
+  appearance: none; cursor: pointer;
+  transition: border-color .18s ease;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%238A8A92' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center;
+}
+.auth-field select:hover { border-color: rgba(255,255,255,.28); }
+.auth-field select:focus { outline: none; border-color: rgba(255,255,255,.42); }
+/* a lista aberta é desenhada pelo SO: sem isto ela sai branca sobre branco */
+.auth-field select option { background: var(--surface-card); color: var(--text-strong); }
+
 /* Campo de senha com olho mostrar/ocultar */
 .auth-password { position: relative; }
 .auth-password input { padding-right: 44px; }
@@ -2259,9 +2279,19 @@ a.painel-fila-titulo:hover { color: var(--leds-green); }
 /* ---- Linhas editáveis (diretorias, gestões) ---- */
 .painel-linhas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
 .painel-linha { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
-.painel-linha-form { display: flex; align-items: center; gap: 7px; margin: 0; flex: 1; min-width: 0; }
-.painel-linha-form .painel-input { flex: 1; min-width: 0; }
-.painel-linha-form .painel-input.compacto { flex: 0 0 84px; }
+/* align-items: flex-end para que campo COM rótulo e campo sem rótulo fiquem
+   com os inputs alinhados na mesma linha de base. */
+.painel-linha-form { display: flex; align-items: flex-end; gap: 7px; margin: 0; flex: 1; min-width: 0; }
+/* Filho DIRETO, não descendente. Como descendente, estas regras vazavam para
+   dentro de um .painel-campo — que é flex COLUMN, onde o eixo principal é o
+   vertical. Lá, `flex: 0 0 84px` vira flex-basis de 84px de ALTURA: era o que
+   deixava os campos de peso e ordem gigantes. */
+.painel-linha-form > .painel-input { flex: 1; min-width: 0; }
+.painel-linha-form > .painel-input.compacto { flex: 0 0 84px; }
+/* campo com rótulo dentro de uma linha: quem cresce é o campo, não o input */
+.painel-linha-form > .painel-campo { flex: 1; min-width: 0; }
+.painel-linha-form > .painel-campo.compacto { flex: 0 0 96px; }
+.painel-linha-form > .painel-campo .painel-input { width: 100%; }
 .painel-linha-sep { color: var(--text-faint); font-family: var(--font-mono); }
 .painel-linha-meta { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); white-space: nowrap; }
 
@@ -2933,4 +2963,465 @@ a.painel-resumo.ativo { box-shadow: inset 0 0 0 1px var(--r-cor); }
 
 @media (max-width: 620px) {
   .painel-busca-campo { flex-basis: 100%; max-width: none; }
+}
+
+/* =====================================================================
+   Emblemas (RF-EMB)
+   Cor e efeito saem de --emblema-cor + uma classe .emblema-fx-*, ambas
+   postas inline pelo helper. Nada de CSS gerado por emblema: cadastrar um
+   emblema novo no painel não toca este arquivo.
+   ===================================================================== */
+
+/* O ícone é markup do gestor, então a cor é imposta AQUI, não confiada ao
+   SVG: regra de CSS vence atributo de apresentação (um fill="#fff" no path),
+   e o :not([fill="none"]) preserva ícone de traço, que viraria um borrão
+   sólido se pintássemos tudo. */
+.emblema { display: inline-grid; place-items: center; color: var(--emblema-cor); line-height: 0; }
+.emblema svg { width: 100%; height: 100%; display: block; }
+.emblema svg :not([fill="none"]) { fill: currentColor; }
+.emblema svg [stroke]:not([stroke="none"]) { stroke: currentColor; }
+
+.emblema-mini { width: 22px; height: 22px; }
+.emblema-sm   { width: 34px; height: 34px; }
+.emblema-md   { width: 48px; height: 48px; }
+.emblema-lg   { width: 72px; height: 72px; }
+
+/* Bloqueado: silhueta. Sem cor e sem efeito — dá para ver a forma e a
+   raridade, não o brilho de quem conquistou. */
+.emblema.bloqueado { filter: grayscale(1) brightness(.5); opacity: .6; }
+
+/* ---- Efeitos ---- */
+@keyframes emblema-brilho {
+  0%, 100% { filter: brightness(1)   drop-shadow(0 0 2px var(--emblema-cor)); }
+  50%      { filter: brightness(1.6) drop-shadow(0 0 10px var(--emblema-cor)); }
+}
+@keyframes emblema-arco { to { filter: hue-rotate(360deg); } }
+@keyframes emblema-pulso { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.09); } }
+
+.emblema-fx-brilho { animation: emblema-brilho 2.6s ease-in-out infinite; }
+.emblema-fx-neon   { filter: drop-shadow(0 0 3px var(--emblema-cor)) drop-shadow(0 0 10px var(--emblema-cor)); }
+.emblema-fx-arco_iris { animation: emblema-arco 5s linear infinite; }
+.emblema-fx-pulso  { animation: emblema-pulso 2.2s ease-in-out infinite; }
+
+/* ---- Anel do avatar (shared/_avatar) ----
+   outline, não box-shadow: o box-shadow do avatar já serve de borda de
+   contraste e tem regras mais específicas por contexto (.perfil-avatar,
+   .drawer-avatar) que venceriam esta. O outline acompanha o border-radius. */
+.avatar-anel { outline: 2px solid var(--emblema-cor); outline-offset: 2px; }
+
+@keyframes anel-arco {
+  0%   { outline-color: var(--leds-red); }
+  33%  { outline-color: var(--leds-green); }
+  66%  { outline-color: var(--leds-blue); }
+  100% { outline-color: var(--leds-red); }
+}
+@keyframes anel-brilho { 0%, 100% { outline-color: var(--emblema-cor); } 50% { outline-color: #fff; } }
+@keyframes anel-pulso { 0%, 100% { outline-offset: 2px; } 50% { outline-offset: 5px; } }
+
+.avatar-fx-brilho { animation: anel-brilho 2.6s ease-in-out infinite; }
+.avatar-fx-neon   { filter: drop-shadow(0 0 5px var(--emblema-cor)); }
+.avatar-fx-arco_iris { animation: anel-arco 5s linear infinite; }
+.avatar-fx-pulso  { animation: anel-pulso 2.2s ease-in-out infinite; }
+
+/* Movimento aqui é decoração: a cor e a forma já dizem tudo. */
+@media (prefers-reduced-motion: reduce) {
+  [class*="emblema-fx-"], [class*="avatar-fx-"] { animation: none !important; }
+}
+
+/* ---- Nome pintado pelo emblema em destaque ---- */
+.nome-emblema { color: var(--emblema-cor); }
+
+/* ---- Card ---- */
+/* grid-auto-rows: 1fr iguala TODAS as linhas pela mais alta — sem isso cada
+   card tem a altura do próprio conteúdo (uns têm rank, outros descrição, outros
+   barra de progresso) e a grade fica serrilhada. O card estica para preencher
+   a célula via height:100%. */
+.emblema-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px; grid-auto-rows: 1fr;
+}
+.emblema-grid.catalogo { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.emblema-grid > * { height: 100%; }
+
+.emblema-card {
+  display: flex; align-items: flex-start; gap: 16px; padding: 18px;
+  background: var(--surface-card-alt); border-radius: var(--radius-card);
+  box-shadow: inset 0 0 0 1px var(--border-hair);
+  /* piso para que uma grade de cards curtos não fique espremida */
+  min-height: 132px;
+}
+.emblema-card.bloqueado { background: var(--surface-card); }
+/* o ícone não encolhe quando o texto ao lado é longo */
+.emblema-card > .emblema { flex-shrink: 0; }
+.emblema-info { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; }
+.emblema-nome { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--text-strong); margin: 0; }
+/* Descrição limitada a 2 linhas: é o único campo de texto livre do card, e uma
+   descrição longa sozinha esticaria TODAS as linhas da grade (grid-auto-rows:1fr). */
+.emblema-desc {
+  font-size: 13px; color: var(--text-muted); margin: 0;
+  display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden;
+  -webkit-line-clamp: 2; line-clamp: 2;
+}
+.emblema-como { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-subtle); }
+/* empurra progresso e registros para o rodapé do card: com altura uniforme,
+   os elementos de baixo alinham entre si em vez de flutuarem no meio */
+.emblema-info > .emblema-progresso, .emblema-info > .emblema-registros-dica { margin-top: auto; }
+
+.emblema-raridade {
+  font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--text-subtle);
+}
+.emblema-raridade.r-incomum  { color: var(--leds-green); }
+.emblema-raridade.r-raro     { color: var(--leds-blue); }
+.emblema-raridade.r-epico    { color: var(--leds-red); }
+.emblema-raridade.r-lendario { color: var(--leds-yellow); }
+
+/* Barra de progresso rumo à meta: --pct vem do inline do partial. */
+.emblema-progresso { display: flex; align-items: center; gap: 8px; margin-top: 3px; }
+.emblema-progresso em { font-family: var(--font-mono); font-size: 11px; font-style: normal; color: var(--text-faint); }
+.emblema-barra {
+  flex: 1; height: 4px; border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, .09); overflow: hidden;
+}
+.emblema-barra::after {
+  content: ""; display: block; height: 100%; width: var(--pct);
+  background: var(--leds-green); border-radius: var(--radius-pill);
+}
+
+/* ---- Aba "Meus emblemas" ---- */
+.emblema-equipar-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px; }
+/* Na aba do perfil o item da grade é o SLOT (ele carrega o selo "Destaque"),
+   com o card dentro — então o card precisa preencher o slot para a altura
+   uniforme chegar até ele. */
+.emblema-slot { position: relative; }
+.emblema-slot > .emblema-card { height: 100%; }
+.emblema-equipado {
+  position: absolute; top: 10px; right: 10px;
+  font-family: var(--font-mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: .5px;
+  padding: 3px 7px; border-radius: var(--radius-tag);
+  background: var(--surface-chip); color: var(--text-subtle);
+}
+.emblema-equipado.destaque { color: var(--leds-green); box-shadow: inset 0 0 0 1px rgba(0,197,91,.35); }
+
+/* ---- Catálogo ---- */
+.emblemas-page { padding-top: 40px; padding-bottom: 80px; }
+.emblemas-head { margin-bottom: 26px; display: flex; flex-direction: column; gap: 6px; }
+
+/* ---- Perfil público ---- */
+.perfil-publico { padding-top: 40px; padding-bottom: 80px; }
+.perfil-publico .perfil-head { align-items: flex-start; }
+.perfil-bio { font-size: 14px; color: var(--text-lead); max-width: 60ch; margin-top: 4px; }
+.perfil-link-publico { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-subtle); margin-top: 4px; }
+.perfil-link-publico:hover { color: var(--text-strong); }
+/* destaque grande + secundário pequeno, encostados embaixo à direita */
+.perfil-equipados { margin-left: auto; display: flex; align-items: flex-end; gap: 10px; }
+.perfil-avaliacoes { display: flex; flex-direction: column; gap: 12px; }
+
+/* ---- Painel: editor do emblema ---- */
+/* A prévia é o PRIMEIRO filho (fica à esquerda), então a coluna estreita vem
+   primeiro. Com `1fr 200px` ela ficava com a coluna elástica e crescia até não
+   caber na tela junto com o formulário. */
+.emblema-editor { display: grid; grid-template-columns: 190px 1fr; gap: 22px; align-items: start; }
+.emblema-editor-campos { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.emblema-editor-previa { display: flex; flex-direction: column; gap: 8px; }
+.emblema-previa {
+  display: grid; place-items: center; aspect-ratio: 1; padding: 22px;
+  background: var(--surface-card); border-radius: var(--radius-card);
+  box-shadow: inset 0 0 0 1px var(--border-hair);
+  color: var(--emblema-cor); line-height: 0;
+}
+.emblema-previa svg { width: 100%; height: 100%; }
+.emblema-previa svg :not([fill="none"]) { fill: currentColor; }
+.emblema-previa svg [stroke]:not([stroke="none"]) { stroke: currentColor; }
+
+.painel-input.painel-cor { min-width: 0; width: 74px; padding: 4px 6px; height: 38px; cursor: pointer; }
+.painel-input.painel-mono { font-family: var(--font-mono); font-size: 12px; line-height: 1.5; }
+
+@media (max-width: 900px) {
+  /* empilhado, a prévia não pode esticar para a largura toda da tela */
+  .emblema-editor { grid-template-columns: 1fr; }
+  .emblema-editor-previa { max-width: 190px; }
+}
+@media (max-width: 620px) {
+  .emblema-equipar-head { flex-direction: column; }
+  .perfil-equipados { margin-left: 0; }
+}
+
+/* ---- Rank do emblema escalonável ---- */
+.emblema-nome { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.emblema-rank {
+  font-family: var(--font-mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: .6px;
+  padding: 2px 7px; border-radius: var(--radius-tag);
+  color: var(--emblema-cor); box-shadow: inset 0 0 0 1px currentColor;
+}
+.emblema-raridade-rank { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-faint); }
+
+/* ---- Registros no hover ----
+   CSS puro: o conteúdo já vem renderizado. :focus-within (com tabindex no card)
+   dá o mesmo por teclado — hover sozinho deixaria a informação fora do alcance
+   de quem não usa mouse. */
+.emblema-card { position: relative; outline: none; }
+.emblema-registros-dica {
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--text-faint);
+  border-bottom: 1px dotted var(--border-strong); align-self: flex-start; cursor: help;
+}
+.emblema-registros {
+  position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%);
+  z-index: 20; min-width: 220px; max-width: 300px; padding: 12px 14px;
+  background: var(--surface-card); border-radius: var(--radius-card);
+  box-shadow: inset 0 0 0 1px var(--border-strong), 0 12px 32px rgba(0, 0, 0, .5);
+  opacity: 0; visibility: hidden; transition: opacity .14s ease;
+}
+.emblema-card:hover .emblema-registros,
+.emblema-card:focus-within .emblema-registros,
+.emblema-card:focus .emblema-registros { opacity: 1; visibility: visible; }
+.emblema-registros ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.emblema-registros li { display: flex; flex-direction: column; }
+.emblema-registro-nome { font-size: 13px; color: var(--text-primary); }
+.emblema-registro-data { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-faint); }
+.emblema-registros-mais {
+  display: block; margin-top: 9px; padding-top: 8px; border-top: 1px solid var(--border-hair);
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--text-subtle);
+}
+
+/* ---- Elo ---- */
+.elo-icone strong { font-family: var(--font-display); font-size: 60%; color: var(--emblema-cor); }
+.elo-selo { display: inline-flex; align-items: center; gap: 10px; margin-top: 8px; }
+.elo-id { display: flex; flex-direction: column; }
+.elo-id strong { font-family: var(--font-display); font-size: 14px; color: var(--emblema-cor); }
+.elo-id em { font-family: var(--font-mono); font-size: 11px; font-style: normal; color: var(--text-faint); }
+
+/* ---- Ranking ---- */
+.ranking-voce {
+  display: flex; align-items: center; gap: 22px; margin-bottom: 30px; padding: 22px 24px;
+  background: var(--surface-card-alt); border-radius: var(--radius-card);
+  box-shadow: inset 0 0 0 1px var(--border-hair);
+}
+.ranking-voce-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+
+.ranking-escada { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ranking-degrau {
+  display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+  background: var(--surface-card-alt); border-radius: var(--radius-btn);
+  box-shadow: inset 0 0 0 1px var(--border-hair);
+}
+/* o degrau em que a pessoa está ganha a barra lateral — dá para achar de relance */
+.ranking-degrau.atual { box-shadow: inset 0 0 0 1px var(--border-strong), inset 3px 0 0 var(--leds-green); }
+.ranking-degrau-nome { font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--emblema-cor); }
+.ranking-degrau-pts { font-family: var(--font-mono); font-size: 12px; color: var(--text-subtle); }
+.ranking-degrau-gente { margin-left: auto; font-family: var(--font-mono); font-size: 11.5px; color: var(--text-faint); }
+
+.ranking-topo { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ranking-linha {
+  display: flex; align-items: center; gap: 14px; padding: 10px 16px;
+  background: var(--surface-card-alt); border-radius: var(--radius-btn);
+  box-shadow: inset 0 0 0 1px var(--border-hair);
+}
+.ranking-pos {
+  font-family: var(--font-mono); font-size: 13px; color: var(--text-subtle);
+  min-width: 38px;
+}
+/* os três primeiros em cor de pódio: ouro, prata, bronze */
+.ranking-linha:nth-child(1) .ranking-pos { color: var(--leds-yellow); }
+.ranking-linha:nth-child(2) .ranking-pos { color: var(--text-strong); }
+.ranking-linha:nth-child(3) .ranking-pos { color: #CD7F32; }
+.ranking-avatar { flex-shrink: 0; width: 34px; height: 34px; }
+.ranking-avatar .avatar-img, .ranking-avatar .avatar-initials { width: 34px; height: 34px; font-size: 13px; }
+.ranking-nome { flex: 1; min-width: 0; font-size: 14px; }
+.ranking-pts { font-family: var(--font-mono); font-size: 12px; color: var(--text-subtle); }
+
+.emblema-equipar-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+
+@media (max-width: 620px) {
+  .ranking-voce { flex-direction: column; align-items: flex-start; }
+  .ranking-degrau { flex-wrap: wrap; }
+  .ranking-degrau-gente { margin-left: 0; }
+  /* o popover centralizado estoura a tela estreita: encosta à esquerda */
+  .emblema-registros { left: 0; transform: none; max-width: calc(100vw - 60px); }
+}
+
+/* ---- Escada editável (ranks e elos) ----
+   Um GRID só, compartilhado pelo cabeçalho e pelas linhas, em vez de <table>:
+   o formulário de cada linha entra com `display: contents`, então os campos
+   caem direto nas colunas certas. Com <table> seria preciso um colspan para o
+   form caber, e aí os rótulos do cabeçalho param de corresponder às células.
+   (Os <input type=hidden> do Rails têm display:none pela folha do navegador,
+   então não ocupam coluna.) */
+.escada { display: flex; flex-direction: column; gap: 7px; }
+.escada-linha {
+  display: grid;
+  grid-template-columns: 44px minmax(130px, 1.4fr) 62px minmax(120px, 1fr) 76px 76px 96px auto auto;
+  gap: 8px; align-items: center;
+  padding: 8px 10px; border-radius: var(--radius-btn);
+  background: var(--surface-chip); box-shadow: inset 0 0 0 1px var(--border-hair);
+}
+/* elos trocam duas colunas: "a partir de" (pontos) e o id do cargo, que é longo */
+.escada.elos .escada-linha {
+  grid-template-columns: 44px minmax(120px, 1.1fr) 104px 62px minmax(110px, .9fr) minmax(120px, 1fr) 96px auto auto;
+}
+.escada-form { display: contents; }
+
+/* o cabeçalho usa o MESMO grid: é o que garante a correspondência */
+.escada-linha.cabecalho {
+  background: none; box-shadow: none; padding: 0 10px 2px;
+}
+.escada-linha.cabecalho span {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .7px;
+  text-transform: uppercase; color: var(--text-faint);
+}
+
+.escada-degrau {
+  display: grid; place-items: center; width: 36px; height: 36px;
+  font-family: var(--font-mono); font-size: 12px; color: var(--text-subtle);
+}
+.escada-nome { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.escada-nome .painel-input { flex: 1; min-width: 0; }
+.escada-pontos { display: flex; align-items: center; gap: 6px; }
+.escada-pontos .painel-input { flex: 1; min-width: 0; }
+.escada-pontos em { font-family: var(--font-mono); font-size: 11px; font-style: normal; color: var(--text-faint); }
+.escada-uso {
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-faint);
+  display: flex; align-items: center; gap: 6px; white-space: nowrap;
+}
+.escada-linha .painel-input { min-width: 0; }
+.escada-x { justify-self: end; }
+/* o elo final é o alvo do ranking: ganha a barra lateral para achar de relance */
+.escada-linha.final { box-shadow: inset 0 0 0 1px var(--border-strong), inset 3px 0 0 var(--leds-yellow); }
+
+/* O SVG do elo é longo demais para uma coluna: cai para baixo ocupando a
+   largura toda, sem sair do formulário da linha.
+   order:1 é necessário — o <details> vem ANTES do botão de remover no DOM (o
+   remover é outro form, não cabe dentro deste), e como ele ocupa a linha toda,
+   o × seria empurrado para uma terceira linha. O grid posiciona na ordem
+   modificada por `order`, então isto o joga para depois de todo mundo. */
+.escada-svg { grid-column: 1 / -1; margin-top: 4px; order: 1; }
+.escada-svg summary {
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--text-subtle);
+  cursor: pointer; padding: 3px 0; list-style-position: inside;
+}
+.escada-svg summary:hover { color: var(--text-strong); }
+.escada-svg .painel-input { width: 100%; margin-top: 6px; }
+
+@media (max-width: 1100px) {
+  /* abaixo disso o grid de 9 colunas espreme tudo: vira duas colunas com
+     rótulo em cima, e o cabeçalho some (cada campo passa a se explicar pelo
+     aria-label e pelo placeholder) */
+  .escada-linha.cabecalho { display: none; }
+  .escada-linha, .escada.elos .escada-linha {
+    grid-template-columns: 44px 1fr auto; row-gap: 7px;
+  }
+  .escada-form { display: contents; }
+  .escada-linha > *:not(.escada-degrau):not(.escada-x) { grid-column: 2; }
+  .escada-svg { grid-column: 1 / -1; }
+}
+
+/* ---- Formulário de emblema ---- */
+/* passo numerado no título da seção: o formulário é longo e tem quatro
+   decisões distintas; o número diz onde a pessoa está */
+.painel-sub .passo {
+  display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 8px;
+  border-radius: 50%; background: var(--surface-chip); box-shadow: inset 0 0 0 1px var(--border-strong);
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-subtle);
+  vertical-align: middle;
+}
+
+.emblema-previa-legenda {
+  display: block; text-align: center; margin-top: -2px;
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-faint);
+}
+
+/* Tipo: dois cartões clicáveis em vez de um select. A escolha muda o resto do
+   formulário, então precisa pesar mais que uma linha de dropdown. */
+.emblema-tipos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.emblema-tipo {
+  display: flex; align-items: flex-start; gap: 12px; padding: 16px 18px; cursor: pointer;
+  background: var(--surface-chip); border-radius: var(--radius-card);
+  box-shadow: inset 0 0 0 1px var(--border-hair);
+  transition: box-shadow .16s ease, background .16s ease;
+}
+.emblema-tipo:hover { box-shadow: inset 0 0 0 1px var(--border-strong); }
+.emblema-tipo input { margin-top: 3px; accent-color: var(--leds-green); flex-shrink: 0; }
+.emblema-tipo:has(input:checked) {
+  background: var(--surface-card-alt);
+  box-shadow: inset 0 0 0 1px rgba(0, 197, 91, .45);
+}
+.emblema-tipo-corpo { display: flex; flex-direction: column; gap: 4px; }
+.emblema-tipo-corpo strong { font-family: var(--font-display); font-size: 14.5px; color: var(--text-strong); }
+.emblema-tipo-corpo > span { font-size: 13px; color: var(--text-muted); line-height: 1.45; }
+.emblema-tipo-corpo em {
+  font-style: normal; font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); line-height: 1.5;
+}
+
+/* A frase que explica o que a combinação tipo+critério vai fazer. Escrita pelo
+   Stimulus a cada mudança — é o "o que está acontecendo" da tela. */
+.painel-nota {
+  margin: 12px 0 4px; padding: 11px 14px; border-radius: var(--radius-btn);
+  background: rgba(29, 132, 245, .07); box-shadow: inset 0 0 0 1px rgba(29, 132, 245, .22);
+  font-size: 13px; color: var(--text-lead); line-height: 1.55;
+}
+.painel-nota:empty { display: none; }
+
+/* ---- Resumo no topo da ficha ---- */
+.emblema-resumo {
+  display: flex; align-items: center; gap: 22px; margin-bottom: 22px; padding: 20px 24px;
+  background: var(--surface-card-alt); border-radius: var(--radius-card);
+  box-shadow: inset 0 0 0 1px var(--border-hair);
+}
+.emblema-resumo-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.emblema-resumo-info h2 { font-family: var(--font-display); font-size: 19px; font-weight: 700; color: var(--text-strong); }
+.emblema-resumo-info p { font-size: 13px; color: var(--text-muted); }
+.emblema-resumo-chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+.chip-mono {
+  font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .6px;
+  padding: 3px 8px; border-radius: var(--radius-tag);
+  background: var(--surface-chip); color: var(--text-subtle);
+}
+.emblema-resumo-numeros { display: flex; gap: 26px; margin: 0; }
+.emblema-resumo-numeros dt {
+  font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .7px;
+  color: var(--text-faint); margin-bottom: 3px;
+}
+.emblema-resumo-numeros dd {
+  margin: 0; font-family: var(--font-display); font-size: 21px; font-weight: 700; color: var(--text-strong);
+}
+.emblema-resumo-numeros dd em { font-style: normal; font-size: 13px; color: var(--text-faint); }
+
+/* ---- Escada de ranks DENTRO de um emblema ----
+   O mesmo desenho em cada cor, na ordem em que a pessoa vai subir: responde
+   "como fica no ouro?" sem precisar conceder a ninguém. */
+.nivel-escada {
+  list-style: none; margin: 14px 0 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px;
+}
+.nivel-degrau {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 7px;
+  padding: 18px 14px 14px;
+  background: var(--surface-chip); border-radius: var(--radius-card);
+  box-shadow: inset 0 0 0 1px var(--border-hair);
+}
+.nivel-rank {
+  font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .8px;
+  color: var(--emblema-cor);
+}
+.nivel-limiar { font-size: 13px; color: var(--text-muted); }
+.nivel-limiar strong { color: var(--text-strong); }
+.nivel-meta { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-faint); text-align: center; }
+.nivel-degrau .painel-mini { position: absolute; top: 8px; right: 8px; opacity: 0; transition: opacity .15s ease; }
+.nivel-degrau:hover .painel-mini, .nivel-degrau:focus-within .painel-mini { opacity: 1; }
+
+/* ---- Aba "Meus emblemas": o par de selects ---- */
+.emblema-equipar {
+  padding: 18px 20px; margin-bottom: 24px;
+  background: var(--surface-card-alt); border-radius: var(--radius-card);
+  box-shadow: inset 0 0 0 1px var(--border-hair);
+}
+.emblema-equipar-campos { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+.emblema-equipar-campos .auth-field { margin-bottom: 0; flex: 1; min-width: 190px; }
+.emblema-equipar-campos .btn { flex: 0 0 auto; }
+
+@media (max-width: 760px) {
+  .emblema-tipos { grid-template-columns: 1fr; }
+  .emblema-resumo { flex-direction: column; align-items: flex-start; }
+  .emblema-resumo-numeros { gap: 20px; }
+  .emblema-equipar-campos .btn { width: 100%; }
 }

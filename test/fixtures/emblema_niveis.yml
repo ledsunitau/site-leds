@@ -1,0 +1,27 @@
+# Degraus do maratonista: 1 registro = bronze, 2 = prata, 4 = ouro.
+maratonista_bronze:
+  emblema: maratonista
+  rank: bronze
+  limiar: 1
+  discord_role_id: "111000111000111000"
+
+maratonista_prata:
+  emblema: maratonista
+  rank: prata
+  limiar: 2
+
+maratonista_ouro:
+  emblema: maratonista
+  rank: ouro
+  limiar: 4
+
+# escalonável por MÉTRICA (ideias aprovadas), para o outro caminho de progresso
+pensador_bronze:
+  emblema: pensador
+  rank: bronze
+  limiar: 1
+
+pensador_prata:
+  emblema: pensador
+  rank: prata
+  limiar: 3

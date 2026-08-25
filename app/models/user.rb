@@ -31,6 +31,15 @@ class User < ApplicationRecord
   has_many :enderecos, dependent: :destroy
   # o pedido sobrevive à conta apagada (ON DELETE SET NULL) — histórico de venda
   has_many :pedidos, dependent: :nullify, inverse_of: :comprador
+  # espelha o ON DELETE SET NULL: a avaliação anonimiza, não some (LGPD)
+  has_many :avaliacoes, dependent: :nullify, inverse_of: :autor, foreign_key: :user_id
+  # Emblemas (RF-EMB): desbloqueados + os dois equipados. cascade no banco.
+  has_many :emblema_usuarios, dependent: :destroy
+  has_many :emblemas, through: :emblema_usuarios
+  belongs_to :emblema_destaque, class_name: "Emblema", optional: true, inverse_of: false
+  belongs_to :emblema_secundario, class_name: "Emblema", optional: true, inverse_of: false
+  # elo: degrau alcançado pelos pontos dos emblemas (ver recalcular_elo!)
+  belongs_to :elo, optional: true
   has_one_attached :foto
 
   # Papel de ACESSO (autorização via Pundit). O cargo detalhado e histórico do
@@ -48,6 +57,8 @@ class User < ApplicationRecord
   scope :gestao, -> { where(role: ROLES_DE_GESTAO) }
 
   validates :name, presence: true
+  validate :emblemas_equipados_desbloqueados
+  validate :destaque_diferente_do_secundario
 
   def discord_username
     # find (não find_by): aproveita o preload de oauth_identities nas listagens
@@ -68,9 +79,61 @@ class User < ApplicationRecord
     Acao.publicadas.where(id: ids).order(created_at: :desc)
   end
 
+  # Pontos e elo (RF-EMB). Pontos = Σ (peso do emblema × peso do rank atual);
+  # emblema único, que não tem rank, conta ×1 pelo COALESCE.
+  #
+  # Denormalizado em users porque o ranking é um ORDER BY e o elo aparece em
+  # toda página de perfil — recalcular na leitura seria uma agregação por
+  # pageview. Reescrito onde os pontos podem mudar: conceder, revogar, subir de
+  # rank e a varredura do EmblemasJob.
+  def recalcular_elo!
+    pontos = EmblemaUsuario.where(user_id: id)
+                           .joins(:emblema)
+                           .joins("LEFT JOIN emblema_niveis ON emblema_niveis.id = emblema_usuarios.nivel_id")
+                           .joins("LEFT JOIN emblema_ranks ON emblema_ranks.id = emblema_niveis.rank_id")
+                           .sum("emblemas.peso * COALESCE(emblema_ranks.peso, 1)")
+    novo = Elo.para(pontos)
+    return if pontos == pontos_emblemas && novo&.id == elo_id
+
+    anterior = elo
+    # update_columns: não passa pelas validações de emblema equipado (que nada
+    # têm a ver com pontuação) nem dispara callbacks numa escrita de bastidor.
+    update_columns(pontos_emblemas: pontos, elo_id: novo&.id)
+
+    return if anterior&.id == novo&.id
+
+    DiscordCargoJob.perform_later(id, anterior.discord_role_id, "remover") if anterior&.discord_role_id.present?
+    DiscordCargoJob.perform_later(id, novo.discord_role_id, "adicionar") if novo&.discord_role_id.present?
+  end
+
+  # Posição no ranking do elo mais alto (1, 2, 3…). nil se não está nele.
+  def posicao_no_topo
+    return nil if elo.nil? || !elo.final?
+
+    User.where(elo_id: elo_id).where("pontos_emblemas > ?", pontos_emblemas).count + 1
+  end
+
   private
 
   def identidade_discord
     oauth_identities.find { |i| i.provider == "discord" }
+  end
+
+  # Equipar só o que é seu. Sem isto, um PATCH com id arbitrário exibiria no
+  # perfil um emblema que o usuário nunca conquistou.
+  def emblemas_equipados_desbloqueados
+    ids = [ emblema_destaque_id, emblema_secundario_id ].compact
+    return if ids.empty?
+
+    desbloqueados = EmblemaUsuario.where(user_id: id, emblema_id: ids).pluck(:emblema_id)
+    return if (ids - desbloqueados).empty?
+
+    errors.add(:base, "Você só pode equipar emblemas que já desbloqueou.")
+  end
+
+  def destaque_diferente_do_secundario
+    return if emblema_destaque_id.blank? || emblema_destaque_id != emblema_secundario_id
+
+    errors.add(:emblema_secundario, "não pode ser o mesmo do destaque")
   end
 end

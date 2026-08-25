@@ -1,0 +1,24 @@
+# Uma conquista por vínculo existente (o que a migração faz no backfill).
+escritora_novidade:
+  emblema_usuario: escritora_primeira_novidade
+  origem: meta
+  ocorrido_em: <%= 30.days.ago.iso8601 %>
+
+ana_fundadora:
+  emblema_usuario: ana_fundadora
+  origem: concessao
+  concedido_por: pres
+  ocorrido_em: <%= 10.days.ago.iso8601 %>
+
+# duas maratonas da ana: leva o emblema escalonável ao rank PRATA
+ana_maratona_1:
+  emblema_usuario: ana_maratonista
+  origem: convite
+  descricao: Maratona SBC 2025
+  ocorrido_em: <%= 200.days.ago.iso8601 %>
+
+ana_maratona_2:
+  emblema_usuario: ana_maratonista
+  origem: convite
+  descricao: Maratona Interna 2026
+  ocorrido_em: <%= 20.days.ago.iso8601 %>

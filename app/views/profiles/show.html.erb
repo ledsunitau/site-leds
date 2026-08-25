@@ -19,15 +19,20 @@
         <% else %>
           <span class="perfil-tag"><%= papel_label(@user.role) %></span>
         <% end %>
-        <h2 class="perfil-nome"><%= @user.name %></h2>
+        <h2 class="perfil-nome"><%= nome_com_emblema(@user) %></h2>
         <span class="perfil-email"><%= @user.email %></span>
+        <%= link_to "Ver minha página pública →", usuario_path(@user), class: "perfil-link-publico" %>
       </div>
+
+      <% if @user.emblema_destaque %>
+        <%= emblema_icone(@user.emblema_destaque, tamanho: "lg") %>
+      <% end %>
     </header>
 
     <%# ---- Abas ---- %>
     <nav class="perfil-tabs" role="tablist">
-      <% [["informacoes", "Informações"], ["projetos", "Projetos"], ["ideias", "Ideias"], ["novidades", "Novidades"],
-          ["loja", "Loja"], ["notificacoes", "Notificações"]].each_with_index do |(vista, label), i| %>
+      <% [["informacoes", "Informações"], ["emblemas", "Emblemas"], ["projetos", "Projetos"], ["ideias", "Ideias"],
+          ["novidades", "Novidades"], ["loja", "Loja"], ["notificacoes", "Notificações"]].each_with_index do |(vista, label), i| %>
         <button type="button" class="perfil-tab <%= 'active' if i.zero? %>" data-vista="<%= vista %>"
                 data-perfil-target="tab" data-action="perfil#mostrar">
           <%= label %>
@@ -39,6 +44,7 @@
     </nav>
 
     <div class="perfil-panel" data-perfil-target="panel" data-vista="informacoes"><%= render "profiles/info" %></div>
+    <div class="perfil-panel" data-perfil-target="panel" data-vista="emblemas" hidden><%= render "profiles/emblemas" %></div>
     <div class="perfil-panel" data-perfil-target="panel" data-vista="projetos" hidden><%= render "profiles/projetos" %></div>
     <div class="perfil-panel" data-perfil-target="panel" data-vista="ideias" hidden><%= render "profiles/ideias" %></div>
     <div class="perfil-panel" data-perfil-target="panel" data-vista="novidades" hidden><%= render "profiles/novidades" %></div>

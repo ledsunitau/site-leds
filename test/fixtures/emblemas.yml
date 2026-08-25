@@ -1,0 +1,89 @@
+# Emblemas (RF-EMB). usuarios_count é mantido por counter_cache no runtime;
+# nas fixtures ele é escrito à mão para casar com emblema_usuarios.yml —
+# fixture não passa por callback.
+
+# meta baixa de propósito: users.yml tem contas com posts publicados
+primeira_novidade:
+  nome: Primeira novidade
+  descricao: Publicou a primeira novidade no site.
+  icone_svg: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16v16H4z"/></svg>'
+  cor: "#00C55B"
+  efeito: nenhum
+  criterio: novidades_publicadas
+  meta: 1
+  usuarios_count: 1
+
+# meta alta: ninguém das fixtures alcança — serve para testar o "não concede"
+veterano:
+  nome: Veterano
+  descricao: Mil dias de conta.
+  icone_svg: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="9"/></svg>'
+  cor: "#1D84F5"
+  efeito: neon
+  criterio: dias_de_conta
+  meta: 1000
+  usuarios_count: 0
+
+# sem critério: só concessão a dedo ou link
+fundador_honorario:
+  nome: Fundador honorário
+  descricao: Concedido pela presidência.
+  icone_svg: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7h7l-6 4 2 7-6-4-6 4 2-7-6-4h7z"/></svg>'
+  cor: "#FFEE04"
+  efeito: brilho
+  usuarios_count: 1
+
+# exclusivo: fica fora do catálogo de quem não tem
+convidado_beta:
+  nome: Convidado beta
+  descricao: Entrou pelo link do beta fechado.
+  icone_svg: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="4"/></svg>'
+  cor: "#F84A54"
+  efeito: arco_iris
+  exclusivo: true
+  discord_role_id: "999888777666555444"
+  usuarios_count: 0
+
+# desligado: não aparece no catálogo nem é concedido
+aposentado:
+  nome: Emblema aposentado
+  icone_svg: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 12h20"/></svg>'
+  cor: "#9A9AA2"
+  efeito: nenhum
+  ativo: false
+  usuarios_count: 0
+
+# escalonável por REGISTRO: sobe a cada maratona lançada por link/concessão
+maratonista:
+  nome: Maratonista
+  descricao: Participou de maratonas de programação.
+  icone_svg: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 20L20 4"/></svg>'
+  cor: "#1D84F5"
+  efeito: nenhum
+  tipo: escalonavel
+  peso: 2
+  usuarios_count: 1
+
+# escalonável por MÉTRICA: o rank acompanha as ideias aprovadas
+pensador:
+  nome: Pensador
+  descricao: Ideias aprovadas pela gestão.
+  icone_svg: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="7"/></svg>'
+  cor: "#00C55B"
+  efeito: nenhum
+  tipo: escalonavel
+  criterio: ideias_aprovadas
+  peso: 1
+  usuarios_count: 0
+
+# emblema de lançamento: os 2 primeiros que comprarem a camiseta
+comprador_pioneiro:
+  nome: Comprador pioneiro
+  descricao: Um dos primeiros a comprar.
+  icone_svg: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="7" width="16" height="13"/></svg>'
+  cor: "#F84A54"
+  efeito: nenhum
+  produto: camiseta
+  limite_donos: 2
+  peso: 4
+  usuarios_count: 0
