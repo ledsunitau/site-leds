@@ -84,7 +84,7 @@
       <% @membros.each_with_index do |item, i| %>
         <% member = item[:member]; mandato = item[:mandato] %>
         <% grupo = grupo_do_membro(mandato&.cargo, item[:ex]) %>
-        <% acoes = member.acoes_participadas.pluck(:titulo) %>
+        <% acoes = @titulos_de_acoes[member.id] || [] %>
         <article class="membro-card" data-members-target="card" data-grupo="<%= grupo %>" data-nome="<%= member.name.downcase %>">
           <header class="membro-bar" style="--accent:<%= acento_do_card(i) %>">
             <h3 class="membro-nome"><%= member.name %></h3>

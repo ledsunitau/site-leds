@@ -20,11 +20,19 @@ class Produto < ApplicationRecord
 
   # desvio documentado: o DDL não tem coluna de imagem — é Active Storage,
   # como tecnologias/temas (a modelagem lista "imagem de produto")
-  has_one_attached :imagem
+  # :card é o card do catálogo (4/5, ~320px) em 2x; :full é a foto principal do
+  # detalhe e o lightbox com zoom, onde a pessoa REALMENTE olha de perto.
+  has_one_attached :imagem do |anexo|
+    anexo.variant :card, resize_to_limit: [ 640, 800 ], **ImagemValidavel::VARIANTE
+    anexo.variant :full, resize_to_limit: [ 1200, 1500 ], **ImagemValidavel::VARIANTE
+  end
   valida_imagem :imagem
   # Galeria do detalhe (#LOJA3): fotos extras além da principal. A gestão sobe no
   # futuro; a view mostra [imagem] + galeria como miniaturas.
-  has_many_attached :galeria
+  has_many_attached :galeria do |anexo|
+    anexo.variant :card, resize_to_limit: [ 640, 800 ], **ImagemValidavel::VARIANTE
+    anexo.variant :full, resize_to_limit: [ 1200, 1500 ], **ImagemValidavel::VARIANTE
+  end
 
   # No máximo 6 fotos no total (principal + galeria) — regra do display (#LOJA3).
   MAX_FOTOS = 6
@@ -32,9 +40,13 @@ class Produto < ApplicationRecord
 
   # Todas as fotos do detalhe (principal primeiro), como objetos que o
   # rails_blob_path aceita. Vazio se não houver nenhuma.
+  #
+  # Devolve os ATTACHMENTS da galeria, não os blobs: variante nomeada
+  # (:card/:full) é resolvida pela reflection do anexo, coisa que ActiveStorage::Blob
+  # não conhece — com .map(&:blob) o FotoUrl cairia calado no original.
   def fotos
     principal = imagem.attached? ? [ imagem ] : []
-    principal + galeria.attachments.map(&:blob)
+    principal + galeria.attachments
   end
 
   MODOS_VENDA = %w[estoque sob_demanda].freeze

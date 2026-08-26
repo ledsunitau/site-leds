@@ -1,0 +1,52 @@
+<%# Toolbar + cards + pager. Tudo DENTRO do turbo-frame porque o estado do chip
+    ativo e o contador do pager mudam junto com a lista — deixar a toolbar fora
+    obrigaria a atualizá-la por JS, que é justamente o que saiu daqui.
+
+    turbo-frame + data-turbo-action="advance": o Turbo troca só este pedaço e
+    ainda assim empurra a URL para o histórico, então o filtro vira link
+    compartilhável e o botão voltar desfaz. Antes, um F5 perdia o filtro. %>
+<turbo-frame id="acoes-lista" data-turbo-action="advance">
+  <div class="acoes-toolbar" data-controller="acoes">
+    <div class="chips">
+      <% [ [ nil, "Todos" ], [ "Artigo", "Artigos" ], [ "Evento", "Eventos" ], [ "Projeto", "Projetos" ] ].each do |val, label| %>
+        <a href="<%= url_com(tipo: val, pagina: nil) %>"
+           class="chip <%= 'active' if @tipo == val %>"><%= label %></a>
+      <% end %>
+
+      <%# GET: o form vira query string, que é exatamente o que o pager e os chips
+          leem depois. Está DENTRO do turbo-frame, então o Turbo já mira o frame
+          sem precisar de data-turbo-frame. Submit debounced no acoes_controller.js.
+
+          Os hidden carregam os outros filtros (tipo, membro) para a busca não
+          zerá-los. `q` e `pagina` ficam de fora: um é o próprio input, o outro
+          tem que voltar para a página 1 a cada busca nova. %>
+      <%= form_with url: request.path, method: :get, data: { acoes_target: "form" } do %>
+        <% request.query_parameters.except("q", "pagina").each do |chave, valor| %>
+          <%= hidden_field_tag chave, valor, id: nil %>
+        <% end %>
+        <button type="button" class="chip chip-lupa" aria-label="Pesquisar" data-action="acoes#toggleBusca">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7" /><line x1="16.5" y1="16.5" x2="21" y2="21" />
+          </svg>
+        </button>
+        <input type="search" name="q" value="<%= @busca %>" class="acoes-busca"
+               placeholder="Pesquisar por nome…" <%= "hidden" if @busca.blank? %>
+               data-acoes-target="busca" data-action="input->acoes#buscar">
+      <% end %>
+    </div>
+  </div>
+
+  <div class="acoes-list">
+    <% @acoes.each do |a| %>
+      <%= render "acoes/card", a: a %>
+    <% end %>
+  </div>
+
+  <% if @acoes.empty? %>
+    <p class="acoes-empty">Nenhuma ação encontrada.</p>
+  <% elsif @pagina >= @total_paginas %>
+    <p class="acoes-end">Não há mais ações para carregar.</p>
+  <% end %>
+
+  <%= render "shared/paginacao", pagina: @pagina, total: @total_paginas, classe: "acoes-pag" %>
+</turbo-frame>

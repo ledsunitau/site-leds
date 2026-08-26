@@ -8,7 +8,7 @@
          data-action="click->analytics#rastrear" data-evento="produto_view"
          data-meta='<%= { id: produto.id, nome: produto.nome }.to_json %>'>
   <%= link_to produto_path(produto), class: "produto-card-img", aria: { label: produto.nome } do %>
-    <img src="<%= produto_imagem_url(produto) %>" alt="<%= produto.nome %>" loading="lazy">
+    <img src="<%= produto_imagem_url(produto) %>" alt="<%= produto.nome %>" loading="lazy" decoding="async" width="320" height="400">
     <% if produto.em_promocao? %><span class="promo-flag">PROMOÇÃO</span><% end %>
   <% end %>
 

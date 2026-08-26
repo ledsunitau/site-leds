@@ -20,6 +20,22 @@ module ImagemValidavel
   TIPOS = %w[image/jpeg image/png image/webp].freeze
   TAMANHO_MAX = 5.megabytes
 
+  # Opções COMUNS a toda variante do site — só as medidas mudam por anexo.
+  # Ficam aqui porque divergir é o modo de falha real: uma variante esquecida em
+  # JPEG ou sem preprocessed passa despercebida até virar peso em produção.
+  #
+  #   has_one_attached :foto do |anexo|
+  #     anexo.variant :avatar, resize_to_limit: [96, 96], **ImagemValidavel::VARIANTE
+  #   end
+  #
+  # preprocessed: gera no upload (job do Solid Queue) em vez de na primeira
+  # visita — quem abre a página não paga o processamento. Registro antigo, que
+  # não tem a variante, gera sob demanda no primeiro acesso e cacheia.
+  # resize_to_limit: nunca faz upscale e preserva proporção, então uma foto menor
+  # que o limite passa intacta em vez de ser esticada.
+  # webp é seguro: o allow_browser :modern do ApplicationController já o exige.
+  VARIANTE = { format: :webp, saver: { quality: 80 }, preprocessed: true }.freeze
+
   class_methods do
     # tipos:/formatos: permitem casos como logo de parceiro (aceita SVG) sem
     # afrouxar as demais imagens (foto, thumbnail, ícone) — que seguem raster.

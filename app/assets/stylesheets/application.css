@@ -587,6 +587,24 @@ h1, h2, h3, p { margin: 0; }
 
 /* ---- Cards ---- */
 .membros-list { display: flex; flex-direction: column; gap: 22px; }
+
+/* Pula layout/paint dos cards fora da viewport. Vale AQUI porque a lista de
+   membros não pagina (os dois grafos da página precisam de todo mundo de
+   qualquer jeito) e cada card passa de 400px — numa liga com 40 membros são
+   ~16.000px de altura, quase toda fora da tela.
+
+   Não foi aplicado em .acao-card nem em .emblema-card: content-visibility
+   implica contain:paint, que CLIPARIA o popover de participantes (.ppop) e a
+   dica de registros (.emblema-registros), ambos posicionados para fora do card
+   de propósito. Novidades e Loja não precisam — paginam em 6 e 8.
+
+   `auto` no contain-intrinsic-size: o browser memoriza o tamanho real depois do
+   primeiro render, então o 420px é só o palpite inicial e não vira salto de
+   scrollbar se estiver errado. */
+.membro-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 420px;
+}
 .membro-card[hidden] { display: none; }
 .membro-bar {
   display: flex; align-items: center; justify-content: space-between; gap: 18px;
@@ -705,15 +723,33 @@ h1, h2, h3, p { margin: 0; }
 .novidade-meta { margin-top: auto; display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 12px; color: var(--text-subtle); }
 
 /* ---- Paginação ---- */
-.novidades-paginacao { display: flex; justify-content: center; gap: 8px; margin-top: 30px; }
-.novidades-pag {
+/* ---- Pager compartilhado (shared/_paginacao) ----
+   Antes eram <button> desenhados por JS; agora são <a> renderizados no
+   servidor. Link é inline por padrão, então sem o inline-flex abaixo o
+   min-width/height das regras de .novidades-pag e .loja-pag não pegaria e os
+   botões mudariam de forma. O <nav> concentra o layout — as regras
+   .novidades-paginacao/.loja-paginacao viraram só o wrapper.
+   .acoes-pag copia o visual de .novidades-pag: Ações não tinha pager. */
+.acoes-pag-nav, .novidades-pag-nav, .loja-pag-nav {
+  display: flex; justify-content: center; align-items: center; gap: 8px;
+  flex-wrap: wrap; margin-top: 30px;
+}
+.acoes-pag, .novidades-pag, .loja-pag {
+  display: inline-flex; align-items: center; justify-content: center; text-decoration: none;
+}
+.acoes-pag-gap, .novidades-pag-gap, .loja-pag-gap {
+  color: var(--text-faint); font-family: var(--font-mono); font-size: 13px; padding: 0 2px;
+}
+
+.novidades-paginacao { display: flex; justify-content: center; gap: 8px; }
+.acoes-pag, .novidades-pag {
   min-width: 36px; height: 36px; padding: 0 10px; border-radius: var(--radius-pill);
   font-family: var(--font-mono); font-size: 13px; cursor: pointer;
   background: transparent; color: var(--text-nav); border: 1px solid var(--border-strong);
   transition: color .18s ease, background .18s ease, border-color .18s ease;
 }
-.novidades-pag:hover:not(.active) { color: var(--text-strong); border-color: rgba(255,255,255,.32); }
-.novidades-pag.active { background: var(--surface-invert); color: var(--text-on-invert); border-color: transparent; font-weight: 600; }
+.acoes-pag:hover:not(.active), .novidades-pag:hover:not(.active) { color: var(--text-strong); border-color: rgba(255,255,255,.32); }
+.acoes-pag.active, .novidades-pag.active { background: var(--surface-invert); color: var(--text-on-invert); border-color: transparent; font-weight: 600; }
 
 /* ---- Página da novidade (artigo) ---- */
 .novidade-artigo { padding-bottom: 80px; }
@@ -1675,7 +1711,11 @@ body.no-scroll { overflow: hidden; }
 .loja-promo-toggle input { width: 16px; height: 16px; accent-color: var(--leds-red); cursor: pointer; }
 
 .loja-todos-main { min-width: 0; }
-.loja-paginacao, .avaliacoes-paginacao { display: flex; gap: 8px; justify-content: center; margin-top: 30px; flex-wrap: wrap; }
+/* .loja-paginacao virou só wrapper (o layout foi para .loja-pag-nav); a de
+   avaliações ainda é montada por JS no avaliacao_controller, então MANTÉM o
+   margin-top que ela sempre teve. */
+.loja-paginacao { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.avaliacoes-paginacao { display: flex; gap: 8px; justify-content: center; margin-top: 30px; flex-wrap: wrap; }
 .loja-pag {
   min-width: 36px; height: 36px; padding: 0 10px; cursor: pointer;
   background: var(--surface-card); border: 1px solid var(--border-strong); border-radius: var(--radius-btn);

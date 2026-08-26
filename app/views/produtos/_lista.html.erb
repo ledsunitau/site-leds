@@ -1,0 +1,91 @@
+<%# Sidebar de filtros + grade + pager da Loja, tudo dentro do frame: o estado
+    ativo da categoria, a posição do slider e o total mudam junto com a grade.
+
+    Slider e checkbox são inputs de um form GET que submete no `change` (ao
+    SOLTAR), não no `input` — arrastar o slider com `input` dispararia um request
+    por pixel. Categorias e páginas são links: o Turbo troca o frame e o Turbo 8
+    ainda faz prefetch on hover. %>
+<turbo-frame id="produtos-lista" data-turbo-action="advance">
+  <div class="loja-todos-layout">
+    <aside class="loja-filtros">
+      <div class="loja-filtros-head">
+        <span>Filtros</span>
+        <%# "Limpar" = a própria URL sem nenhum filtro. Era um método JS. %>
+        <a href="<%= todos_produtos_path %>" class="loja-clear">Limpar</a>
+      </div>
+
+      <span class="loja-filtros-titulo">Categorias</span>
+      <ul class="loja-cat-lista">
+        <li>
+          <a href="<%= url_com(cat: nil, pagina: nil) %>"
+             class="categoria-item <%= 'active' if @cat.nil? %>">
+            Todas <span class="cat-count"><%= @contagem_categoria.values.sum %></span>
+          </a>
+        </li>
+        <% @categorias.each do |c| %>
+          <% qtd = @contagem_categoria[c.id].to_i %>
+          <% next if qtd.zero? %>
+          <li>
+            <a href="<%= url_com(cat: c.id, pagina: nil) %>"
+               class="categoria-item <%= 'active' if @cat == c.id %>">
+              <%= c.nome %> <span class="cat-count"><%= qtd %></span>
+            </a>
+          </li>
+        <% end %>
+      </ul>
+
+      <%= form_with url: request.path, method: :get, data: { loja_target: "filtros" } do %>
+        <% request.query_parameters.except("preco_min", "preco_max", "promo", "pagina").each do |chave, valor| %>
+          <%= hidden_field_tag chave, valor, id: nil %>
+        <% end %>
+
+        <div class="loja-filtro-bloco">
+          <span class="loja-filtros-titulo">Preço</span>
+          <div class="preco-slider" data-loja-target="precoSlider">
+            <span class="preco-trilha"></span>
+            <span class="preco-fill" data-loja-target="precoFill"></span>
+            <input type="range" name="preco_min" min="0" max="<%= @teto %>" value="<%= @preco_min.to_i %>" step="1"
+                   class="preco-range" data-loja-target="rangeMin"
+                   data-action="input->loja#arrastarPreco change->loja#submeterFiltros"
+                   aria-label="Preço mínimo">
+            <input type="range" name="preco_max" min="0" max="<%= @teto %>" value="<%= @preco_max.to_i %>" step="1"
+                   class="preco-range" data-loja-target="rangeMax"
+                   data-action="input->loja#arrastarPreco change->loja#submeterFiltros"
+                   aria-label="Preço máximo">
+          </div>
+          <div class="preco-inputs">
+            <label>R$<input type="number" min="0" max="<%= @teto %>" value="<%= @preco_min.to_i %>" inputmode="numeric"
+                   data-loja-target="precoMin" data-action="change->loja#precoPorNumero" aria-label="Preço mínimo"></label>
+            <span class="preco-tra">–</span>
+            <label>R$<input type="number" min="0" max="<%= @teto %>" value="<%= @preco_max.to_i %>" inputmode="numeric"
+                   data-loja-target="precoMax" data-action="change->loja#precoPorNumero" aria-label="Preço máximo"></label>
+          </div>
+        </div>
+
+        <div class="loja-filtro-bloco">
+          <label class="loja-promo-toggle">
+            <input type="checkbox" name="promo" value="1" <%= "checked" if @promo %>
+                   data-loja-target="promo" data-action="change->loja#submeterFiltros">
+            <span>Somente promoções</span>
+          </label>
+        </div>
+      <% end %>
+    </aside>
+
+    <div class="loja-todos-main">
+      <div class="cards-2 loja-grid">
+        <% @produtos.each_with_index do |p, i| %>
+          <%= render "produtos/card", produto: p, accent: loja_accent(i) %>
+        <% end %>
+      </div>
+
+      <% if @produtos.empty? %>
+        <p class="empty-state">Nenhum produto encontrado.</p>
+      <% end %>
+
+      <div class="loja-paginacao">
+        <%= render "shared/paginacao", pagina: @pagina, total: @total_paginas, classe: "loja-pag" %>
+      </div>
+    </div>
+  </div>
+</turbo-frame>

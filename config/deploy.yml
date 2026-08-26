@@ -7,14 +7,21 @@
 
 service: site_leds
 
-# ghcr.io/<owner>/<imagem>. TODO: confirme o owner da org.
+# ghcr.io/<owner>/<imagem>. Owner confere com o remote do repositório
+# (github.com/ledsunitau/site-leds), então não é mais placeholder.
 image: ledsunitau/site_leds
 
 servers:
   web:
     - TODO_IP_DO_VPS # TODO: IP público (ou privado, se atrás do CF) do servidor
-  # Fila em processo no Puma (SOLID_QUEUE_IN_PUMA=true). Quando a loja gerar
-  # volume, mova para uma máquina de jobs dedicada trocando estas linhas:
+  # Fila em processo no Puma (SOLID_QUEUE_IN_PUMA=true). Além dos jobs de
+  # domínio (Discord, etiquetas, alertas), é ela que processa o
+  # ActiveStorage::TransformJob das variantes de imagem — com a fila parada as
+  # variantes não somem, só passam a ser geradas na primeira visita, dentro do
+  # request. Ver docs/deploy.md §4.2.
+  #
+  # Quando a loja gerar volume, mova para uma máquina de jobs dedicada trocando
+  # estas linhas:
   # job:
   #   hosts:
   #     - TODO_IP_DO_VPS
@@ -80,10 +87,17 @@ aliases:
   shell: app exec --interactive --reuse "bash"
   logs: app logs -f
   dbc: app exec --interactive --reuse "bin/rails dbconsole --include-password"
-  # aplica as 4 bases (primary + Solid cache/queue/cable) na primeira subida
+  # Cria as 4 bases (primary + Solid cache/queue/cable) na primeira subida E
+  # aplica migrações pendentes nas seguintes — db:prepare faz os dois, então
+  # este é o comando de TODO deploy que traz migração, não só do primeiro.
   prepare: app exec "bin/rails db:prepare"
+  # Gera as variantes de imagem que ainda não existem (registros anteriores à
+  # introdução das variantes). Idempotente. Ver docs/deploy.md §4.2.
+  variantes: app exec "bin/rails imagens:preparar_variantes"
 
-# Active Storage vai pro R2; storage local não é usado em produção.
+# Active Storage vai pro R2; storage local não é usado em produção. As variantes
+# (:avatar/:card/:full) são geradas pelo libvips — já instalado no Dockerfile de
+# produção — e gravadas no MESMO bucket do original.
 
 # Assets fingerprintados entre versões, evita 404 em requests em voo.
 asset_path: /rails/public/assets

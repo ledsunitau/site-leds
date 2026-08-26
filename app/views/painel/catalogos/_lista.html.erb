@@ -11,7 +11,7 @@
           <% if icone %>
             <span class="painel-catalogo-icone">
               <% if item.icone.attached? %>
-                <img src="<%= FotoUrl.para(item.icone) %>" alt="">
+                <img src="<%= FotoUrl.para(item.icone) %>" alt="" loading="lazy" decoding="async" width="28" height="28">
               <% else %>
                 <span class="painel-catalogo-vazio">—</span>
               <% end %>

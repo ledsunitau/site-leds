@@ -9,8 +9,10 @@ class EmblemasController < ApplicationController
   def index
     authorize Emblema
     # avalia na hora em vez de esperar o EmblemasJob da hora cheia — bater a
-    # meta e não ver o emblema na tela que acabou de abrir seria confuso
-    Emblema.avaliar!(current_user)
+    # meta e não ver o emblema na tela que acabou de abrir seria confuso.
+    # _recente!: uma vez por janela de 5min, senão cada F5 repete um COUNT por
+    # emblema com meta dentro do GET.
+    Emblema.avaliar_recente!(current_user)
 
     @vinculos = EmblemaUsuario.where(user: current_user)
                               .includes(:conquistas, nivel: :rank).index_by(&:emblema_id)

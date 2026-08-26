@@ -10,6 +10,15 @@ class ProdutosController < ApplicationController
   # loja desligada pela gestão → comprador vê "indisponível"; quem opera segue.
   before_action :loja_disponivel!, only: %i[index show todos]
 
+  POR_PAGINA = 8 # mesmo número que a paginação client-side mostrava
+
+  # Produto#preco_atual (preco_promocional || preco) em SQL. O filtro de faixa
+  # tem que comparar contra o preço que a pessoa VÊ — usar `preco` deixaria um
+  # item em promoção fora da faixa que ele visualmente ocupa.
+  PRECO_ATUAL = Arel::Nodes::NamedFunction.new(
+    "COALESCE", [ Produto.arel_table[:preco_promocional], Produto.arel_table[:preco] ]
+  ).freeze
+
   def index
     authorize Produto
 
@@ -34,15 +43,40 @@ class ProdutosController < ApplicationController
     end
   end
 
-  # #LOJA2: catálogo expandido — todos os ativos + categorias para o filtro
-  # lateral. Filtro/paginação são no cliente (Stimulus loja), como em Ações.
+  # #LOJA2: catálogo expandido. Categoria, busca, faixa de preço, promoção e
+  # página são parâmetros de URL resolvidos AQUI. Antes o servidor mandava TODOS
+  # os produtos e o Stimulus escondia todos menos 8 — o pior dos dois mundos:
+  # payload de catálogo inteiro para mostrar uma página.
   def todos
     authorize Produto, :index?
 
-    @produtos = Produto.ativos.includes(:categoria, :variantes, imagem_attachment: :blob).order(:nome)
+    ativos = Produto.ativos
+    @teto = (ativos.maximum(PRECO_ATUAL) || 100).ceil
+
+    @cat = filtro(:cat)&.to_i
+    @busca = filtro(:q)
+    @preco_min = preco_do_filtro(:preco_min, 0)
+    @preco_max = preco_do_filtro(:preco_max, @teto)
+    @promo = filtro(:promo) == "1"
+
+    escopo = ativos.order(:nome)
+    escopo = escopo.where(categoria_id: @cat) if @cat&.positive?
+    escopo = buscar_por(escopo, :nome)
+    escopo = escopo.where(PRECO_ATUAL.gteq(@preco_min)) if @preco_min.positive?
+    escopo = escopo.where(PRECO_ATUAL.lteq(@preco_max)) if @preco_max < @teto
+    escopo = escopo.em_promocao if @promo
+
+    @pagina = pagina_atual
+    @total = escopo.count
+    @total_paginas = [ (@total.to_f / POR_PAGINA).ceil, 1 ].max
+    @produtos = paginar(escopo.includes(:categoria, :variantes, imagem_attachment: :blob),
+                        por_pagina: POR_PAGINA)
+
     @categorias = Categoria.order(:nome)
     # contagem por categoria numa query só (evita N COUNTs na sidebar)
-    @contagem_categoria = Produto.ativos.group(:categoria_id).count
+    @contagem_categoria = ativos.group(:categoria_id).count
+
+    render_em_frame "produtos/lista"
   end
 
   def show
@@ -92,6 +126,15 @@ class ProdutosController < ApplicationController
   end
 
   private
+
+  # Preço vindo da query string. Fora da faixa [0, teto] ou não-numérico cai no
+  # padrão — o slider é público e o valor vai direto para um comparador SQL.
+  def preco_do_filtro(chave, padrao)
+    bruto = filtro(chave)
+    return padrao if bruto.blank? || !bruto.match?(/\A\d+(\.\d+)?\z/)
+
+    bruto.to_d.clamp(0, @teto)
+  end
 
   # Loja desligada (Setting): o comprador vê "indisponível"; quem cadastra/edita
   # (membro da liga) segue enxergando para operar. Barra só a navegação; carrinho

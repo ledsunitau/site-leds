@@ -17,7 +17,9 @@ máquina, Active Storage no Cloudflare R2, SSL do proxy Kamal atrás do Cloudfla
 
 ## 2. Preencher os placeholders
 
-- `config/deploy.yml`: todos os `TODO:` (IP do VPS, domínio, owner da imagem).
+- `config/deploy.yml`: os `TODO:` restantes são **IP do VPS** (`servers.web` e
+  `accessories.db.host`) e **domínio** (`proxy.host`). O owner da imagem já está
+  resolvido (`ledsunitau`, confere com o remote do repositório).
 - ENV do operador (o `.kamal/secrets` lê daqui). Crie um `.env.production` **fora
   do git** e exporte antes de deployar:
 
@@ -54,7 +56,32 @@ Rate limiting rules**. Deliverable explícito (não fica implícito):
 Limites de borda ficam **acima** dos do Rack::Attack (a borda corta abuso
 grosso; a aplicação afina por rota/usuário). Ajuste conforme o tráfego real.
 
-### 3.2 Integrações externas (callbacks e webhooks — apontar pro domínio real)
+### 3.2 Cache de HTML — NÃO ligue "Cache Everything"
+
+O padrão do Cloudflare (cachear só extensões estáticas, HTML sempre no origin)
+é o certo aqui. **Não** crie regra de "Cache Everything"/"Cache Level: Everything"
+sobre as páginas sem ler o parágrafo abaixo.
+
+As listagens públicas (`/acoes`, `/posts`, `/produtos/todos`) respondem **dois
+corpos na mesma URL**: a página inteira, ou só o fragmento da lista quando o
+Turbo manda o header `Turbo-Frame` (é o que faz clicar num chip trocar só a
+grade, sem recarregar navbar e footer). O app declara isso no
+`Vary: Accept, Turbo-Frame`, e um cache que respeite `Vary` fica correto.
+
+O risco é ligar "Cache Everything" **junto** com qualquer coisa que ignore ou
+normalize o `Vary` — aí o CF pode servir o fragmento (sem navbar, sem footer,
+sem `<html>`) para quem abriu o endereço no navegador. Sintoma: a página aparece
+"pelada", só a lista de cards. Se precisar cachear HTML, exija que a regra
+preserve o `Vary` e teste com:
+
+```bash
+curl -sI https://<APP_HOST>/acoes | grep -i '^vary'
+# esperado: vary: Accept, Turbo-Frame
+curl -s  https://<APP_HOST>/acoes | head -1
+# esperado: <!DOCTYPE html>   (e NÃO <turbo-frame ...>)
+```
+
+### 3.3 Integrações externas (callbacks e webhooks — apontar pro domínio real)
 
 Trocando `<APP_HOST>` pelo domínio de produção:
 
@@ -73,10 +100,24 @@ Trocando `<APP_HOST>` pelo domínio de produção:
 
 ```bash
 kamal setup          # 1ª vez: provisiona proxy, registro, sobe app + acessório db
-kamal app exec "bin/rails db:prepare"   # cria/migra as 4 bases (primary + solid cache/queue/cable)
-# (ou o alias: kamal prepare)
+kamal prepare        # cria/migra as 4 bases (primary + solid cache/queue/cable)
+kamal variantes      # gera as variantes de imagem que faltarem (ver 4.2)
+
 kamal deploy         # deploys subsequentes
+kamal prepare        # ...seguido disto SEMPRE que o deploy trouxer migração
 ```
+
+> **Este deploy traz migração.** `20260826160000_indices_das_listagens_publicas`
+> cria três índices compostos — `acoes(status, created_at DESC)`,
+> `posts(status, published_at DESC)` e `produtos(status, nome)` — que sustentam
+> filtro + ordenação + `LIMIT` das listagens paginadas. São `CREATE INDEX`
+> simples, sem reescrita de tabela; em tabela pequena roda em milissegundos.
+> Sem eles o site funciona igual, só faz sort de tudo para devolver 24 linhas.
+>
+> O Kamal **não** migra sozinho (os hooks em `.kamal/hooks/` são todos
+> `.sample`, inativos). `kamal prepare` é o passo manual, e `db:prepare` é
+> idempotente: cria o que falta, migra o que está pendente, não faz nada se
+> estiver tudo em dia.
 
 - **Erros no log durante o `setup`**: o Puma sobe com o Solid Queue embutido
   ANTES do `db:prepare`, então o supervisor loga erro de conexão na base `queue`
@@ -105,12 +146,55 @@ Depois entre com essa conta, promova os demais e troque a senha pela tela de
 admin/perfil (RF-ADM-03). O cargo/histórico detalhado (Member/Mandato) também é
 cadastrado por lá — o role acima já basta para abrir o `/admin`.
 
+### 4.2 Variantes de imagem (Active Storage)
+
+Nenhuma tela serve mais o arquivo original: avatar, card e galeria pedem uma
+**variante** redimensionada em WebP (`:avatar` 96px, `:card` 640px, `:full`
+1200px). Uma foto de celular de 4 MB deixa de ser baixada inteira dentro de um
+avatar de 40 px.
+
+O que isso exige em produção — tudo já configurado, listado aqui para conferência:
+
+- **libvips** no container: já está no `Dockerfile` de produção (linha do
+  `apt-get install`). Sem ele o `image_processing` cai no `rescue` e as imagens
+  voltam a sair no tamanho original — degrada, não quebra.
+- **Solid Queue rodando**: os anexos são declarados com `preprocessed: true`, ou
+  seja, subir uma imagem enfileira um `ActiveStorage::TransformJob`. Com
+  `SOLID_QUEUE_IN_PUMA=true` isso já acontece dentro do próprio web.
+- **Espaço no R2**: cada imagem passa a ter 1–2 objetos derivados além do
+  original, no mesmo bucket. São arquivos pequenos (WebP q80), mas o número de
+  objetos cresce.
+
+**Registros antigos não têm variante.** Eles não quebram — o Active Storage gera
+sob demanda —, mas a geração acontece *dentro do request do primeiro visitante*.
+Numa página de catálogo isso vira uma dúzia de conversões em série. Por isso o
+passo de deploy:
+
+```bash
+kamal variantes      # = bin/rails imagens:preparar_variantes
+```
+
+Idempotente e seguro de repetir: variante que já existe é reaproveitada, e um
+blob corrompido é registrado no log sem abortar o resto. Rode uma vez no primeiro
+deploy depois desta versão; nos seguintes só se tiver importado imagens por fora
+do app.
+
 ## 5. Smoke test pós-deploy
 
 - [ ] `GET https://<dominio>/up` → 200 (health check).
 - [ ] Login por e-mail/senha e por Google/Discord (redirect URIs de produção).
 - [ ] Recuperação de senha envia e-mail (SMTP).
 - [ ] Upload de imagem de produto → aparece servida do R2.
+- [ ] **Imagem sai como variante, não como original**: no DevTools → Network, a
+      `src` dos cards e avatares deve ser `/rails/active_storage/representations/…`.
+      Se vier `/rails/active_storage/blobs/…`, o libvips não está disponível ou o
+      anexo não é rasterizável (SVG cai no original de propósito).
+- [ ] **Listagens filtram e paginam**: em `/acoes` e `/posts`, clicar num chip e
+      numa página troca só a grade (sem recarregar a folha de estilo — confira no
+      Network) e a URL acompanha o filtro. Buscar por algo que está na 2ª página
+      tem que encontrar.
+- [ ] **`Vary` correto** (só importa se você cacheia HTML no CF — ver §3.2):
+      `curl -sI https://<dominio>/acoes | grep -i '^vary'` → `Accept, Turbo-Frame`.
 - [ ] Webhook do Mercado Pago alcança `/pagamentos/webhook` (configure a
       notification_url no painel MP com o domínio real; `APP_HOST` correto).
 - [ ] Cotação de frete (`/frete/cotar`) responde com credenciais reais do ME.

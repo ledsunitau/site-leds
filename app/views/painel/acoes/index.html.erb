@@ -54,7 +54,7 @@
         <% @acoes.each do |acao| %>
           <tr>
             <td>
-              <span class="painel-foto"><img src="<%= card_image_url(acao) %>" alt=""></span>
+              <span class="painel-foto"><img src="<%= card_image_url(acao) %>" alt="" loading="lazy" decoding="async" width="56" height="42"></span>
             </td>
             <td>
               <%= acao.titulo %>

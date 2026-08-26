@@ -38,6 +38,10 @@ class ApplicationController < ActionController::Base
   # Modo manutenção (painel → Recursos): fecha o site para quem não é gestão.
   before_action :bloquear_em_manutencao
 
+  # Depois do render: a essa altura o respond_to já pôs o Vary: Accept dele, e
+  # este soma o Turbo-Frame em vez de substituir (ver render_em_frame).
+  after_action :declarar_variacao_de_frame
+
   protected
 
   # Quem passa mesmo em manutenção:
@@ -77,11 +81,70 @@ class ApplicationController < ActionController::Base
     nil
   end
 
-  # Paginação simples por query string (?pagina=N). O clamp de cima importa:
-  # sem ele, um número gigante estoura o bigint do OFFSET (500 público).
+  # Página pedida na query string, saneada. O clamp de cima importa: sem ele, um
+  # número gigante estoura o bigint do OFFSET (500 público).
+  def pagina_atual(param = :pagina)
+    filtro(param).to_i.clamp(1, 100_000)
+  end
+
+  # Paginação simples por query string (?pagina=N).
   def paginar(escopo, por_pagina: 20, param: :pagina)
-    pagina = filtro(param).to_i.clamp(1, 100_000)
-    escopo.limit(por_pagina).offset((pagina - 1) * por_pagina)
+    escopo.limit(por_pagina).offset((pagina_atual(param) - 1) * por_pagina)
+  end
+
+  # Busca pública por LIKE, sem case (?q=), em UMA OU MAIS colunas (OR entre
+  # elas). Escapa os curingas do LIKE: sem isso um "%" digitado casa com tudo e
+  # um "_" casa com qualquer caractere.
+  #
+  # Mais de uma coluna importa quando o card mostra um campo e o banco guarda
+  # outro: o card de novidade exibe `caller` e cai em `titulo` — procurar só em
+  # titulo faria a busca falhar exatamente no texto que a pessoa está lendo.
+  #
+  # ponytail: ILIKE '%termo%' não usa índice btree — em algumas centenas de
+  # linhas o seq scan é irrelevante; se crescer, pg_trgm + índice GIN.
+  def buscar_por(escopo, *colunas, param: :q)
+    termo = filtro(param)
+    return escopo if termo.blank?
+
+    padrao = "%#{ActiveRecord::Base.sanitize_sql_like(termo)}%"
+    # arel matches → ILIKE no PostgreSQL, e sem interpolar nome de coluna em SQL.
+    tabela = escopo.arel_table
+    escopo.where(colunas.map { |c| tabela[c].matches(padrao) }.reduce(:or))
+  end
+
+  # Quantas páginas o escopo tem, para desenhar o pager. COUNT à parte porque o
+  # escopo já paginado perdeu o total. Mínimo 1: lista vazia é "página 1 de 1",
+  # e assim o pager some (a view esconde quando total <= 1) em vez de mostrar 0.
+  def total_de_paginas(escopo, por_pagina:)
+    [ (escopo.count.to_f / por_pagina).ceil, 1 ].max
+  end
+
+  # Listagem que responde a página INTEIRA ou só o fragmento, conforme o header
+  # Turbo-Frame — a mesma URL com dois corpos.
+  #
+  # Só marca a intenção; quem escreve o header é o after_action. Escrever aqui
+  # NÃO funciona: neste ponto o `respond_to` ainda não pôs o `Vary: Accept` dele,
+  # e a atribuição some com o Accept em vez de somar a ele.
+  def render_em_frame(partial)
+    @varia_por_frame = true
+    render partial: partial, layout: false if turbo_frame_request?
+  end
+
+  # Declara Turbo-Frame como dimensão de variação da resposta.
+  #
+  # Não é detalhe: em produção tem Cloudflare na frente (ver docs/deploy.md). O
+  # CF não cacheia HTML por padrão, mas uma regra "Cache Everything" passaria a
+  # cachear por URL — e sem isto serviria o fragmento sem navbar para quem abriu
+  # a página pelo endereço, ou a página inteira dentro de um frame.
+  #
+  # Vale para as DUAS respostas: é a URL que varia, não uma das versões dela.
+  def declarar_variacao_de_frame
+    return unless @varia_por_frame
+
+    valores = response.headers["Vary"].to_s.split(",").map(&:strip).reject(&:empty?)
+    return if valores.any? { |v| v.casecmp?("Turbo-Frame") }
+
+    response.headers["Vary"] = (valores + [ "Turbo-Frame" ]).join(", ")
   end
 
   # Janela ?de=/&ate= (ISO) sobre uma coluna de timestamp.

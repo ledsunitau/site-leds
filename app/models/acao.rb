@@ -15,7 +15,11 @@ class Acao < ApplicationRecord
   has_many :acao_parceiros, dependent: :destroy
   has_many :parceiros, through: :acao_parceiros
 
-  has_one_attached :thumbnail # RF-ACO-10: todo card tem thumbnail
+  # RF-ACO-10: todo card tem thumbnail. :card serve a .acao-media, que é o
+  # maior consumo — nenhuma tela mostra a thumbnail em tamanho original.
+  has_one_attached :thumbnail do |anexo|
+    anexo.variant :card, resize_to_limit: [ 640, 480 ], **ImagemValidavel::VARIANTE
+  end
   valida_imagem :thumbnail
 
   STATUSES = %w[rascunho publicada arquivada].freeze

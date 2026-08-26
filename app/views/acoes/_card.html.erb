@@ -1,11 +1,18 @@
-<%# Card horizontal de ação. Local `a` (Acao). Usado na página de Ações (com o
-    filtro Stimulus) e no perfil (aba Projetos). Os data-acoes-target só têm
-    efeito dentro do controller "acoes"; fora dele são inertes. %>
+<%# Card horizontal de ação. Local `a` (Acao). Usado na página de Ações e no
+    perfil (aba Projetos).
+
+    Os data-tipo/data-nome saíram: alimentavam o filtro client-side, que agora é
+    where + ILIKE no acoes#index. O que o card percorre aqui (participantes,
+    tecnologias, temas) é pré-carregado por AcoesController#preload_cards_de_acao —
+    ler uma associação nova sem acrescentá-la lá reintroduz N+1, e o teste
+    "consultas não crescem com o número de ações" quebra. %>
 <% cat = a.detalhe_type.downcase %>
 <% parts = participantes_da_acao(a) %>
-<article class="acao-card" data-acoes-target="card" data-tipo="<%= a.detalhe_type %>" data-nome="<%= a.titulo.downcase %>"
+<article class="acao-card"
          data-action="click->analytics#rastrear" data-evento="acao_view"
          data-meta='<%= { tipo: a.detalhe_type, id: a.id }.to_json %>'>
+  <%# background-image não tem loading="lazy"; quem limita o custo aqui é a
+      variante :card do FotoUrl mais o content-visibility da grade. %>
   <div class="acao-media" style="background-image:url('<%= card_image_url(a) %>')">
     <span class="tag solid" style="--tag-color:var(--cat-<%= cat %>)"><%= cat.upcase %></span>
   </div>

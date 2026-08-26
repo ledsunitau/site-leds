@@ -123,7 +123,7 @@
             <div class="painel-item">
               <span class="painel-item-foto">
                 <% if item.produto %>
-                  <img src="<%= produto_imagem_url(item.produto) %>" alt="" loading="lazy">
+                  <img src="<%= produto_imagem_url(item.produto) %>" alt="" loading="lazy" decoding="async" width="48" height="60">
                 <% end %>
               </span>
 

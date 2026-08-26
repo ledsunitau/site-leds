@@ -1,11 +1,12 @@
 <%# Página de Novidades (Layers NOVIDADES do Figma). Tudo do banco (@posts).
-    Carrossel = 3 mais recentes; filtro por tipo + busca + paginação são no
-    cliente (Stimulus novidades/carrossel). %>
+    Carrossel = 3 mais recentes, FORA do frame (não muda com o filtro).
+    Filtro por tipo, busca e paginação são no servidor (ver posts#index) e
+    trocam só o turbo-frame de _lista. %>
 <% content_for :title, "Novidades — LEDS" %>
 
 <%= render "shared/page_bg" %>
 
-<div class="page" data-controller="novidades">
+<div class="page">
   <%= render "shared/navbar", active: "NOVIDADES" %>
 
   <main class="content wrap novidades-page">
@@ -44,38 +45,7 @@
       </div>
     <% end %>
 
-    <%# ---- Filtro ---- %>
-    <div class="novidades-toolbar">
-      <div class="chips">
-        <% [["todos", "Todos"], ["noticia", "Notícias"], ["blog", "Blog"]].each_with_index do |(val, label), i| %>
-          <button type="button" class="chip <%= 'active' if i.zero? %>" data-tipo="<%= val %>"
-                  data-novidades-target="chip" data-action="novidades#filtrar"><%= label %></button>
-        <% end %>
-        <button type="button" class="chip chip-lupa" aria-label="Pesquisar" data-action="novidades#toggleBusca">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="7" /><line x1="16.5" y1="16.5" x2="21" y2="21" />
-          </svg>
-        </button>
-        <input type="search" class="acoes-busca" placeholder="Pesquisar por título…" hidden
-               data-novidades-target="busca" data-action="input->novidades#buscar">
-      </div>
-    </div>
-
-    <%# ---- Grid de novidades ---- %>
-    <div class="novidades-grid">
-      <% @posts.each do |p| %>
-        <%= render "posts/card", post: p, filtravel: true %>
-      <% end %>
-    </div>
-
-    <p class="acoes-empty" data-novidades-target="empty" hidden>Nenhuma novidade encontrada.</p>
-    <div class="novidades-paginacao" data-novidades-target="paginacao"></div>
-    <% if @posts.empty? %>
-      <div class="empty-state" style="margin-top:24px">
-        <span class="empty-mono">// nada por aqui ainda</span>
-        <p>As notícias e posts do blog aparecem aqui assim que forem publicados.</p>
-      </div>
-    <% end %>
+    <%= render "posts/lista" %>
   </main>
 
   <%= render "shared/footer" %>

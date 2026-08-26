@@ -1,12 +1,9 @@
 module HomeHelper
   # Imagem do card (ação/post): usa a thumbnail salva se houver; senão cai na
   # imagem padrão do código (ainda não temos bucket de imagens configurado).
+  # Variante :card — Acao e Post declaram a mesma, com as mesmas medidas.
   def card_image_url(record)
-    if record.thumbnail.attached?
-      rails_blob_path(record.thumbnail, only_path: true)
-    else
-      image_path("card-placeholder.svg")
-    end
+    FotoUrl.para(record.thumbnail, :card) || image_path("card-placeholder.svg")
   end
 
   MESES_ABREV = %w[jan fev mar abr mai jun jul ago set out nov dez].freeze

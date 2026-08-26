@@ -1,30 +1,30 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Loja: adicionar/remover do carrinho (atualiza o badge do FAB sem recarregar),
-// e — no catálogo expandido (#LOJA2) — filtro por categoria + paginação, tudo
-// client-side sobre os .produto-card do banco.
+// Loja: carrinho (adicionar/remover, badge do FAB sem recarregar) e, no catálogo
+// expandido (#LOJA2), os controles de filtro.
+//
+// O FILTRO em si é do servidor (produtos#todos): categoria e página são links,
+// preço e promoção são inputs de um form GET. Aqui sobrou só o que é interação
+// de tela — debounce da busca, min<=max do slider, espelhar os campos numéricos
+// nos ranges. Saíram aplicar()/renderPaginacao()/irPara(), que peneiravam os
+// cards já renderizados: a busca só via a página corrente e a grade inteira
+// vinha do servidor para 8 itens ficarem visíveis.
+const DEBOUNCE = 250
+
 export default class extends Controller {
   static targets = [
-    "badge", "grade", "categoria", "vazio", "paginacao", "tamanho", "qtd", "busca",
+    "badge", "busca", "form", "filtros", "tamanho", "qtd",
     "rangeMin", "rangeMax", "precoMin", "precoMax", "precoFill", "promo",
   ]
-  static values = {
-    produtoId: Number, nome: String, variante: String, teto: Number,
-    porPagina: { type: Number, default: 8 },
-  }
+  static values = { produtoId: Number, nome: String, variante: String }
 
   connect() {
     this.varianteId = null
-    if (this.hasGradeTarget) {
-      this.cat = ""
-      this.termo = ""
-      this.pMin = 0
-      this.pMax = this.hasTetoValue ? this.tetoValue : Infinity
-      this.promoOnly = false
-      this.pagina = 1
-      this.atualizarFill()
-      this.aplicar()
-    }
+    if (this.hasPrecoFillTarget) this.atualizarFill()
+  }
+
+  disconnect() {
+    clearTimeout(this.timer)
   }
 
   // ---- Carrinho ----
@@ -133,125 +133,66 @@ export default class extends Controller {
     return { "Content-Type": "application/json", "X-CSRF-Token": token || "", Accept: "application/json" }
   }
 
-  // ---- Filtro + paginação (#LOJA2) ----
-
-  filtrarCategoria(e) {
-    this.cat = e.currentTarget.dataset.cat
-    this.categoriaTargets.forEach((c) => c.classList.toggle("active", c === e.currentTarget))
-    this.pagina = 1
-    this.aplicar()
-  }
+  // ---- Controles do filtro (#LOJA2) ----
 
   buscar() {
-    this.termo = this.buscaTarget.value.trim().toLowerCase()
-    this.pagina = 1
-    this.aplicar()
+    clearTimeout(this.timer)
+    this.timer = setTimeout(() => this.formTarget.requestSubmit(), DEBOUNCE)
   }
 
-  // Preço pelos sliders (dois thumbs sobrepostos; garante min <= max).
-  faixaPrecoSlider() {
-    let lo = Number(this.rangeMinTarget.value)
-    let hi = Number(this.rangeMaxTarget.value)
-    if (lo > hi) [lo, hi] = [hi, lo]
-    this.aplicarFaixa(lo, hi)
+  submeterFiltros() {
+    this.filtrosTarget.requestSubmit()
   }
 
-  // Preço pelos inputs numéricos (digitação manual).
-  faixaPrecoNumero() {
-    const teto = this.hasTetoValue ? this.tetoValue : Infinity
-    let lo = this.limpar(this.precoMinTarget.value, 0, teto)
-    let hi = this.limpar(this.precoMaxTarget.value, 0, teto)
-    if (lo > hi) [lo, hi] = [hi, lo]
-    this.aplicarFaixa(lo, hi)
-  }
-
-  aplicarFaixa(lo, hi) {
-    this.pMin = lo
-    this.pMax = hi
-    if (this.hasRangeMinTarget) this.rangeMinTarget.value = lo
-    if (this.hasRangeMaxTarget) this.rangeMaxTarget.value = hi
-    if (this.hasPrecoMinTarget) this.precoMinTarget.value = lo
-    if (this.hasPrecoMaxTarget) this.precoMaxTarget.value = hi
+  // Enquanto ARRASTA: só corrige min<=max e repinta a faixa. Nada de request —
+  // é o evento `input`, que dispara a cada pixel. O request vem do `change`,
+  // quando o dedo solta.
+  arrastarPreco() {
+    this.ordenarRanges()
+    this.espelharNumeros()
     this.atualizarFill()
-    this.pagina = 1
-    this.aplicar()
   }
 
-  filtrarPromo() {
-    this.promoOnly = this.promoTarget.checked
-    this.pagina = 1
-    this.aplicar()
+  // Digitação nos campos numéricos: joga nos ranges e busca. `change` já é ao
+  // sair do campo, então aqui submeter direto é o comportamento certo.
+  precoPorNumero() {
+    const teto = Number(this.rangeMaxTarget.max)
+    this.rangeMinTarget.value = this.limitar(this.precoMinTarget.value, 0, teto)
+    this.rangeMaxTarget.value = this.limitar(this.precoMaxTarget.value, 0, teto)
+    this.ordenarRanges()
+    this.espelharNumeros()
+    this.atualizarFill()
+    this.submeterFiltros()
   }
 
-  limpar(valor, min, max) {
+  // Os dois thumbs ficam sobrepostos; sem isto o "mínimo" pode passar o "máximo"
+  // e a faixa vira negativa.
+  ordenarRanges() {
+    const lo = Number(this.rangeMinTarget.value)
+    const hi = Number(this.rangeMaxTarget.value)
+    if (lo > hi) {
+      this.rangeMinTarget.value = hi
+      this.rangeMaxTarget.value = lo
+    }
+  }
+
+  espelharNumeros() {
+    if (this.hasPrecoMinTarget) this.precoMinTarget.value = this.rangeMinTarget.value
+    if (this.hasPrecoMaxTarget) this.precoMaxTarget.value = this.rangeMaxTarget.value
+  }
+
+  limitar(valor, min, max) {
     const n = parseFloat(valor)
     if (Number.isNaN(n)) return min
     return Math.min(max, Math.max(min, n))
   }
 
   atualizarFill() {
-    if (!this.hasPrecoFillTarget || !this.hasTetoValue || this.tetoValue <= 0) return
-    const pct = (v) => (v / this.tetoValue) * 100
-    this.precoFillTarget.style.left = `${pct(this.pMin)}%`
-    this.precoFillTarget.style.right = `${100 - pct(this.pMax)}%`
-  }
-
-  limparFiltro() {
-    this.termo = ""
-    if (this.hasBuscaTarget) this.buscaTarget.value = ""
-    if (this.hasPromoTarget) this.promoTarget.checked = false
-    this.promoOnly = false
-    this.aplicarFaixa(0, this.hasTetoValue ? this.tetoValue : Infinity)
-    const todas = this.categoriaTargets.find((c) => c.dataset.cat === "")
-    if (todas) todas.click()
-  }
-
-  irPara(e) {
-    this.pagina = Number(e.currentTarget.dataset.pagina)
-    this.aplicar()
-  }
-
-  cards() {
-    return Array.from(this.gradeTarget.querySelectorAll(".produto-card"))
-  }
-
-  aplicar() {
-    const filtrados = this.cards().filter((c) => {
-      const preco = parseFloat(c.dataset.preco) || 0
-      return (
-        (this.cat === "" || c.dataset.categoria === this.cat) &&
-        (!this.termo || (c.dataset.nome || "").includes(this.termo)) &&
-        preco >= this.pMin &&
-        preco <= this.pMax &&
-        (!this.promoOnly || c.dataset.promo === "true")
-      )
-    })
-    const paginas = Math.max(1, Math.ceil(filtrados.length / this.porPaginaValue))
-    if (this.pagina > paginas) this.pagina = paginas
-
-    const inicio = (this.pagina - 1) * this.porPaginaValue
-    const visiveis = filtrados.slice(inicio, inicio + this.porPaginaValue)
-    this.cards().forEach((c) => (c.hidden = true))
-    visiveis.forEach((c) => (c.hidden = false))
-
-    if (this.hasVazioTarget) this.vazioTarget.hidden = filtrados.length > 0
-    this.renderPaginacao(paginas)
-  }
-
-  renderPaginacao(paginas) {
-    if (!this.hasPaginacaoTarget) return
-    this.paginacaoTarget.replaceChildren()
-    if (paginas <= 1) return
-
-    for (let p = 1; p <= paginas; p++) {
-      const btn = document.createElement("button")
-      btn.type = "button"
-      btn.className = "loja-pag"
-      if (p === this.pagina) btn.classList.add("active")
-      btn.dataset.pagina = String(p)
-      btn.dataset.action = "loja#irPara"
-      btn.textContent = String(p)
-      this.paginacaoTarget.appendChild(btn)
-    }
+    if (!this.hasPrecoFillTarget || !this.hasRangeMaxTarget) return
+    const teto = Number(this.rangeMaxTarget.max)
+    if (!teto) return
+    const pct = (v) => (Number(v) / teto) * 100
+    this.precoFillTarget.style.left = `${pct(this.rangeMinTarget.value)}%`
+    this.precoFillTarget.style.right = `${100 - pct(this.rangeMaxTarget.value)}%`
   }
 }

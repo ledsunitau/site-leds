@@ -264,9 +264,33 @@ class Emblema < ApplicationRecord
     user.recalcular_elo!
   end
 
+  # Reavaliação disparada por PAGEVIEW (perfil e catálogo de emblemas), no
+  # máximo uma vez por JANELA por usuário.
+  #
+  # POR QUE existe separado de avaliar!: aquele é a varredura autoritativa (o
+  # EmblemasJob da hora cheia) e não pode ser pulado. Este é o atalho de
+  # conveniência das telas — abrir o perfil três vezes seguidas repetia um COUNT
+  # por emblema com meta, mais as escritas de conceder!, dentro de um GET.
+  #
+  # A janela não atrasa quem acabou de bater a meta: a primeira visita depois do
+  # feito cai fora da janela e avalia. O que ela corta é a repetição.
+  #
+  # Mesmo padrão de cache de total_usuarios. Em teste o store é :null_store, então
+  # o write é no-op e isto se comporta exatamente como avaliar! — de propósito:
+  # nenhum teste existente muda de resultado por causa da janela.
+  JANELA_AVALIACAO = 5.minutes
+
+  def self.avaliar_recente!(user)
+    chave = "emblemas/avaliado/#{user.id}"
+    return if Rails.cache.read(chave)
+
+    Rails.cache.write(chave, true, expires_in: JANELA_AVALIACAO)
+    avaliar!(user)
+  end
+
   # Concede ao usuário todo emblema ÚNICO com meta que ele já bateu, e reavalia
   # o rank dos escalonáveis de métrica. Chamado pelo EmblemasJob (varredura
-  # horária) e sob demanda quando o próprio usuário abre suas telas de emblema.
+  # horária) e, via avaliar_recente!, quando o próprio usuário abre suas telas.
   def self.avaliar!(user)
     return unless Setting.ativo?("emblemas_ativos")
 

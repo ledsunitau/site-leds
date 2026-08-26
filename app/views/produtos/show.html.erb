@@ -16,19 +16,23 @@
       <span><%= @produto.nome %></span>
     </nav>
 
-    <% urls = @produto.fotos.any? ? @produto.fotos.map { |f| foto_url(f) } : [ produto_imagem_url(@produto) ] %>
+    <%# urls: :full — alimenta o controller da galeria, a foto principal e o
+        lightbox com zoom. thumbs: :card — as 3 miniaturas não precisam de 1200px. %>
+    <% fotos = @produto.fotos %>
+    <% urls = fotos.any? ? fotos.map { |f| foto_url(f, :full) } : [ produto_imagem_url(@produto) ] %>
+    <% thumbs = fotos.any? ? fotos.map { |f| foto_url(f, :card) } : urls %>
     <div class="produto-topo">
       <%# ---- Galeria: até 3 miniaturas + foto principal; "+N" e clique abrem o
           lightbox (carrossel com zoom) ---- %>
       <div class="produto-galeria" data-controller="galeria" data-galeria-fotos-value="<%= urls.to_json %>">
         <div class="galeria-thumbs">
-          <% urls.first(3).each_with_index do |url, i| %>
+          <% thumbs.first(3).each_with_index do |thumb, i| %>
             <% mais = (i == 2 && urls.size > 3) %>
             <button type="button" class="galeria-thumb <%= 'ativa' if i.zero? %> <%= 'tem-mais' if mais %>"
                     data-index="<%= i %>"
                     data-action="galeria#<%= mais ? 'abrir' : 'trocar' %>"
                     aria-label="<%= mais ? 'Ver todas as fotos' : "Foto #{i + 1}" %>">
-              <img src="<%= url %>" alt="" loading="lazy">
+              <img src="<%= thumb %>" alt="" loading="lazy" decoding="async" width="96" height="120">
               <% if mais %><span class="galeria-mais">+<%= urls.size - 3 %></span><% end %>
             </button>
           <% end %>
@@ -36,7 +40,9 @@
 
         <div class="galeria-main">
           <button type="button" class="galeria-abrir" data-action="galeria#abrir" aria-label="Ampliar foto">
-            <img src="<%= urls.first %>" alt="<%= @produto.nome %>" class="produto-img-main" data-galeria-target="main">
+            <%# LCP desta tela: fica eager de propósito, sem loading="lazy". %>
+            <img src="<%= urls.first %>" alt="<%= @produto.nome %>" class="produto-img-main"
+                 data-galeria-target="main" decoding="async" width="600" height="750">
             <span class="galeria-lupa" aria-hidden="true">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="7" /><line x1="16.5" y1="16.5" x2="21" y2="21" />

@@ -1,19 +1,19 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Página de Ações: filtro por tipo (chips) + busca por nome (lupa).
-// Tudo client-side sobre os cards já renderizados do banco.
+// Página de Ações: só a lupa e o debounce da busca.
+//
+// O filtro por tipo e a paginação são LINKS resolvidos no servidor (ver
+// acoes#index) — o Turbo troca o frame sozinho, sem JS nenhum. O que existia
+// aqui antes (aplicar/renderPaginacao sobre os cards já renderizados) filtrava
+// só o que estava na tela: buscar por algo fora da primeira leva devolvia
+// "nenhuma ação encontrada" com o item existindo no banco.
+const DEBOUNCE = 250
+
 export default class extends Controller {
-  static targets = ["chip", "card", "busca", "empty", "list", "end"]
+  static targets = ["busca", "form"]
 
-  connect() {
-    this.tipo = "todos"
-    this.termo = ""
-  }
-
-  filtrar(e) {
-    this.tipo = e.currentTarget.dataset.tipo
-    this.chipTargets.forEach((c) => c.classList.toggle("active", c === e.currentTarget))
-    this.aplicar()
+  disconnect() {
+    clearTimeout(this.timer)
   }
 
   toggleBusca() {
@@ -21,28 +21,23 @@ export default class extends Controller {
     input.hidden = !input.hidden
     if (!input.hidden) {
       input.focus()
-    } else {
+      return
+    }
+    // Fechar a lupa com termo digitado limpa a busca — e como o termo vem da
+    // URL, limpar exige ir ao servidor de novo.
+    if (input.value !== "") {
       input.value = ""
-      this.termo = ""
-      this.aplicar()
+      this.submeter()
     }
   }
 
+  // Debounce: sem ele cada tecla vira um request de frame.
   buscar() {
-    this.termo = this.buscaTarget.value.trim().toLowerCase()
-    this.aplicar()
+    clearTimeout(this.timer)
+    this.timer = setTimeout(() => this.submeter(), DEBOUNCE)
   }
 
-  aplicar() {
-    let visiveis = 0
-    this.cardTargets.forEach((card) => {
-      const okTipo = this.tipo === "todos" || card.dataset.tipo === this.tipo
-      const okNome = this.termo === "" || card.dataset.nome.includes(this.termo)
-      const mostra = okTipo && okNome
-      card.hidden = !mostra
-      if (mostra) visiveis++
-    })
-    this.emptyTarget.hidden = visiveis > 0
-    if (this.hasEndTarget) this.endTarget.hidden = visiveis === 0
+  submeter() {
+    this.formTarget.requestSubmit()
   }
 }
