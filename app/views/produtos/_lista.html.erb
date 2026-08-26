@@ -5,19 +5,23 @@
     SOLTAR), não no `input` — arrastar o slider com `input` dispararia um request
     por pixel. Categorias e páginas são links: o Turbo troca o frame e o Turbo 8
     ainda faz prefetch on hover. %>
-<turbo-frame id="produtos-lista" data-turbo-action="advance">
+<%# target="_top": link daqui navega a PÁGINA por padrão. O card do produto
+    tem três links para /produtos/:id e, sem isto, o frame os capturava — a
+    página do produto não contém <turbo-frame id="produtos-lista">, então o
+    Turbo escrevia "Content missing" no lugar do produto. %>
+<turbo-frame id="produtos-lista" target="_top" data-turbo-action="advance">
   <div class="loja-todos-layout">
     <aside class="loja-filtros">
       <div class="loja-filtros-head">
         <span>Filtros</span>
         <%# "Limpar" = a própria URL sem nenhum filtro. Era um método JS. %>
-        <a href="<%= todos_produtos_path %>" class="loja-clear">Limpar</a>
+        <a href="<%= todos_produtos_path %>" class="loja-clear" data-turbo-frame="produtos-lista">Limpar</a>
       </div>
 
       <span class="loja-filtros-titulo">Categorias</span>
       <ul class="loja-cat-lista">
         <li>
-          <a href="<%= url_com(cat: nil, pagina: nil) %>"
+          <a href="<%= url_com(cat: nil, pagina: nil) %>" data-turbo-frame="produtos-lista"
              class="categoria-item <%= 'active' if @cat.nil? %>">
             Todas <span class="cat-count"><%= @contagem_categoria.values.sum %></span>
           </a>
@@ -26,7 +30,7 @@
           <% qtd = @contagem_categoria[c.id].to_i %>
           <% next if qtd.zero? %>
           <li>
-            <a href="<%= url_com(cat: c.id, pagina: nil) %>"
+            <a href="<%= url_com(cat: c.id, pagina: nil) %>" data-turbo-frame="produtos-lista"
                class="categoria-item <%= 'active' if @cat == c.id %>">
               <%= c.nome %> <span class="cat-count"><%= qtd %></span>
             </a>
@@ -34,7 +38,8 @@
         <% end %>
       </ul>
 
-      <%= form_with url: request.path, method: :get, data: { loja_target: "filtros" } do %>
+      <%= form_with url: request.path, method: :get,
+                    data: { loja_target: "filtros", turbo_frame: "produtos-lista" } do %>
         <% request.query_parameters.except("preco_min", "preco_max", "promo", "pagina").each do |chave, valor| %>
           <%= hidden_field_tag chave, valor, id: nil %>
         <% end %>
@@ -84,7 +89,8 @@
       <% end %>
 
       <div class="loja-paginacao">
-        <%= render "shared/paginacao", pagina: @pagina, total: @total_paginas, classe: "loja-pag" %>
+        <%= render "shared/paginacao", pagina: @pagina, total: @total_paginas,
+                                       classe: "loja-pag", frame: "produtos-lista" %>
       </div>
     </div>
   </div>

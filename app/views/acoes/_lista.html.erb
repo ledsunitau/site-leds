@@ -5,11 +5,15 @@
     turbo-frame + data-turbo-action="advance": o Turbo troca só este pedaço e
     ainda assim empurra a URL para o histórico, então o filtro vira link
     compartilhável e o botão voltar desfaz. Antes, um F5 perdia o filtro. %>
-<turbo-frame id="acoes-lista" data-turbo-action="advance">
+<%# target="_top": link daqui navega a PÁGINA por padrão; só quem pede
+    explicitamente troca o frame. Hoje o card de ação não tem link de detalhe
+    (acoes#show é JSON), mas o dia em que tiver, sem isto ele responderia
+    "Content missing" — foi exatamente o que aconteceu em Novidades. %>
+<turbo-frame id="acoes-lista" target="_top" data-turbo-action="advance">
   <div class="acoes-toolbar" data-controller="acoes">
     <div class="chips">
       <% [ [ nil, "Todos" ], [ "Artigo", "Artigos" ], [ "Evento", "Eventos" ], [ "Projeto", "Projetos" ] ].each do |val, label| %>
-        <a href="<%= url_com(tipo: val, pagina: nil) %>"
+        <a href="<%= url_com(tipo: val, pagina: nil) %>" data-turbo-frame="acoes-lista"
            class="chip <%= 'active' if @tipo == val %>"><%= label %></a>
       <% end %>
 
@@ -20,7 +24,8 @@
           Os hidden carregam os outros filtros (tipo, membro) para a busca não
           zerá-los. `q` e `pagina` ficam de fora: um é o próprio input, o outro
           tem que voltar para a página 1 a cada busca nova. %>
-      <%= form_with url: request.path, method: :get, data: { acoes_target: "form" } do %>
+      <%= form_with url: request.path, method: :get,
+                    data: { acoes_target: "form", turbo_frame: "acoes-lista" } do %>
         <% request.query_parameters.except("q", "pagina").each do |chave, valor| %>
           <%= hidden_field_tag chave, valor, id: nil %>
         <% end %>
@@ -48,5 +53,6 @@
     <p class="acoes-end">Não há mais ações para carregar.</p>
   <% end %>
 
-  <%= render "shared/paginacao", pagina: @pagina, total: @total_paginas, classe: "acoes-pag" %>
+  <%= render "shared/paginacao", pagina: @pagina, total: @total_paginas,
+                                 classe: "acoes-pag", frame: "acoes-lista" %>
 </turbo-frame>
