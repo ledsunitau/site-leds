@@ -52,7 +52,10 @@ class User < ApplicationRecord
   SLOTS_DE_PINTURA = %i[emblema_nome_id emblema_halo_id].freeze
   # elo: degrau alcançado pelos pontos dos emblemas (ver recalcular_elo!)
   belongs_to :elo, optional: true
-  has_one_attached :foto
+  # :avatar cobre o maior uso real (anel do header a ~40px) em 2x.
+  has_one_attached :foto do |anexo|
+    anexo.variant :avatar, resize_to_limit: [ 96, 96 ], **ImagemValidavel::VARIANTE
+  end
 
   # Papel de ACESSO (autorização via Pundit). O cargo detalhado e histórico do
   # membro (presidente, diretor…) vive em mandatos — ver modelagem, Cluster 1.

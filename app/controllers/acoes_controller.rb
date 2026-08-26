@@ -9,6 +9,11 @@ class AcoesController < ApplicationController
 
   before_action :authenticate_user!, only: %i[create update]
 
+  POR_PAGINA = 24 # a grade tem 24 itens antes do pager aparecer
+  # Valores aceitos no chip de tipo. Lista fechada: `detalhe_type` vai direto pro
+  # where, então qualquer coisa fora daqui é descartada em vez de consultada.
+  TIPOS_FILTRO = %w[Projeto Evento Artigo].freeze
+
   def index
     authorize Acao
 
@@ -29,18 +34,31 @@ class AcoesController < ApplicationController
         render json: { acoes: acoes.map { |a| acao_json(a) } }
       end
 
-      # Página pública server-rendered: todas as publicadas; filtro/busca é no
-      # cliente (Stimulus). ?membro=ID vem do card do membro ("Mais ações") e
-      # restringe às ações daquele membro (RF-MEM). ponytail: N+1 nas assocs do
-      # detalhe (techs/membros/temas) — ok com poucas ações; pré-carrega por tipo
-      # se a lista crescer.
+      # Página pública server-rendered. Tipo (chips), busca e página são
+      # parâmetros de URL resolvidos AQUI — antes o servidor mandava a tabela
+      # inteira e o Stimulus escondia o resto, então buscar só achava o que já
+      # estava na tela. ?membro=ID vem do card do membro ("Mais ações") e
+      # restringe às ações daquele membro (RF-MEM).
       format.html do
         @membro_filtro = Member.find_by(id: params[:membro])
-        @acoes = if @membro_filtro
-          @membro_filtro.acoes_participadas.includes(:detalhe, thumbnail_attachment: :blob)
-        else
-          Acao.publicadas.includes(:detalhe, thumbnail_attachment: :blob).order(created_at: :desc)
-        end
+        base = @membro_filtro ? @membro_filtro.acoes_participadas : Acao.publicadas.order(created_at: :desc)
+
+        @tipo = TIPOS_FILTRO.include?(filtro(:tipo)) ? filtro(:tipo) : nil
+        @busca = filtro(:q)
+        escopo = base
+        escopo = escopo.where(detalhe_type: @tipo) if @tipo
+        escopo = buscar_por(escopo, :titulo)
+
+        @pagina = pagina_atual
+        @total_paginas = total_de_paginas(escopo, por_pagina: POR_PAGINA)
+        @acoes = paginar(escopo.includes(:detalhe, thumbnail_attachment: :blob),
+                         por_pagina: POR_PAGINA).to_a
+        preload_cards_de_acao(@acoes)
+
+        # Clique em chip/página é requisição de FRAME: renderiza só a lista. Sem
+        # isto o servidor montaria navbar, footer e page_bg a cada clique para o
+        # Turbo jogar tudo fora menos o frame. O helper também marca o Vary.
+        render_em_frame "acoes/lista"
       end
     end
   end
@@ -143,8 +161,37 @@ class AcoesController < ApplicationController
 
   private
 
+  # Foto que foto_de_membro resolve: a do Member, com a do User como fallback
+  # (Member#foto_para_card). As duas precisam vir, senão o fallback é que vira o N+1.
+  FOTO_DO_MEMBRO = { foto_attachment: :blob, user: { foto_attachment: :blob } }.freeze
+
+  # O que acoes/_card.html.erb toca DENTRO do detalhe, por tipo. O includes(:detalhe)
+  # do escopo carrega o detalhe polimórfico, mas nada abaixo dele — daí o N+1.
+  CARD_POR_TIPO = {
+    "Projeto" => { tecnologias: { icone_attachment: :blob }, membros: FOTO_DO_MEMBRO },
+    "Evento" => { membros: FOTO_DO_MEMBRO },
+    "Artigo" => { temas: { icone_attachment: :blob }, autores: { member: FOTO_DO_MEMBRO } }
+  }.freeze
+
+  # Preload dos cards da PÁGINA (participantes + ícones). Um Preloader por tipo:
+  # o detalhe é polimórfico, então não dá para pedir tudo numa associação só.
+  #
+  # Separado de preload_temas_dos_artigos de propósito: o JSON só toca
+  # Artigo#temas (ver os card_json dos models), e carregar membros/fotos lá seria
+  # trabalho jogado fora num endpoint que nunca os serializa.
+  def preload_cards_de_acao(acoes)
+    acoes.group_by(&:detalhe_type).each do |tipo, do_tipo|
+      associations = CARD_POR_TIPO[tipo] or next
+      detalhes = do_tipo.filter_map(&:detalhe)
+      next if detalhes.empty?
+
+      ActiveRecord::Associations::Preloader.new(records: detalhes, associations: associations).call
+    end
+  end
+
   # Cards de artigo mostram os ícones dos temas (RF-ACO-05): preload em lote
-  # para a listagem não fazer N+1 por artigo.
+  # para a listagem não fazer N+1 por artigo. Caminho JSON — o HTML usa
+  # preload_cards_de_acao, que é mais largo.
   def preload_temas_dos_artigos(acoes)
     artigos = acoes.select(&:artigo?).map(&:detalhe)
     return if artigos.empty?

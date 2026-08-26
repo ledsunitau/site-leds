@@ -24,7 +24,11 @@ class Parceiro < ApplicationRecord
   # Logo da vitrine/faixa (RF-PAR-01); sem ele, a landing cai num chip com o nome.
   # Aceita SVG (marca vetorial) além de raster — servido via <img>, então o SVG
   # não executa script. O upload vem do admin ao registrar o parceiro (futuro).
-  has_one_attached :logo
+  # A variante só vale para o raster: SVG não é variable?, então o FotoUrl cai no
+  # original — que é o certo, marca vetorial já escala sozinha e pesa pouco.
+  has_one_attached :logo do |anexo|
+    anexo.variant :card, resize_to_limit: [ 240, 120 ], **ImagemValidavel::VARIANTE
+  end
   valida_imagem :logo, tipos: ImagemValidavel::TIPOS + %w[image/svg+xml],
                        formatos: "SVG, JPEG, PNG ou WebP"
 

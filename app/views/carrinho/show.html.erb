@@ -16,7 +16,7 @@
         <div class="carrinho-itens">
           <% @itens.each do |item| %>
             <article class="carrinho-item">
-              <img src="<%= produto_imagem_url(item.produto) %>" alt="<%= item.produto.nome %>">
+              <img src="<%= produto_imagem_url(item.produto) %>" alt="<%= item.produto.nome %>" loading="lazy" decoding="async" width="72" height="90">
               <div class="carrinho-item-info">
                 <h3><%= link_to item.produto.nome, produto_path(item.produto) %></h3>
                 <% if item.variante %><span class="carrinho-item-var">Tamanho: <%= item.variante.nome %></span><% end %>

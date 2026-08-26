@@ -1,0 +1,50 @@
+<%# Toolbar + grid + pager de Novidades. Mesmo desenho de acoes/_lista: tudo
+    dentro do frame porque o chip ativo e o pager mudam junto com a lista.
+    O carrossel fica FORA, na index — ele é "as 3 mais recentes", não parte do
+    resultado filtrado. %>
+<turbo-frame id="novidades-lista" data-turbo-action="advance">
+  <div class="novidades-toolbar" data-controller="novidades">
+    <div class="chips">
+      <% [ [ nil, "Todos" ], [ "noticia", "Notícias" ], [ "blog", "Blog" ] ].each do |val, label| %>
+        <a href="<%= url_com(tipo: val, pagina: nil) %>"
+           class="chip <%= 'active' if @tipo == val %>"><%= label %></a>
+      <% end %>
+
+      <%= form_with url: request.path, method: :get, data: { novidades_target: "form" } do %>
+        <% request.query_parameters.except("q", "pagina").each do |chave, valor| %>
+          <%= hidden_field_tag chave, valor, id: nil %>
+        <% end %>
+        <button type="button" class="chip chip-lupa" aria-label="Pesquisar" data-action="novidades#toggleBusca">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7" /><line x1="16.5" y1="16.5" x2="21" y2="21" />
+          </svg>
+        </button>
+        <input type="search" name="q" value="<%= @busca %>" class="acoes-busca"
+               placeholder="Pesquisar por título…" <%= "hidden" if @busca.blank? %>
+               data-novidades-target="busca" data-action="input->novidades#buscar">
+      <% end %>
+    </div>
+  </div>
+
+  <div class="novidades-grid">
+    <% @posts.each do |p| %>
+      <%= render "posts/card", post: p %>
+    <% end %>
+  </div>
+
+  <% if @posts.empty? %>
+    <%# Com filtro/busca ativos é "não achou"; sem eles, é "ainda não há nada". %>
+    <% if @tipo || @busca.present? %>
+      <p class="acoes-empty">Nenhuma novidade encontrada.</p>
+    <% else %>
+      <div class="empty-state" style="margin-top:24px">
+        <span class="empty-mono">// nada por aqui ainda</span>
+        <p>As notícias e posts do blog aparecem aqui assim que forem publicados.</p>
+      </div>
+    <% end %>
+  <% end %>
+
+  <div class="novidades-paginacao">
+    <%= render "shared/paginacao", pagina: @pagina, total: @total_paginas, classe: "novidades-pag" %>
+  </div>
+</turbo-frame>

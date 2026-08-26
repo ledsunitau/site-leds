@@ -2,12 +2,14 @@ module LojaHelper
   # Imagem do produto: usa o anexo se houver; senão o placeholder do código
   # (mesma ideia do card_image_url, mas Produto tem `imagem`, não `thumbnail`).
   def produto_imagem_url(produto)
-    FotoUrl.para(produto.imagem) || image_path("card-placeholder.svg")
+    FotoUrl.para(produto.imagem, :card) || image_path("card-placeholder.svg")
   end
 
-  # URL de uma foto da galeria (blob/attachment). Fallback no placeholder.
-  def foto_url(foto)
-    foto ? rails_blob_path(foto, only_path: true) : image_path("card-placeholder.svg")
+  # URL de uma foto da galeria (Attached::One da principal ou Attachment das
+  # extras — ver Produto#fotos). :card nas miniaturas, :full na foto grande e no
+  # lightbox, que é onde a pessoa amplia e o pixel importa.
+  def foto_url(foto, variante = :full)
+    FotoUrl.para(foto, variante) || image_path("card-placeholder.svg")
   end
 
   # Preço em reais (o site não tem locale pt-BR configurado, então formato explícito).

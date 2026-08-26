@@ -41,7 +41,8 @@
             <td>
               <span class="painel-foto">
                 <% if parceiro.logo.attached? %>
-                  <img src="<%= FotoUrl.para(parceiro.logo) %>" alt="<%= parceiro.nome %>">
+                  <img src="<%= FotoUrl.para(parceiro.logo, :card) %>" alt="<%= parceiro.nome %>"
+                       loading="lazy" decoding="async" width="80" height="40">
                 <% else %>
                   <span class="avatar-initials"><%= iniciais(parceiro.nome) %></span>
                 <% end %>

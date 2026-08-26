@@ -50,7 +50,7 @@
       <tbody>
         <% @produtos.each do |produto| %>
           <tr>
-            <td><span class="painel-foto"><img src="<%= produto_imagem_url(produto) %>" alt=""></span></td>
+            <td><span class="painel-foto"><img src="<%= produto_imagem_url(produto) %>" alt="" loading="lazy" decoding="async" width="56" height="70"></span></td>
             <td>
               <%= produto.nome %>
               <% if produto.destaque? %><span class="painel-tag-mono">DESTAQUE</span><% end %>

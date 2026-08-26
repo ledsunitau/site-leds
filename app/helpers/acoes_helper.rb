@@ -53,7 +53,7 @@ module AcoesHelper
   end
 
   def foto_de_membro(member)
-    FotoUrl.para(member.foto_para_card) || image_path("avatar-default.svg")
+    FotoUrl.para(member.foto_para_card, :avatar) || image_path("avatar-default.svg")
   end
 
   # Ícone de tecnologia/tema: ícone salvo no banco > ícone empacotado pelo nome

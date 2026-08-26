@@ -4,6 +4,8 @@
 class PostsController < ApplicationController
   before_action :authenticate_user!, except: %i[index show ultimas]
 
+  POR_PAGINA = 6 # mesmo número que a paginação client-side mostrava
+
   def index
     authorize Post
 
@@ -23,11 +25,32 @@ class PostsController < ApplicationController
         render json: { posts: paginar(posts).map { |p| post_json(p) } }
       end
 
-      # Página pública: todos os publicados (filtro por tipo + busca + paginação
-      # são no cliente/Stimulus). Carrossel = 3 mais recentes.
+      # Página pública. Tipo (chips), busca e página são parâmetros de URL
+      # resolvidos AQUI — antes vinha a tabela inteira e o Stimulus escondia o
+      # resto, então a busca só enxergava o que já estava na tela.
+      #
+      # O carrossel é consulta PRÓPRIA, não @posts.first(3): ele é "as 3 mais
+      # recentes", não "as 3 primeiras do filtro atual" — senão filtrar por Blog
+      # trocaria o carrossel junto, e ele nem está dentro do frame.
       format.html do
-        @posts = base_scope.publicados.order(published_at: :desc).to_a
-        @carrossel = @posts.first(3)
+        publicados = base_scope.publicados.order(published_at: :desc)
+
+        @tipo = Post::TIPOS.include?(filtro(:tipo)) ? filtro(:tipo) : nil
+        @busca = filtro(:q)
+        escopo = publicados
+        escopo = escopo.where(tipo: @tipo) if @tipo
+        # caller E titulo: o card mostra `caller` quando existe (ver posts/_card),
+        # então buscar só em titulo erraria justamente o texto que está na tela.
+        escopo = buscar_por(escopo, :caller, :titulo)
+
+        @pagina = pagina_atual
+        @total_paginas = total_de_paginas(escopo, por_pagina: POR_PAGINA)
+        @posts = paginar(escopo, por_pagina: POR_PAGINA).to_a
+
+        # Só na carga completa: o frame não redesenha o carrossel.
+        @carrossel = turbo_frame_request? ? [] : publicados.limit(3).to_a
+
+        render_em_frame "posts/lista"
       end
     end
   end

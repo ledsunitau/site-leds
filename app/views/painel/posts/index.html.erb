@@ -49,7 +49,7 @@
       <tbody>
         <% @posts.each do |post| %>
           <tr>
-            <td><span class="painel-foto"><img src="<%= card_image_url(post) %>" alt=""></span></td>
+            <td><span class="painel-foto"><img src="<%= card_image_url(post) %>" alt="" loading="lazy" decoding="async" width="56" height="42"></span></td>
             <td>
               <%= post.titulo %>
               <% if post.aprovador %>

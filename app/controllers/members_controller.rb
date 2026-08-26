@@ -19,6 +19,10 @@ class MembersController < ApplicationController
         @grafo = MembrosGrafo.grafo(gestao_vigente)
         @geneograma = MembrosGrafo.geneograma
         @membros = membros_da_pagina # cards: vigentes (por cargo) + ex-membros
+        # Em lote: o card lia member.acoes_participadas, que custa 4 consultas
+        # por membro. Não paginamos esta tela (os dois grafos precisam de todo
+        # mundo de qualquer jeito), então o N+1 era o custo real dela.
+        @titulos_de_acoes = Member.titulos_de_acoes(@membros.map { |i| i[:member] })
       end
     end
   end

@@ -4,8 +4,10 @@
     do painel ganham o efeito de uma vez só. %>
 <% anel = anel_do_emblema(user) %>
 <% if user.foto.attached? %>
+  <%# eager: está na navbar/topbar, acima da dobra em toda página. %>
   <img class="avatar-img <%= anel[:class] %>" style="<%= anel[:style] %>"
-       src="<%= FotoUrl.para(user.foto) %>" alt="<%= user.name %>">
+       src="<%= FotoUrl.para(user.foto, :avatar) %>" alt="<%= user.name %>"
+       decoding="async" width="48" height="48">
 <% else %>
   <span class="avatar-initials <%= anel[:class] %>" style="<%= anel[:style] %>"><%= iniciais(user.name) %></span>
 <% end %>

@@ -3250,6 +3250,13 @@ CREATE INDEX index_acoes_on_status ON public.acoes USING btree (status);
 
 
 --
+-- Name: index_acoes_on_status_and_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_acoes_on_status_and_created_at ON public.acoes USING btree (status, created_at DESC);
+
+
+--
 -- Name: index_action_text_rich_texts_uniqueness; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3978,6 +3985,13 @@ CREATE INDEX index_posts_on_status ON public.posts USING btree (status);
 
 
 --
+-- Name: index_posts_on_status_and_published_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_posts_on_status_and_published_at ON public.posts USING btree (status, published_at DESC);
+
+
+--
 -- Name: index_posts_on_tipo; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4017,6 +4031,13 @@ CREATE INDEX index_produtos_on_modo_venda ON public.produtos USING btree (modo_v
 --
 
 CREATE INDEX index_produtos_on_status ON public.produtos USING btree (status);
+
+
+--
+-- Name: index_produtos_on_status_and_nome; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_produtos_on_status_and_nome ON public.produtos USING btree (status, nome);
 
 
 --
@@ -4850,6 +4871,7 @@ ALTER TABLE ONLY public.itens_pedido
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260826160000'),
 ('20260826140000'),
 ('20260826120000'),
 ('20260826000000'),

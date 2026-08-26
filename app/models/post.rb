@@ -24,7 +24,9 @@ class Post < ApplicationRecord
   has_many :comentarios, dependent: :destroy
 
   has_rich_text :corpo
-  has_one_attached :thumbnail
+  has_one_attached :thumbnail do |anexo|
+    anexo.variant :card, resize_to_limit: [ 640, 480 ], **ImagemValidavel::VARIANTE
+  end
   valida_imagem :thumbnail
 
   TIPOS = %w[noticia blog].freeze

@@ -1,0 +1,46 @@
+<%# Pager compartilhado (Ações, Novidades, Loja). Locals:
+      pagina  — página atual (Integer)
+      total   — total de páginas (Integer)
+      classe  — classe CSS do botão, para cada página manter o visual que já tinha
+                ("novidades-pag", "loja-pag"…)
+
+    Some sozinho quando só há uma página — que é o caso no volume atual, então a
+    paginação é invisível até a lista realmente crescer.
+
+    São <a>, não <button>: link dentro de turbo-frame é trocado pelo Turbo sem
+    recarregar a página, ganha prefetch on hover de graça (Turbo 8) e continua
+    funcionando com JS desligado. O JS que desenhava isto no cliente foi apagado.
+
+    Janela de 7 páginas em volta da atual: com 40 páginas, 40 botões estouram a
+    largura da tela — o mesmo motivo do teto em painel_contador. %>
+<% return if total.to_i <= 1 %>
+
+<% janela = 3 %>
+<% de = [ pagina - janela, 1 ].max %>
+<% ate = [ de + (janela * 2), total ].min %>
+<% de = [ ate - (janela * 2), 1 ].max %>
+
+<nav class="<%= classe %>-nav" aria-label="Paginação">
+  <% if pagina > 1 %>
+    <a href="<%= url_com(pagina: pagina - 1) %>" class="<%= classe %>" rel="prev" aria-label="Página anterior">‹</a>
+  <% end %>
+
+  <% if de > 1 %>
+    <a href="<%= url_com(pagina: 1) %>" class="<%= classe %>">1</a>
+    <% if de > 2 %><span class="<%= classe %>-gap">…</span><% end %>
+  <% end %>
+
+  <% (de..ate).each do |p| %>
+    <a href="<%= url_com(pagina: p) %>" class="<%= classe %> <%= 'active' if p == pagina %>"
+       aria-current="<%= 'page' if p == pagina %>"><%= p %></a>
+  <% end %>
+
+  <% if ate < total %>
+    <% if ate < total - 1 %><span class="<%= classe %>-gap">…</span><% end %>
+    <a href="<%= url_com(pagina: total) %>" class="<%= classe %>"><%= total %></a>
+  <% end %>
+
+  <% if pagina < total %>
+    <a href="<%= url_com(pagina: pagina + 1) %>" class="<%= classe %>" rel="next" aria-label="Próxima página">›</a>
+  <% end %>
+</nav>
