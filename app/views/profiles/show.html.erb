@@ -31,8 +31,9 @@
 
     <%# ---- Abas ---- %>
     <nav class="perfil-tabs" role="tablist">
-      <% [["informacoes", "Informações"], ["emblemas", "Emblemas"], ["projetos", "Projetos"], ["ideias", "Ideias"],
-          ["novidades", "Novidades"], ["loja", "Loja"], ["notificacoes", "Notificações"]].each_with_index do |(vista, label), i| %>
+      <% [["informacoes", "Informações"], ["emblemas", "Emblemas"], ["customizacao", "Customização"],
+          ["projetos", "Projetos"], ["ideias", "Ideias"], ["novidades", "Novidades"],
+          ["loja", "Loja"], ["notificacoes", "Notificações"]].each_with_index do |(vista, label), i| %>
         <button type="button" class="perfil-tab <%= 'active' if i.zero? %>" data-vista="<%= vista %>"
                 data-perfil-target="tab" data-action="perfil#mostrar">
           <%= label %>
@@ -45,6 +46,7 @@
 
     <div class="perfil-panel" data-perfil-target="panel" data-vista="informacoes"><%= render "profiles/info" %></div>
     <div class="perfil-panel" data-perfil-target="panel" data-vista="emblemas" hidden><%= render "profiles/emblemas" %></div>
+    <div class="perfil-panel" data-perfil-target="panel" data-vista="customizacao" hidden><%= render "profiles/customizacao" %></div>
     <div class="perfil-panel" data-perfil-target="panel" data-vista="projetos" hidden><%= render "profiles/projetos" %></div>
     <div class="perfil-panel" data-perfil-target="panel" data-vista="ideias" hidden><%= render "profiles/ideias" %></div>
     <div class="perfil-panel" data-perfil-target="panel" data-vista="novidades" hidden><%= render "profiles/novidades" %></div>

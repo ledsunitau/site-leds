@@ -61,9 +61,50 @@
     </div>
   </section>
 
-  <%# ================= 2. Tipo — dois cartões, não um select ================= %>
+  <%# ================= 2. Cosmético exclusivo =============================== %>
   <section class="painel-form-secao">
-    <h4 class="painel-sub"><span class="passo">2</span> Tipo</h4>
+    <h4 class="painel-sub"><span class="passo">2</span> Cor exclusiva</h4>
+    <p class="painel-campo-dica" style="margin-bottom:14px">
+      A pintura que quem desbloquear este emblema pode <strong>vestir</strong> no nome e no anel
+      do avatar. É <strong>exclusiva deste emblema</strong>: o banco recusa duas cores iguais em
+      emblemas diferentes. Deixe em branco para o emblema não dar cor nenhuma.
+    </p>
+
+    <div class="cosmetico-editor">
+      <div class="cosmetico-campos">
+        <label class="painel-campo">
+          <span>Cores <em>(2 ou 3 hexadecimais, separadas por vírgula)</em></span>
+          <%= f.text_field :cosmetico_gradiente, class: "painel-input painel-mono",
+                placeholder: "#FF6B00,#FFD200", data: { emblema_target: "gradiente",
+                action: "input->emblema#pintarCosmetico" } %>
+        </label>
+        <div class="painel-form-grid">
+          <label class="painel-campo">
+            <span>Movimento</span>
+            <%= f.select :cosmetico_movimento,
+                  Emblema::MOVIMENTOS.map { |m| [ Emblema::MOVIMENTO_LABEL[m], m ] }, {},
+                  class: "painel-input", data: { emblema_target: "movimento",
+                  action: "change->emblema#pintarCosmetico" } %>
+          </label>
+          <label class="painel-campo">
+            <span>Duração <em>(segundos)</em></span>
+            <%= f.number_field :cosmetico_velocidade, min: 1, max: 30, class: "painel-input compacto",
+                  data: { emblema_target: "velocidade", action: "input->emblema#pintarCosmetico" } %>
+          </label>
+        </div>
+      </div>
+
+      <div class="cosmetico-previa">
+        <span class="painel-nav-title">Prévia</span>
+        <span class="cosmetico-amostra" data-emblema-target="amostra">Nome de exemplo</span>
+        <span class="cosmetico-anel" data-emblema-target="anel">LD</span>
+      </div>
+    </div>
+  </section>
+
+  <%# ================= 3. Tipo — dois cartões, não um select ================= %>
+  <section class="painel-form-secao">
+    <h4 class="painel-sub"><span class="passo">3</span> Tipo</h4>
 
     <div class="emblema-tipos">
       <% [ [ "unico", "Único", "Você tem ou não tem.", "Ex.: “Fundador honorário”, “Comprador pioneiro”." ],
@@ -81,9 +122,9 @@
     </div>
   </section>
 
-  <%# ================= 3. Como se ganha ====================================== %>
+  <%# ================= 4. Como se ganha ====================================== %>
   <section class="painel-form-secao">
-    <h4 class="painel-sub"><span class="passo">3</span> Como se ganha</h4>
+    <h4 class="painel-sub"><span class="passo">4</span> Como se ganha</h4>
 
     <label class="painel-campo">
       <span>Critério automático</span>
@@ -124,8 +165,12 @@
 
   <%# ================= 4. Visibilidade ======================================= %>
   <section class="painel-form-secao">
-    <h4 class="painel-sub"><span class="passo">4</span> Visibilidade</h4>
+    <h4 class="painel-sub"><span class="passo">5</span> Visibilidade</h4>
 
+    <label class="painel-check">
+      <%= f.check_box :discord_sincronizar %>
+      <span>Espelhar no Discord <em>(vira um cargo no servidor — o id é criado em Gestão → Discord)</em></span>
+    </label>
     <label class="painel-check">
       <%= f.check_box :exclusivo %>
       <span>Exclusivo <em>(fica escondido do catálogo até a pessoa desbloquear — emblema-surpresa)</em></span>

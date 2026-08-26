@@ -84,6 +84,13 @@ class Rack::Attack
     req.ip if req.post? && normalized_path(req) == "/checkout"
   end
 
+  # Sincronizar emblemas com o Discord (RF-EMB): cada clique vira uma rajada de
+  # chamadas à API do Discord, que tem cota própria. Teto baixo — é uma ação de
+  # conferência, ninguém precisa dela de minuto em minuto.
+  throttle("discord_sync/ip", limit: 6, period: 1.hour) do |req|
+    req.ip if req.post? && normalized_path(req) == "/emblemas/sincronizar_discord"
+  end
+
   # Resgate de link de emblema (RF-EMB): é GET, mas ESCREVE (concede o emblema)
   # e o token é o único segredo. Sem teto, dá para varrer tokens à força bruta.
   throttle("emblema_convites/ip", limit: 20, period: 1.hour) do |req|

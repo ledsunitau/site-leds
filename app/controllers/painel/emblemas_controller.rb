@@ -120,8 +120,10 @@ class Painel::EmblemasController < Painel::BaseController
 
   def emblema_params
     params.expect(emblema: [ :nome, :descricao, :icone_svg, :cor, :efeito,
-                             :criterio, :meta, :exclusivo, :discord_role_id, :ativo,
-                             :tipo, :peso, :limite_donos, :produto_id ])
+                             :criterio, :meta, :exclusivo, :ativo,
+                             :tipo, :peso, :limite_donos, :produto_id,
+                             :cosmetico_gradiente, :cosmetico_movimento, :cosmetico_velocidade,
+                             :discord_sincronizar ])
           .tap do |limpos|
             # select vazio = "sem critério"/"sem produto": sem isto, "" cairia na
             # validação de inclusão em vez de virar "só de concessão"

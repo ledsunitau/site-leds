@@ -30,7 +30,7 @@ class Painel::EmblemaNiveisController < Painel::BaseController
   end
 
   def nivel_params
-    params.expect(emblema_nivel: [ :rank_id, :limiar, :discord_role_id ])
+    params.expect(emblema_nivel: [ :rank_id, :limiar, :discord_sincronizar ])
   end
 
   # Reaplica o rank de quem tem este emblema com os limiares novos. Escopo

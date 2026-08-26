@@ -30,7 +30,12 @@
       <%# Logado: avatar da conta. Deslogado: nada — o acesso é pelo "Participe
           da comunidade" na home. %>
       <% if user_signed_in? %>
-        <button type="button" class="account-avatar" data-action="drawer#open"
+        <%# o anel giratório do header é desenhado pelo ::before DESTE botão, não
+            pelo avatar. Com halo escolhido, é ele que troca de cor — senão
+            ficariam dois anéis, o padrão por fora e o escolhido por dentro. %>
+        <% halo = halo_do_header(current_user) %>
+        <button type="button" class="account-avatar <%= halo[:class] %>"
+                style="<%= halo[:style] %>" data-action="drawer#open"
                 aria-label="Minha conta" aria-haspopup="dialog">
           <%= render "shared/avatar", user: current_user %>
         </button>

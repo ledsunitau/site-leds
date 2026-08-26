@@ -8,7 +8,8 @@ class PerfisPublicosController < ApplicationController
   before_action :authenticate_user!
 
   def show
-    @usuario = User.includes(:emblema_destaque, :emblema_secundario, :member, :elo,
+    @usuario = User.includes(:emblema_destaque, :emblema_secundario, :emblema_nome, :emblema_halo,
+                             :member, :elo,
                              foto_attachment: :blob).find(params[:id])
     authorize @usuario, :show?
 

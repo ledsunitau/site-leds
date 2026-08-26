@@ -154,9 +154,9 @@ class PostsController < ApplicationController
   end
 
   def base_scope
-    # emblema_destaque do autor: os cards pintam o nome com a cor dele (RF-EMB),
-    # e sem o preload seria uma consulta por card
-    Post.includes(thumbnail_attachment: :blob, autor: :emblema_destaque)
+    # emblema_nome do autor: os cards pintam o nome com a pintura que ele veste
+    # (RF-EMB), e sem o preload seria uma consulta por card
+    Post.includes(thumbnail_attachment: :blob, autor: :emblema_nome)
   end
 
   # sem a coluna object (snapshot completo por linha, nunca lida aqui):

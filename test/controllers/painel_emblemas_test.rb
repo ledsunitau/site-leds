@@ -251,4 +251,53 @@ class PainelEmblemasTest < ActionDispatch::IntegrationTest
 
     assert_match(/teto de 2/i, flash[:alert])
   end
+
+  # ------------------------------------------------------------- Cosmético
+
+  test "salva a cor exclusiva pelo painel" do
+    sign_in users(:diretor)
+    emblema = emblemas(:aposentado) # não tem cosmético nas fixtures
+
+    patch painel_emblema_path(emblema), params: { emblema: {
+      nome: emblema.nome, icone_svg: SVG_OK, cor: "#00C55B", efeito: "nenhum",
+      tipo: "unico", peso: "1", ativo: "1",
+      cosmetico_gradiente: "#ff6b00,#ffd200", cosmetico_movimento: "fluxo",
+      cosmetico_velocidade: "7"
+    } }
+
+    emblema.reload
+    assert_equal "#FF6B00,#FFD200", emblema.cosmetico_gradiente, "a cor tem de ser gravada"
+    assert_equal "fluxo", emblema.cosmetico_movimento
+    assert_equal 7, emblema.cosmetico_velocidade
+    assert emblema.cosmetico?
+  end
+
+  test "apagar a cor grava NULL, não string vazia" do
+    sign_in users(:diretor)
+    emblema = emblemas(:veterano) # tem cosmético
+
+    patch painel_emblema_path(emblema), params: { emblema: {
+      nome: emblema.nome, icone_svg: SVG_OK, cor: emblema.cor, efeito: "nenhum",
+      tipo: "unico", peso: "1", ativo: "1", cosmetico_gradiente: "",
+      cosmetico_movimento: "parado", cosmetico_velocidade: "4"
+    } }
+
+    # "" passaria pelo índice parcial (WHERE ... IS NOT NULL) como se fosse um
+    # valor, e o SEGUNDO emblema sem cor colidiria com o primeiro
+    assert_nil emblema.reload.cosmetico_gradiente
+    outro = emblemas(:primeira_novidade)
+    assert outro.update(cosmetico_gradiente: ""), "dois emblemas sem cor têm de conviver"
+    assert_nil outro.reload.cosmetico_gradiente
+  end
+
+  test "a cor exclusiva salva vira opção de nome e halo para quem tem o emblema" do
+    emblemas(:aposentado).update!(cosmetico_gradiente: "#FF6B00,#FFD200", ativo: true)
+    emblemas(:aposentado).conceder!(users(:ana), origem: "concessao")
+
+    sign_in users(:ana)
+    get profile_path
+
+    assert_select "input[name=?][value=?]", "user[emblema_nome_id]", emblemas(:aposentado).id.to_s
+    assert_select "input[name=?][value=?]", "user[emblema_halo_id]", emblemas(:aposentado).id.to_s
+  end
 end

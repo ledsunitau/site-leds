@@ -925,6 +925,21 @@ h1, h2, h3, p { margin: 0; }
 }
 .account-avatar:hover::before { opacity: 1; }
 @keyframes avatar-ring { to { transform: rotate(360deg); } }
+
+/* Com halo escolhido, o anel do header TROCA de cor em vez de ganhar um
+   segundo por dentro: o gradiente do emblema entra no lugar do cônico padrão,
+   e a rotação continua sendo a assinatura do header. O anel do próprio avatar
+   sai, senão ficariam dois. */
+.account-avatar.tem-halo::before {
+  /* conic, não o linear pronto: é o cônico que faz o anel girar liso —
+     um linear girando mostraria o eixo do gradiente rodando. */
+  background: conic-gradient(from 0deg, var(--emblema-cores));
+}
+.account-avatar.tem-halo .avatar-anel {
+  background-image: none;
+  border: none; /* sem a borda, o avatar não encolhe ao equipar um halo */
+  box-shadow: 0 0 0 2px var(--surface-page); /* devolve o vão entre avatar e anel */
+}
 .avatar-img, .avatar-initials {
   position: relative; z-index: 1; width: 38px; height: 38px; border-radius: 50%;
   object-fit: cover; display: grid; place-items: center;
@@ -3003,33 +3018,76 @@ a.painel-resumo.ativo { box-shadow: inset 0 0 0 1px var(--r-cor); }
 .emblema-fx-arco_iris { animation: emblema-arco 5s linear infinite; }
 .emblema-fx-pulso  { animation: emblema-pulso 2.2s ease-in-out infinite; }
 
-/* ---- Anel do avatar (shared/_avatar) ----
-   outline, não box-shadow: o box-shadow do avatar já serve de borda de
-   contraste e tem regras mais específicas por contexto (.perfil-avatar,
-   .drawer-avatar) que venceriam esta. O outline acompanha o border-radius. */
-.avatar-anel { outline: 2px solid var(--emblema-cor); outline-offset: 2px; }
+/* ================= COSMÉTICO ==============================================
+   A pintura exclusiva que a pessoa desbloqueia com o emblema e escolhe vestir.
+   Duas variáveis vêm inline do helper: --emblema-grad (o gradiente do emblema,
+   único no banco) e --emblema-vel (a duração). O movimento é uma classe de uma
+   lista fechada, porque ele é só o MOTOR — quem faz a pintura ser exclusiva é
+   o gradiente, que é infinito.
 
-@keyframes anel-arco {
-  0%   { outline-color: var(--leds-red); }
-  33%  { outline-color: var(--leds-green); }
-  66%  { outline-color: var(--leds-blue); }
-  100% { outline-color: var(--leds-red); }
+   POR QUE 200% E 200%, e não outro par: com background-size S (fração do
+   elemento), `background-position: P%` desloca P × (1 − S) × largura. Para o
+   laço fechar sem emenda o deslocamento tem de ser UM ladrilho inteiro (S ×
+   largura), o que exige P = S/(S−1). Em S=2 dá P=200% — números redondos.
+   Com os 250% × 250% que estavam aqui o passo era 1,5 ladrilho, e o gradiente
+   saltava de cor a cada volta: era a "travada" ao reiniciar.
+   (O gradiente também termina na cor em que começa — ver Emblema#cosmetico_css
+   —, então a emenda entre ladrilhos é invisível.) */
+
+/* ---- Nome ---- */
+.nome-emblema {
+  background-image: var(--emblema-grad);
+  background-size: 200% 100%;
+  background-position: 0% 50%;
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent;
+  /* o Safari precisa disto para não pintar o texto por cima do recorte */
+  -webkit-text-fill-color: transparent;
 }
-@keyframes anel-brilho { 0%, 100% { outline-color: var(--emblema-cor); } 50% { outline-color: #fff; } }
-@keyframes anel-pulso { 0%, 100% { outline-offset: 2px; } 50% { outline-offset: 5px; } }
 
-.avatar-fx-brilho { animation: anel-brilho 2.6s ease-in-out infinite; }
-.avatar-fx-neon   { filter: drop-shadow(0 0 5px var(--emblema-cor)); }
-.avatar-fx-arco_iris { animation: anel-arco 5s linear infinite; }
-.avatar-fx-pulso  { animation: anel-pulso 2.2s ease-in-out infinite; }
+/* ---- Anel do avatar ----
+   Borda transparente + duas camadas de fundo: a de baixo (sólida, recortada no
+   padding-box) devolve o fundo do avatar, a de cima (o gradiente, no
+   border-box) sobra só na faixa da borda. É como se faz anel em gradiente sem
+   elemento extra — outline e box-shadow não aceitam gradiente. */
+.avatar-anel {
+  border: 2px solid transparent;
+  background-image: linear-gradient(var(--surface-card-alt), var(--surface-card-alt)), var(--emblema-grad);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  background-size: auto, 200% 100%;
+  background-position: 0% 50%;
+}
+/* Duas classes de propósito: .perfil-avatar .avatar-img (0,2,0) também define
+   box-shadow, e um seletor de uma classe perderia — o anel ficaria com um aro
+   escuro por fora só naquela tela. O anel SUBSTITUI a borda de contraste. */
+.avatar-img.avatar-anel, .avatar-initials.avatar-anel { box-shadow: none; }
+
+/* ---- Movimentos (compartilhados por nome e anel) ----
+   Todos LINEAR e de ponta a ponta em um ladrilho: qualquer easing zeraria a
+   velocidade na virada do laço, e é isso que se lê como travada. O que
+   diferencia varredura de fluxo é a onda de brilho que viaja junto, não o
+   ritmo do deslocamento. */
+@keyframes cosm-fluxo { to { background-position: 200% 50%; } }
+@keyframes cosm-varredura {
+  0%   { background-position: 0% 50%;   filter: brightness(1); }
+  50%  { filter: brightness(1.4) saturate(1.15); }
+  100% { background-position: 200% 50%; filter: brightness(1); }
+}
+@keyframes cosm-pulso { 0%, 100% { filter: none; } 50% { filter: brightness(1.45) saturate(1.25); } }
+
+.cosm-fluxo { animation: cosm-fluxo var(--emblema-vel, 4s) linear infinite; }
+.cosm-varredura { animation: cosm-varredura var(--emblema-vel, 4s) linear infinite; }
+.cosm-pulso { animation: cosm-pulso var(--emblema-vel, 4s) ease-in-out infinite; }
+/* Parado mostra o gradiente INTEIRO: os 200% existem só para dar percurso à
+   animação, e sem movimento eles fariam ver metade das cores. */
+.cosm-parado { animation: none; background-size: 100% 100%; }
+.avatar-anel.cosm-parado { background-size: auto, 100% 100%; }
 
 /* Movimento aqui é decoração: a cor e a forma já dizem tudo. */
 @media (prefers-reduced-motion: reduce) {
-  [class*="emblema-fx-"], [class*="avatar-fx-"] { animation: none !important; }
+  [class*="emblema-fx-"], [class*="cosm-"] { animation: none !important; }
 }
-
-/* ---- Nome pintado pelo emblema em destaque ---- */
-.nome-emblema { color: var(--emblema-cor); }
 
 /* ---- Card ---- */
 /* grid-auto-rows: 1fr iguala TODAS as linhas pela mais alta — sem isso cada
@@ -3410,18 +3468,334 @@ a.painel-resumo.ativo { box-shadow: inset 0 0 0 1px var(--r-cor); }
 .nivel-degrau:hover .painel-mini, .nivel-degrau:focus-within .painel-mini { opacity: 1; }
 
 /* ---- Aba "Meus emblemas": o par de selects ---- */
-.emblema-equipar {
-  padding: 18px 20px; margin-bottom: 24px;
-  background: var(--surface-card-alt); border-radius: var(--radius-card);
-  box-shadow: inset 0 0 0 1px var(--border-hair);
-}
-.emblema-equipar-campos { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
-.emblema-equipar-campos .auth-field { margin-bottom: 0; flex: 1; min-width: 190px; }
-.emblema-equipar-campos .btn { flex: 0 0 auto; }
 
 @media (max-width: 760px) {
   .emblema-tipos { grid-template-columns: 1fr; }
   .emblema-resumo { flex-direction: column; align-items: flex-start; }
   .emblema-resumo-numeros { gap: 20px; }
-  .emblema-equipar-campos .btn { width: 100%; }
+  }
+
+/* ---- Editor de cosmético (painel) ---- */
+.cosmetico-editor { display: grid; grid-template-columns: 1fr 220px; gap: 22px; align-items: start; }
+.cosmetico-campos { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.cosmetico-previa {
+  display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 20px 16px;
+  background: var(--surface-card); border-radius: var(--radius-card);
+  box-shadow: inset 0 0 0 1px var(--border-hair);
 }
+.cosmetico-amostra {
+  font-family: var(--font-display); font-weight: 700; font-size: 19px; text-align: center;
+  background-image: var(--emblema-grad); background-size: 200% 100%;
+  background-position: 0% 50%;
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent; -webkit-text-fill-color: transparent;
+}
+.cosmetico-anel {
+  display: grid; place-items: center; width: 54px; height: 54px; border-radius: 50%;
+  border: 2px solid transparent;
+  background-image: linear-gradient(var(--surface-card), var(--surface-card)), var(--emblema-grad);
+  background-origin: border-box; background-clip: padding-box, border-box;
+  background-size: auto, 200% 100%; background-position: 0% 50%;
+  font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--text-strong);
+}
+/* sem gradiente válido a prévia volta ao neutro, em vez de piscar meio-quebrada */
+.cosmetico-amostra.sem-cor { -webkit-text-fill-color: var(--text-strong); color: var(--text-strong); }
+.cosmetico-anel.sem-cor { border-color: var(--border-strong); background-image: none; }
+
+
+/* Selos do card: destaque e cor podem coexistir no mesmo emblema. */
+.emblema-selos { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; }
+.emblema-equipado { position: static; }
+.emblema-equipado.cor { color: var(--leds-blue); box-shadow: inset 0 0 0 1px rgba(29,132,245,.4); }
+
+@media (max-width: 900px) {
+  .cosmetico-editor { grid-template-columns: 1fr; }
+  .cosmetico-previa { max-width: 220px; }
+}
+@media (max-width: 760px) {
+  }
+
+/* ================= VITRINE DE TROFÉUS =====================================
+   O catálogo é uma estante: prateleiras por raridade, do lendário ao comum.
+   O que faz parecer conquista é o contraste — desbloqueado brilha e tem cor,
+   bloqueado é silhueta muda. */
+
+.vitrine-topo {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 26px;
+  flex-wrap: wrap; margin-bottom: 34px;
+}
+.vitrine-id { display: flex; flex-direction: column; gap: 6px; }
+.vitrine-progresso {
+  display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: baseline;
+  min-width: 260px; padding: 16px 20px;
+  background: var(--surface-card-alt); border-radius: var(--radius-card);
+  box-shadow: inset 0 0 0 1px var(--border-hair);
+}
+.vitrine-contador { font-family: var(--font-display); line-height: 1; }
+.vitrine-contador strong { font-size: 34px; font-weight: 700; color: var(--text-strong); }
+.vitrine-contador em { font-style: normal; font-size: 17px; color: var(--text-faint); }
+.vitrine-rotulo {
+  font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .8px;
+  color: var(--text-subtle);
+}
+.vitrine-barra {
+  grid-column: 1 / -1; height: 5px; margin-top: 10px; border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, .08); overflow: hidden; position: relative;
+}
+.vitrine-barra::after {
+  content: ""; position: absolute; inset: 0 auto 0 0; width: var(--pct);
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--leds-green), var(--leds-blue));
+}
+.vitrine-progresso .elo-selo { grid-column: 1 / -1; margin-top: 12px; }
+
+/* ---- Prateleira ---- */
+.prateleira { margin-bottom: 34px; }
+.prateleira-cabeca { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.prateleira-titulo {
+  font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-subtle); margin: 0;
+}
+.prateleira-conta { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); }
+/* a linha puxa a cor da raridade e some para a direita: dá o "corte" da estante */
+.prateleira-linha { flex: 1; height: 1px; background: linear-gradient(90deg, var(--raridade-cor, var(--border-hair)), transparent); }
+
+.prateleira.r-incomum  { --raridade-cor: var(--leds-green); }
+.prateleira.r-raro     { --raridade-cor: var(--leds-blue); }
+.prateleira.r-epico    { --raridade-cor: var(--leds-red); }
+.prateleira.r-lendario { --raridade-cor: var(--leds-yellow); }
+.prateleira.r-incomum  .prateleira-titulo { color: var(--leds-green); }
+.prateleira.r-raro     .prateleira-titulo { color: var(--leds-blue); }
+.prateleira.r-epico    .prateleira-titulo { color: var(--leds-red); }
+.prateleira.r-lendario .prateleira-titulo { color: var(--leds-yellow); }
+
+/* ---- Entrada em cascata ----
+   Um respiro por card ao abrir a página. animation-fill-mode: both mantém o
+   estado inicial durante o atraso, senão os cards piscam visíveis antes de
+   começar. */
+@keyframes vitrine-entra {
+  from { opacity: 0; transform: translateY(14px) scale(.97); }
+  to   { opacity: 1; transform: none; }
+}
+.vitrine-slot { animation: vitrine-entra .45s ease-out both; animation-delay: var(--atraso, 0ms); }
+.vitrine-slot > .emblema-card { height: 100%; }
+
+/* ---- Card conquistado x bloqueado ---- */
+/* o halo da raridade fica só no que a pessoa TEM: é o prêmio visual */
+.prateleira .emblema-card:not(.bloqueado) {
+  box-shadow: inset 0 0 0 1px var(--raridade-cor, var(--border-strong)),
+              0 0 26px -14px var(--raridade-cor, transparent);
+}
+.emblema-card.bloqueado .emblema-nome { color: var(--text-subtle); }
+.emblema-card { transition: transform .16s ease, box-shadow .16s ease; }
+.emblema-card:hover { transform: translateY(-2px); }
+.prateleira .emblema-card:not(.bloqueado):hover {
+  box-shadow: inset 0 0 0 1px var(--raridade-cor, var(--border-strong)),
+              0 0 34px -10px var(--raridade-cor, transparent);
+}
+
+/* ---- Pódio ---- */
+.podio {
+  list-style: none; margin: 0 0 24px; padding: 0;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: end;
+}
+.podio-lugar {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 14px 0;
+  text-align: center;
+}
+.podio-medalha {
+  font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--podio-cor);
+}
+.podio-avatar { width: 58px; height: 58px; }
+.podio-avatar .avatar-img, .podio-avatar .avatar-initials { width: 58px; height: 58px; font-size: 21px; }
+.podio-nome { font-family: var(--font-display); font-weight: 700; font-size: 15px; }
+.podio-pts { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-faint); }
+/* a base é o degrau: alturas diferentes é o que faz ler como pódio */
+.podio-base {
+  width: 100%; margin-top: 8px; border-radius: var(--radius-btn) var(--radius-btn) 0 0;
+  background: linear-gradient(180deg, var(--podio-cor), transparent);
+  opacity: .22;
+}
+.podio-lugar.p1 { --podio-cor: var(--leds-yellow); }
+.podio-lugar.p2 { --podio-cor: var(--text-strong); }
+.podio-lugar.p3 { --podio-cor: #CD7F32; }
+.podio-lugar.p1 .podio-base { height: 74px; }
+.podio-lugar.p2 .podio-base { height: 50px; }
+.podio-lugar.p3 .podio-base { height: 34px; }
+.podio-lugar.p1 .podio-avatar { width: 72px; height: 72px; }
+.podio-lugar.p1 .podio-avatar .avatar-img,
+.podio-lugar.p1 .podio-avatar .avatar-initials { width: 72px; height: 72px; font-size: 25px; }
+
+/* a própria pessoa marcada na lista: achar-se no ranking é metade da graça */
+.ranking-linha.voce { box-shadow: inset 0 0 0 1px var(--border-strong), inset 3px 0 0 var(--leds-green); }
+
+@media (prefers-reduced-motion: reduce) {
+  .vitrine-slot { animation: none; }
+  .emblema-card:hover { transform: none; }
+}
+@media (max-width: 700px) {
+  .vitrine-topo { flex-direction: column; align-items: stretch; }
+  .podio { grid-template-columns: 1fr; align-items: stretch; }
+  /* empilhado, o degrau não significa nada e só ocupa espaço */
+  .podio-base { display: none; }
+  .podio-lugar { padding-bottom: 14px; background: var(--surface-card-alt); border-radius: var(--radius-card); }
+}
+
+/* ================= ABA CUSTOMIZAÇÃO ======================================
+   Escolha por card, não por select: o que se escolhe aqui é visual, então
+   precisa ser visto. A seleção é <input type=radio> puro (funciona sem JS);
+   o Stimulus só repinta o cartão de prévia. */
+
+/* ---- Cartão de prévia ---- */
+.custom-cartao {
+  display: flex; align-items: center; gap: 20px; margin-bottom: 30px; padding: 24px 26px;
+  border-radius: var(--radius-feature); position: relative; overflow: hidden;
+  background: var(--surface-card-alt); box-shadow: inset 0 0 0 1px var(--border-hair);
+}
+/* brilho de fundo: dá o ar de "cartão de jogador" sem imagem nenhuma */
+.custom-cartao::before {
+  content: ""; position: absolute; inset: -40% -10% auto -10%; height: 180%;
+  background: radial-gradient(50% 60% at 20% 0%, rgba(29,132,245,.14), transparent 70%),
+              radial-gradient(45% 55% at 85% 10%, rgba(0,197,91,.12), transparent 70%);
+  pointer-events: none;
+}
+.custom-cartao > * { position: relative; }
+.custom-cartao-avatar {
+  flex-shrink: 0; width: 84px; height: 84px; border-radius: 50%;
+  display: grid; place-items: center;
+}
+.custom-cartao-avatar .avatar-initials,
+.custom-cartao-avatar .avatar-img { width: 84px; height: 84px; font-size: 30px; }
+.custom-cartao-id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.custom-cartao-nome {
+  font-family: var(--font-display); font-weight: 700; font-size: 26px; line-height: 1.1;
+  color: var(--text-strong);
+  /* nada de background aqui: .nome-emblema entra quando há pintura e traz o
+     tamanho certo. Repetir background-size neste seletor (que vem depois no
+     arquivo) sobrescreveria o dela e quebraria o laço só nesta tela. */
+}
+.custom-cartao-emblemas { display: flex; align-items: flex-end; gap: 10px; }
+/* sem :empty: tanto o ERB quanto replaceChildren deixam nó de texto, e a regra
+   nunca casaria. O container não tem estilo próprio — vazio ele colapsa. */
+.custom-slot-previa.grande .emblema { width: 66px; height: 66px; }
+.custom-slot-previa.pequena .emblema { width: 34px; height: 34px; }
+
+/* ---- Slot ---- */
+.custom-slot { margin-bottom: 26px; }
+.custom-slot-cabeca { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; }
+.custom-slot-cabeca h4 {
+  font-family: var(--font-mono); font-size: 11.5px; text-transform: uppercase; letter-spacing: 1.1px;
+  color: var(--text-subtle); margin: 0;
+}
+.custom-slot-linha { flex: 1; height: 1px; background: linear-gradient(90deg, var(--border-hair), transparent); }
+
+/* ---- "?" que explica ----
+   <details> nativo: abre no clique e no Enter, sem JS e sem estado para manter. */
+.ajuda { position: relative; }
+.ajuda summary {
+  list-style: none; cursor: pointer;
+  display: grid; place-items: center; width: 17px; height: 17px; border-radius: 50%;
+  background: var(--surface-chip); box-shadow: inset 0 0 0 1px var(--border-strong);
+  font-family: var(--font-mono); font-size: 10px; color: var(--text-subtle);
+}
+.ajuda summary::-webkit-details-marker { display: none; }
+.ajuda summary:hover { color: var(--text-strong); box-shadow: inset 0 0 0 1px var(--border-strong), 0 0 0 3px rgba(255,255,255,.05); }
+.ajuda[open] summary { color: var(--text-strong); }
+.ajuda p {
+  position: absolute; top: calc(100% + 8px); left: 0; z-index: 30;
+  width: max-content; max-width: 320px; margin: 0; padding: 12px 14px;
+  background: var(--surface-card); border-radius: var(--radius-card);
+  box-shadow: inset 0 0 0 1px var(--border-strong), 0 12px 32px rgba(0,0,0,.5);
+  font-size: 12.5px; line-height: 1.55; color: var(--text-lead);
+}
+
+/* ---- Opções ---- */
+.custom-opcoes { display: flex; gap: 10px; flex-wrap: wrap; }
+.custom-opcao { cursor: pointer; }
+/* o radio some visualmente mas continua focável pelo teclado */
+.custom-opcao input {
+  position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;
+}
+.custom-opcao-corpo {
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px;
+  width: 108px; min-height: 104px; padding: 14px 10px;
+  background: var(--surface-chip); border-radius: var(--radius-card);
+  box-shadow: inset 0 0 0 1px var(--border-hair);
+  transition: box-shadow .15s ease, transform .15s ease, background .15s ease;
+}
+.custom-opcao:hover .custom-opcao-corpo { transform: translateY(-2px); box-shadow: inset 0 0 0 1px var(--border-strong); }
+.custom-opcao input:checked + .custom-opcao-corpo {
+  background: var(--surface-card-alt);
+  box-shadow: inset 0 0 0 2px var(--leds-green);
+}
+.custom-opcao input:focus-visible + .custom-opcao-corpo { box-shadow: inset 0 0 0 2px var(--leds-blue); }
+.custom-opcao-nome {
+  font-size: 11.5px; line-height: 1.3; color: var(--text-muted); text-align: center;
+  display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden;
+  -webkit-line-clamp: 2; line-clamp: 2;
+}
+.custom-opcao input:checked + .custom-opcao-corpo .custom-opcao-nome { color: var(--text-strong); }
+.custom-opcao-nada {
+  display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%;
+  box-shadow: inset 0 0 0 1px var(--border-strong); color: var(--text-faint); font-size: 13px;
+}
+/* fita do gradiente no rodapé do card: mostra a pintura sem precisar selecionar */
+.custom-opcao-fita {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 4px;
+  background-image: var(--emblema-grad); background-size: 100% 100%;
+}
+.custom-vazio { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-faint); margin: 0; }
+.custom-acoes { margin-top: 26px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .custom-opcao:hover .custom-opcao-corpo { transform: none; }
+}
+@media (max-width: 620px) {
+  .custom-cartao { flex-direction: column; align-items: flex-start; }
+  .custom-opcao-corpo { width: 96px; min-height: 96px; }
+  /* colado à esquerda o balão não sai da tela em telas estreitas */
+  .ajuda p { left: auto; right: 0; max-width: calc(100vw - 60px); }
+}
+
+/* ---- Botão de sincronizar com o Discord (RF-EMB) ----
+   Reusa .btn-discord (o azul e o brilho do botão da Comunidade). Bloqueado é
+   <span>, não <button disabled>: elemento desabilitado não dispara hover de
+   forma confiável, e o aviso ficaria inacessível para quem mais precisa dele. */
+.btn-sync { padding: 9px 16px; font-size: 13px; }
+.btn-sync .oauth-ico { width: 18px; height: 18px; }
+.btn-sync-bloqueado { position: relative; display: inline-flex; outline: none; }
+.btn-sync.opaco {
+  opacity: .45; cursor: not-allowed; box-shadow: none; pointer-events: none;
+}
+.btn-sync-aviso {
+  position: absolute; top: calc(100% + 8px); left: 0; z-index: 30;
+  width: max-content; max-width: 260px; padding: 10px 13px;
+  background: var(--surface-card); border-radius: var(--radius-card);
+  box-shadow: inset 0 0 0 1px var(--border-strong), 0 12px 32px rgba(0, 0, 0, .5);
+  font-size: 12.5px; line-height: 1.5; color: var(--text-lead);
+  opacity: 0; visibility: hidden; transition: opacity .14s ease;
+}
+.btn-sync-bloqueado:hover .btn-sync-aviso,
+.btn-sync-bloqueado:focus .btn-sync-aviso,
+.btn-sync-bloqueado:focus-within .btn-sync-aviso { opacity: 1; visibility: visible; }
+
+/* ---- Diff dos cargos (painel → Discord) ---- */
+.discord-diff { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin: 18px 0; }
+.discord-bloco {
+  padding: 16px 18px; background: var(--surface-chip); border-radius: var(--radius-card);
+  box-shadow: inset 0 0 0 1px var(--border-hair);
+}
+.discord-bloco-cabeca { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.discord-lista { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.discord-lista li { display: flex; align-items: center; gap: 9px; min-width: 0; }
+/* a bolinha mostra a cor que o cargo terá no servidor */
+.discord-amostra {
+  flex-shrink: 0; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--cargo-cor, var(--text-faint));
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .35);
+}
+.discord-nome { font-size: 13px; color: var(--text-primary); flex: 1; min-width: 0; }
+.discord-origem { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-faint); white-space: nowrap; }
+.escada-check { display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-faint); }
+.escada-check input { accent-color: var(--leds-green); }

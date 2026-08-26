@@ -1,6 +1,9 @@
 <% content_for :title, "Emblemas — Gestão LEDS" %>
 <% content_for :painel_titulo, "Emblemas" %>
 <% content_for :painel_acoes do %>
+  <%= render "shared/botao_discord", url: painel_discord_path, metodo: :get,
+        texto: "Sincronizar cargos", liberado: DiscordSync.configurado?,
+        aviso: "Configure DISCORD_BOT_TOKEN e DISCORD_GUILD_ID para desbloquear essa função" %>
   <%= link_to "Novo emblema", new_painel_emblema_path, class: "btn btn-primary btn-sm" %>
 <% end %>
 

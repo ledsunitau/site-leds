@@ -43,25 +43,47 @@ module EmblemasHelper
     tag.span(conteudo, class: classes, style: "--emblema-cor: #{elo.cor}", title: elo.nome)
   end
 
-  # Nome do usuário pintado com a cor do emblema em destaque. Fonte única — o
-  # nome aparece em post, avaliação, drawer e perfil, e a cor não pode divergir.
-  # `fallback` cobre autor apagado (LGPD): "LEDS" na novidade, "Anônimo" na
-  # avaliação — cada tela mantém o rótulo que já usava.
+  # Nome do usuário pintado com o COSMÉTICO que ele escolheu vestir — não com o
+  # emblema em destaque, que hoje é só vitrine. Sem cosmético, o nome fica
+  # branco, como o de qualquer um.
+  #
+  # Fonte única: o nome aparece em post, avaliação, drawer e perfil, e a pintura
+  # não pode divergir entre eles. `fallback` cobre autor apagado (LGPD): "LEDS"
+  # na novidade, "Anônimo" na avaliação — cada tela mantém o rótulo que já usava.
   def nome_com_emblema(user, classe: nil, fallback: "Usuário")
-    return tag.span(user&.name.presence || fallback, class: classe) if user&.emblema_destaque.nil?
+    pintura = pintura_de(user, :emblema_nome)
+    return tag.span(user&.name.presence || fallback, class: classe) if pintura.nil?
 
-    tag.span(user.name, class: [ classe, "nome-emblema" ].compact,
-             style: "--emblema-cor: #{cor_do_destaque(user)}")
+    tag.span(user.name, class: [ classe, "nome-emblema", "cosm-#{pintura.cosmetico_movimento}" ].compact,
+             style: estilo_do_cosmetico(pintura))
   end
 
-  # Classe do anel do avatar. Usada dentro de shared/_avatar, que é o ponto por
-  # onde todo avatar do site passa.
+  # Anel do avatar, com o mesmo cosmético. Usado dentro de shared/_avatar, que é
+  # o ponto por onde todo avatar do site passa.
   def anel_do_emblema(user)
-    emblema = user&.emblema_destaque
-    return {} if emblema.nil?
+    pintura = pintura_de(user, :emblema_halo)
+    return {} if pintura.nil?
 
-    { class: "avatar-anel avatar-fx-#{efeito_do_destaque(user)}",
-      style: "--emblema-cor: #{cor_do_destaque(user)}" }
+    { class: "avatar-anel cosm-#{pintura.cosmetico_movimento}",
+      style: estilo_do_cosmetico(pintura) }
+  end
+
+  # Só o movimento e as variáveis, SEM a borda em gradiente. É o que o botão do
+  # header precisa: lá quem desenha o anel é o ::before dele, não o avatar.
+  def halo_do_header(user)
+    pintura = pintura_de(user, :emblema_halo)
+    return {} if pintura.nil?
+
+    { class: "tem-halo cosm-#{pintura.cosmetico_movimento}",
+      style: estilo_do_cosmetico(pintura) }
+  end
+
+  # As variáveis que o CSS consome: o gradiente pronto, a lista de cores solta
+  # (o anel do header monta um conic-gradient com ela) e a duração.
+  def estilo_do_cosmetico(emblema)
+    [ "--emblema-grad: #{emblema.cosmetico_css}",
+      "--emblema-cores: #{emblema.cosmetico_cores_fechadas}",
+      "--emblema-vel: #{emblema.cosmetico_velocidade}s" ].join("; ")
   end
 
   # "Raro · 7,2% dos usuários". Separador explícito: o pt-BR.yml do projeto não
@@ -82,25 +104,11 @@ module EmblemasHelper
 
   private
 
-  # O destaque de um escalonável usa a cor do RANK alcançado, que mora no
-  # vínculo. Memoizado por request e por usuário: sem isso, cada nome numa lista
-  # de novidades custaria duas consultas (o nome pintado e o anel do avatar).
-  def vinculo_do_destaque(user)
-    return nil if user&.emblema_destaque_id.nil?
-
-    @vinculos_do_destaque ||= {}
-    @vinculos_do_destaque.fetch(user.id) do
-      @vinculos_do_destaque[user.id] =
-        EmblemaUsuario.includes(nivel: :rank)
-                      .find_by(user_id: user.id, emblema_id: user.emblema_destaque_id)
-    end
-  end
-
-  def cor_do_destaque(user)
-    vinculo_do_destaque(user)&.cor_efetiva || user.emblema_destaque.cor
-  end
-
-  def efeito_do_destaque(user)
-    vinculo_do_destaque(user)&.efeito_efetivo || user.emblema_destaque.efeito
+  # A pintura é do EMBLEMA, não do rank alcançado — então sai direto do
+  # belongs_to, sem consulta ao vínculo. (Era o que exigia memoização antes,
+  # quando a cor vinha do rank.) `slot` é :emblema_nome ou :emblema_halo.
+  def pintura_de(user, slot)
+    emblema = user&.public_send(slot)
+    emblema if emblema&.cosmetico?
   end
 end

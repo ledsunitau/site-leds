@@ -17,6 +17,13 @@ class EmblemasController < ApplicationController
     # Exclusivo é emblema-surpresa: fica fora do catálogo até o usuário ter.
     @emblemas = Emblema.ativos.ordenados.includes(niveis: :rank)
                        .reject { |e| e.exclusivo? && !@vinculos.key?(e.id) }
+
+    # Prateleiras por raridade, do mais raro para o mais comum — é a ordem que
+    # transforma a lista numa vitrine de troféus.
+    # FAIXAS vai do comum ao lendário; o sinal inverte para o raro vir primeiro
+    @prateleiras = @emblemas.group_by(&:raridade)
+                            .sort_by { |chave, _| -Emblema::FAIXAS.index { |_, c, _| c == chave } }
+    @desbloqueados = @emblemas.count { |e| @vinculos.key?(e.id) }
   end
 
   # A escada de elos + o top do elo mais alto. Login já é exigido no controller.
@@ -30,7 +37,7 @@ class EmblemasController < ApplicationController
     # valer a pena. ponytail: desempate por nome; não guardamos QUANDO cada um
     # chegou aos pontos, e inventar um proxy (idade da conta) seria pior.
     @topo = if @elo_final
-      User.where(elo_id: @elo_final.id).includes(:emblema_destaque, foto_attachment: :blob)
+      User.where(elo_id: @elo_final.id).includes(:emblema_nome, foto_attachment: :blob)
           .order(pontos_emblemas: :desc, name: :asc).limit(TOPO)
     else
       User.none
@@ -49,11 +56,43 @@ class EmblemasController < ApplicationController
     end
   end
 
+  # Cross-check dos cargos do Discord (RF-EMB). Os eventos já sincronizam ao
+  # ganhar/perder emblema; isto é a rede de segurança para quando um deles
+  # falhou — bot fora do ar, Discord vinculado só depois, cargo apagado à mão.
+  #
+  # Síncrono de propósito: quem clicou está olhando e quer o resultado. Um job
+  # devolveria "enfileirado", que não responde à pergunta que a pessoa fez.
+  def sincronizar_discord
+    authorize Emblema, :index?
+    resultado = DiscordSync.sincronizar_membro!(current_user)
+
+    redirect_to profile_path(anchor: "emblemas"), notice: resumo_da_sincronizacao(resultado)
+  rescue DiscordSync::NaoConfigurado => e
+    redirect_to profile_path(anchor: "emblemas"), status: :see_other,
+                alert: "Não deu para sincronizar: #{e.message}."
+  rescue DiscordRest::ErroPermanente, RuntimeError => e
+    # 403 costuma ser hierarquia (o cargo do bot está abaixo dos que ele
+    # gerencia) — ver docs/discord-bot.md
+    Rails.logger.warn("[discord] sync do usuário #{current_user.id}: #{e.message}")
+    redirect_to profile_path(anchor: "emblemas"), status: :see_other,
+                alert: "O Discord recusou a sincronização. A gestão foi avisada."
+  end
+
   private
+
+  def resumo_da_sincronizacao(resultado)
+    mudou = resultado[:adicionados] + resultado[:removidos]
+    return "Seus cargos no Discord já estavam em dia." if mudou.zero?
+
+    partes = []
+    partes << "#{resultado[:adicionados]} cargo(s) concedido(s)" if resultado[:adicionados].positive?
+    partes << "#{resultado[:removidos]} removido(s)" if resultado[:removidos].positive?
+    "Sincronizado: #{partes.join(' e ')}."
+  end
 
   def equipar_params
     # to_i converte "" em 0; presence antes disso mantém "desequipar" = nil
-    params.expect(user: [ :emblema_destaque_id, :emblema_secundario_id ])
+    params.expect(user: User::SLOTS)
           .transform_values(&:presence)
   end
 end

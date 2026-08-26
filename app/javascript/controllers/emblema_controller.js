@@ -9,11 +9,39 @@ import { Controller } from "@hotwired/stimulus"
 // aparece depois de salvar; cor e efeito, que é o que se ajusta no tato,
 // respondem na hora.
 export default class extends Controller {
-  static targets = ["cor", "efeito", "previa", "legenda", "criterio", "campoMeta", "nota"]
+  static targets = ["cor", "efeito", "previa", "legenda", "criterio", "campoMeta", "nota",
+                    "gradiente", "movimento", "velocidade", "amostra", "anel"]
 
   connect() {
     this.pintar()
+    this.pintarCosmetico()
     this.trocarTipo()
+  }
+
+  // Prévia do cosmético: o nome e o anel exatamente como vão sair no site.
+  // Aqui o valor É seguro para ler — são cores hexadecimais que o próprio
+  // gestor digita e que viram valor de CSS, não markup.
+  pintarCosmetico() {
+    const cores = this.coresValidas
+    const grad = cores.length ? `linear-gradient(100deg, ${[...cores, cores[0]].join(", ")})` : "none"
+    const dur = `${this.velocidadeTarget.value || 4}s`
+    const mov = this.movimentoTarget.value
+
+    for (const alvo of [this.amostraTarget, this.anelTarget]) {
+      alvo.style.setProperty("--emblema-grad", grad)
+      alvo.style.setProperty("--emblema-vel", dur)
+      alvo.classList.remove("cosm-parado", "cosm-varredura", "cosm-fluxo", "cosm-pulso")
+      alvo.classList.add(`cosm-${mov}`)
+      alvo.classList.toggle("sem-cor", cores.length === 0)
+    }
+  }
+
+  // Só o que o model aceitaria: 2 ou 3 cores #rrggbb. Enquanto a pessoa digita,
+  // a prévia fica na cor neutra em vez de piscar gradiente quebrado.
+  get coresValidas() {
+    const cores = this.gradienteTarget.value.replace(/\s+/g, "").split(",").filter(Boolean)
+    const ok = cores.length >= 2 && cores.length <= 3 && cores.every((c) => /^#[0-9a-f]{6}$/i.test(c))
+    return ok ? cores : []
   }
 
   pintar() {

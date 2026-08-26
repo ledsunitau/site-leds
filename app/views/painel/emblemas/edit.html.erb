@@ -55,9 +55,9 @@
           <span>A partir de</span>
           <%= f.number_field :limiar, min: 1, class: "painel-input compacto", required: true %>
         </label>
-        <label class="painel-campo">
-          <span>Cargo no Discord</span>
-          <%= f.text_field :discord_role_id, class: "painel-input" %>
+        <label class="painel-check" style="align-self:flex-end;padding-bottom:9px">
+          <%= f.check_box :discord_sincronizar %>
+          <span>Espelhar no Discord</span>
         </label>
         <%= f.submit "Adicionar rank", class: "btn btn-primary btn-sm" %>
       <% end %>
@@ -76,8 +76,8 @@
             <span class="nivel-limiar">a partir de <strong><%= nivel.limiar %></strong></span>
             <span class="nivel-meta">
               <%= nivel.emblema_usuarios.size %> pessoa<%= "s" if nivel.emblema_usuarios.size != 1 %>
-              <% if nivel.discord_role_id.present? %>
-                · cargo <%= nivel.discord_role_id %>
+              <% if nivel.discord_sincronizar? %>
+                · no Discord<%= " (cargo #{nivel.discord_role_id})" if nivel.discord_role_id.present? %>
               <% end %>
             </span>
             <%= button_to "×", painel_emblema_nivel_path(@emblema, nivel), method: :delete,

@@ -85,9 +85,11 @@ class EmblemasEscalonaveisTest < ActionDispatch::IntegrationTest
     assert_select ".ranking-degrau", Elo.count
     # ana está na Prata; o topo lista só quem está na Lenda
     assert_select ".ranking-degrau.atual .ranking-degrau-nome", text: "Prata"
-    nomes = css_select(".ranking-nome").map { |n| n.text.squish }
+    # os três primeiros vão para o pódio; do quarto em diante, para a lista
+    nomes = css_select(".podio-nome, .ranking-nome").map { |n| n.text.squish }
     assert_includes nomes, "Dario Diretor"
     assert_not_includes nomes, "Ana Comunidade"
+    assert_select ".podio-lugar.p1 .podio-nome", text: /Dario Diretor/
   end
 
   test "o ranking exige login" do

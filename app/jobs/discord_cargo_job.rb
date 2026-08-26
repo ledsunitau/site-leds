@@ -9,11 +9,12 @@ require "net/http"
 # configurada ou sem Discord vinculado. Mesma postura do DeliveryMethods::
 # DiscordDm: emblema no site funciona com ou sem Discord.
 class DiscordCargoJob < ApplicationJob
-  include DiscordRest # ErroPermanente + retry/discard + chamar_discord
+  include DiscordRest              # REST
+  include DiscordRest::PoliticaDeJob # retry/discard
 
   queue_as :default
 
-  API = "https://discord.com/api/v10".freeze
+  # API e o header de auth vêm da concern — fonte única.
   VERBOS = { "adicionar" => Net::HTTP::Put, "remover" => Net::HTTP::Delete }.freeze
 
   def perform(user_id, role_id, acao)
@@ -26,6 +27,6 @@ class DiscordCargoJob < ApplicationJob
     return if uid.blank?
 
     chamar_discord(verbo, "#{API}/guilds/#{guild}/members/#{uid}/roles/#{role_id}",
-                   "Authorization" => "Bot #{token}")
+                   auth_discord(token))
   end
 end

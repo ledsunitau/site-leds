@@ -13,7 +13,7 @@
     <div class="escada elos">
       <div class="escada-linha cabecalho">
         <span></span><span>Elo</span><span>A partir de</span><span>Cor</span><span>Efeito</span>
-        <span>Cargo no Discord</span><span>Pessoas</span><span></span><span></span>
+        <span>Discord</span><span>Pessoas</span><span></span><span></span>
       </div>
 
       <% @elos.reverse.each do |elo| %>
@@ -31,8 +31,10 @@
             <%= f.color_field :cor, class: "painel-input painel-cor", "aria-label": "Cor" %>
             <%= f.select :efeito, Emblema::EFEITOS.map { |e| [ Emblema::EFEITO_LABEL[e], e ] }, {},
                   class: "painel-input", "aria-label": "Efeito" %>
-            <%= f.text_field :discord_role_id, class: "painel-input", placeholder: "sem cargo",
-                  "aria-label": "Cargo no Discord" %>
+            <label class="escada-check" title="Espelhar no Discord">
+              <%= f.check_box :discord_sincronizar %>
+              <span><%= elo.discord_role_id.presence || "espelhar" %></span>
+            </label>
             <span class="escada-uso">
               <%= @por_elo[elo.id].to_i %>
               <% if elo.final? %><span class="painel-tag-mono">FINAL</span><% end %>
@@ -79,9 +81,9 @@
         <%= f.select :efeito, Emblema::EFEITOS.map { |e| [ Emblema::EFEITO_LABEL[e], e ] }, {},
               class: "painel-input" %>
       </label>
-      <label class="painel-campo">
-        <span>Cargo no Discord</span>
-        <%= f.text_field :discord_role_id, class: "painel-input", placeholder: "opcional" %>
+      <label class="painel-check" style="align-self:flex-end;padding-bottom:9px">
+        <%= f.check_box :discord_sincronizar %>
+        <span>Espelhar no Discord</span>
       </label>
       <%= f.submit "Criar elo", class: "btn btn-primary btn-sm" %>
     </div>
