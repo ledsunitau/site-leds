@@ -143,6 +143,73 @@ class ListagensPublicasTest < ActionDispatch::IntegrationTest
     assert_select "nav.navbar", false, "o frame não deveria trazer a navbar"
   end
 
+  # ------------------------------------------- Escape do frame (Content missing)
+  #
+  # Um <a> dentro de um <turbo-frame> é capturado por ele: o Turbo busca a URL e
+  # procura um frame de MESMO id na resposta. Página de detalhe não tem o frame
+  # da listagem, então o card virava "Content missing" em vez de abrir a notícia.
+  #
+  # A correção é o target="_top" no frame: link de conteúdo navega a página, e só
+  # quem pede (chip, pager, categoria) troca o frame. Os testes abaixo cobrem as
+  # DUAS direções — o card tem que escapar, o controle tem que continuar preso.
+
+  test "novidades: clicar no card abre a notícia, não 'Content missing'" do
+    get posts_path, headers: { "Accept" => "text/html" }
+    card = css_select("a.novidade-card").first
+    assert card, "a listagem precisa ter card para este teste valer"
+
+    frame = css_select("turbo-frame#novidades-lista").first
+    assert_equal "_top", frame["target"],
+                 "sem target=_top o frame captura o link do card"
+    assert_nil card["data-turbo-frame"],
+               "o card herda o _top do frame; um data-turbo-frame aqui o prenderia de volta"
+
+    # A premissa que torna o _top obrigatório: o destino não tem o frame.
+    get card["href"], headers: { "Accept" => "text/html" }
+    assert_response :success
+    assert_select "turbo-frame#novidades-lista", false,
+                  "a página da notícia não tem (nem deve ter) o frame da listagem"
+    # e caiu mesmo na notícia, não numa casca vazia
+    assert_select ".novidade-artigo .artigo-titulo"
+  end
+
+  test "loja: clicar no card abre o produto, não 'Content missing'" do
+    sign_in users(:membro_user)
+    get todos_produtos_path, headers: { "Accept" => "text/html" }
+
+    frame = css_select("turbo-frame#produtos-lista").first
+    assert_equal "_top", frame["target"]
+
+    link = css_select("article.produto-card a").first
+    assert link, "o card de produto precisa ter link para este teste valer"
+    assert_nil link["data-turbo-frame"]
+
+    get link["href"], headers: { "Accept" => "text/html" }
+    assert_response :success
+    assert_select "turbo-frame#produtos-lista", false
+  end
+
+  # A outra direção: se um controle perder o data-turbo-frame ele volta a dar
+  # page load inteiro — funciona, mas joga fora a paginação por frame.
+  test "chips e pager continuam trocando só o frame" do
+    { posts_path => [ "novidades-lista", "chip", "novidades-pag" ],
+      acoes_path => [ "acoes-lista", "chip", "acoes-pag" ] }.each do |caminho, (frame, chip, pag)|
+      publicar_posts(PostsController::POR_PAGINA) if caminho == posts_path
+
+      get caminho, headers: { "Accept" => "text/html" }
+      chips = css_select("a.#{chip}")
+      assert chips.any?, "#{caminho}: sem chips para verificar"
+      chips.each do |c|
+        assert_equal frame, c["data-turbo-frame"], "#{caminho}: chip #{c.text.strip.inspect} escapou do frame"
+      end
+
+      paginas = css_select("a.#{pag}")
+      paginas.each do |p|
+        assert_equal frame, p["data-turbo-frame"], "#{caminho}: link de página escapou do frame"
+      end
+    end
+  end
+
   # A mesma URL devolve dois corpos conforme o header Turbo-Frame. Em produção
   # tem Cloudflare na frente: sem declarar a variação, uma regra "Cache
   # Everything" serviria o fragmento sem navbar para quem abriu o endereço.

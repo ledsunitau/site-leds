@@ -3,6 +3,10 @@
       total   — total de páginas (Integer)
       classe  — classe CSS do botão, para cada página manter o visual que já tinha
                 ("novidades-pag", "loja-pag"…)
+      frame   — id do turbo-frame que estes links devem trocar. Obrigatório: os
+                frames das listagens usam target="_top" (link de conteúdo navega
+                a página), então sem isto o pager recarregaria a página inteira
+                em vez de trocar só a grade.
 
     Some sozinho quando só há uma página — que é o caso no volume atual, então a
     paginação é invisível até a lista realmente crescer.
@@ -22,25 +26,25 @@
 
 <nav class="<%= classe %>-nav" aria-label="Paginação">
   <% if pagina > 1 %>
-    <a href="<%= url_com(pagina: pagina - 1) %>" class="<%= classe %>" rel="prev" aria-label="Página anterior">‹</a>
+    <a href="<%= url_com(pagina: pagina - 1) %>" class="<%= classe %>" data-turbo-frame="<%= frame %>" rel="prev" aria-label="Página anterior">‹</a>
   <% end %>
 
   <% if de > 1 %>
-    <a href="<%= url_com(pagina: 1) %>" class="<%= classe %>">1</a>
+    <a href="<%= url_com(pagina: 1) %>" class="<%= classe %>" data-turbo-frame="<%= frame %>">1</a>
     <% if de > 2 %><span class="<%= classe %>-gap">…</span><% end %>
   <% end %>
 
   <% (de..ate).each do |p| %>
-    <a href="<%= url_com(pagina: p) %>" class="<%= classe %> <%= 'active' if p == pagina %>"
+    <a href="<%= url_com(pagina: p) %>" class="<%= classe %> <%= 'active' if p == pagina %>" data-turbo-frame="<%= frame %>"
        aria-current="<%= 'page' if p == pagina %>"><%= p %></a>
   <% end %>
 
   <% if ate < total %>
     <% if ate < total - 1 %><span class="<%= classe %>-gap">…</span><% end %>
-    <a href="<%= url_com(pagina: total) %>" class="<%= classe %>"><%= total %></a>
+    <a href="<%= url_com(pagina: total) %>" class="<%= classe %>" data-turbo-frame="<%= frame %>"><%= total %></a>
   <% end %>
 
   <% if pagina < total %>
-    <a href="<%= url_com(pagina: pagina + 1) %>" class="<%= classe %>" rel="next" aria-label="Próxima página">›</a>
+    <a href="<%= url_com(pagina: pagina + 1) %>" class="<%= classe %>" data-turbo-frame="<%= frame %>" rel="next" aria-label="Próxima página">›</a>
   <% end %>
 </nav>

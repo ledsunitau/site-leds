@@ -1,16 +1,27 @@
 <%# Toolbar + grid + pager de Novidades. Mesmo desenho de acoes/_lista: tudo
     dentro do frame porque o chip ativo e o pager mudam junto com a lista.
     O carrossel fica FORA, na index — ele é "as 3 mais recentes", não parte do
-    resultado filtrado. %>
-<turbo-frame id="novidades-lista" data-turbo-action="advance">
+    resultado filtrado.
+
+    target="_top": link daqui de dentro navega a PÁGINA por padrão, e só quem
+    pede explicitamente troca o frame. Sem isso o card (que é um <a> inteiro para
+    /posts/:id) era capturado pelo frame, a resposta não continha
+    <turbo-frame id="novidades-lista"> e o Turbo escrevia "Content missing" em
+    vez de abrir a notícia.
+
+    O padrão invertido é de propósito: esquecer o data-turbo-frame num controle
+    custa um reload a mais (funciona, só mais lento), enquanto esquecer de
+    escapar um link de conteúdo deixa a tela quebrada. %>
+<turbo-frame id="novidades-lista" target="_top" data-turbo-action="advance">
   <div class="novidades-toolbar" data-controller="novidades">
     <div class="chips">
       <% [ [ nil, "Todos" ], [ "noticia", "Notícias" ], [ "blog", "Blog" ] ].each do |val, label| %>
-        <a href="<%= url_com(tipo: val, pagina: nil) %>"
+        <a href="<%= url_com(tipo: val, pagina: nil) %>" data-turbo-frame="novidades-lista"
            class="chip <%= 'active' if @tipo == val %>"><%= label %></a>
       <% end %>
 
-      <%= form_with url: request.path, method: :get, data: { novidades_target: "form" } do %>
+      <%= form_with url: request.path, method: :get,
+                    data: { novidades_target: "form", turbo_frame: "novidades-lista" } do %>
         <% request.query_parameters.except("q", "pagina").each do |chave, valor| %>
           <%= hidden_field_tag chave, valor, id: nil %>
         <% end %>
@@ -45,6 +56,7 @@
   <% end %>
 
   <div class="novidades-paginacao">
-    <%= render "shared/paginacao", pagina: @pagina, total: @total_paginas, classe: "novidades-pag" %>
+    <%= render "shared/paginacao", pagina: @pagina, total: @total_paginas,
+                                   classe: "novidades-pag", frame: "novidades-lista" %>
   </div>
 </turbo-frame>
