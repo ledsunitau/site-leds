@@ -1,0 +1,121 @@
+<%# Aba Customização (RF-EMB): quatro slots independentes — dois de vitrine
+    (destaque, sub) e dois de pintura (nome, halo).
+
+    Escolha por CARD, não por select: os selects não davam para ver o que estava
+    sendo escolhido, e o que se escolhe aqui é visual. A seleção é <input
+    type=radio> puro; o JS só repinta o cartão de prévia. %>
+<div class="perfil-secao" data-controller="customizacao">
+  <% if @vinculos.empty? %>
+    <div class="empty-state">
+      <span class="empty-mono">// nada para customizar ainda</span>
+      <p>Os emblemas que você desbloquear liberam a cor do seu nome e o halo do seu avatar.</p>
+      <%= link_to "Ver o que dá para conquistar", emblemas_path, class: "btn btn-secondary" %>
+    </div>
+  <% else %>
+    <% com_pintura = @vinculos.select { |v| v.emblema.cosmetico? } %>
+
+    <%= form_with model: current_user, url: equipar_emblemas_path, method: :patch,
+          class: "custom" do |f| %>
+
+      <%# ---- Cartão de prévia: como a pessoa vai aparecer no site ----
+          O estado SALVO já vem renderizado do servidor; o JS só repinta a partir
+          das mudanças. Assim o cartão está certo antes do JS rodar — e continua
+          certo se ele não rodar. %>
+      <% anel = anel_do_emblema(current_user) %>
+      <% pintura_nome = current_user.emblema_nome %>
+      <div class="custom-cartao">
+        <%# o anel vai no PRÓPRIO avatar, como em shared/_avatar — não no wrapper.
+            No wrapper, a borda encolhe o content box e o avatar (do mesmo tamanho
+            do wrapper) cobre o anel por cima, sobrando só uma pontinha. %>
+        <span class="custom-cartao-avatar">
+          <span class="avatar-initials <%= anel[:class] %>" style="<%= anel[:style] %>"
+                data-customizacao-target="avatar"><%= iniciais(current_user.name) %></span>
+        </span>
+        <div class="custom-cartao-id">
+          <span class="custom-cartao-nome <%= "nome-emblema cosm-#{pintura_nome.cosmetico_movimento}" if pintura_nome&.cosmetico? %>"
+                style="<%= estilo_do_cosmetico(pintura_nome) if pintura_nome&.cosmetico? %>"
+                data-customizacao-target="nome"><%= current_user.name %></span>
+          <%= render "shared/elo", user: current_user %>
+        </div>
+        <div class="custom-cartao-emblemas">
+          <span class="custom-slot-previa grande" data-customizacao-target="previaDestaque">
+            <% if current_user.emblema_destaque %>
+              <%= emblema_icone(current_user.emblema_destaque, tamanho: "lg") %>
+            <% end %>
+          </span>
+          <span class="custom-slot-previa pequena" data-customizacao-target="previaSecundario">
+            <% if current_user.emblema_secundario %>
+              <%= emblema_icone(current_user.emblema_secundario, tamanho: "sm") %>
+            <% end %>
+          </span>
+        </div>
+      </div>
+
+      <%# ---- Os quatro slots ---- %>
+      <% [
+           { campo: :emblema_destaque_id, titulo: "Emblema destaque", vinculos: @vinculos,
+             alvo: "destaque", vazio: "Sem destaque",
+             ajuda: "O emblema grande do seu perfil público. Qualquer emblema desbloqueado serve — desbloqueie mais participando de projetos, publicando novidades ou propondo ideias." },
+           { campo: :emblema_secundario_id, titulo: "Sub-emblema", vinculos: @vinculos,
+             alvo: "secundario", vazio: "Sem sub-emblema",
+             ajuda: "Aparece menor, ao lado do destaque, na sua página pública. Não pode ser o mesmo do destaque." },
+           { campo: :emblema_nome_id, titulo: "Cor do nome", vinculos: com_pintura,
+             alvo: "nome", vazio: "Branco",
+             ajuda: "Cada emblema traz uma cor que é só dele. Nem todo emblema tem uma — as cores vêm dos mais raros, e os exclusivos costumam trazer as mais chamativas." },
+           { campo: :emblema_halo_id, titulo: "Halo do avatar", vinculos: com_pintura,
+             alvo: "halo", vazio: "Sem halo",
+             ajuda: "O anel em volta da sua foto. Pode ser de um emblema diferente do que pinta o nome — misturar dois é o ponto." }
+         ].each do |slot| %>
+        <section class="custom-slot">
+          <div class="custom-slot-cabeca">
+            <h4><%= slot[:titulo] %></h4>
+            <details class="ajuda">
+              <summary aria-label="Como desbloquear mais">?</summary>
+              <p><%= slot[:ajuda] %></p>
+            </details>
+            <span class="custom-slot-linha"></span>
+          </div>
+
+          <div class="custom-opcoes">
+            <label class="custom-opcao vazia">
+              <%= f.radio_button slot[:campo], "",
+                    checked: current_user.public_send(slot[:campo]).nil?,
+                    data: { action: "change->customizacao#repintar", customizacao_alvo_param: slot[:alvo] } %>
+              <span class="custom-opcao-corpo">
+                <span class="custom-opcao-nada">✕</span>
+                <span class="custom-opcao-nome"><%= slot[:vazio] %></span>
+              </span>
+            </label>
+
+            <% slot[:vinculos].each do |vinculo| %>
+              <% emblema = vinculo.emblema %>
+              <label class="custom-opcao">
+                <%= f.radio_button slot[:campo], emblema.id,
+                      data: { action: "change->customizacao#repintar",
+                              customizacao_alvo_param: slot[:alvo],
+                              grad: emblema.cosmetico_css, mov: emblema.cosmetico_movimento,
+                              vel: "#{emblema.cosmetico_velocidade}s" } %>
+                <span class="custom-opcao-corpo">
+                  <%= emblema_icone(emblema, tamanho: "sm", vinculo: vinculo) %>
+                  <span class="custom-opcao-nome"><%= emblema.nome %></span>
+                  <% if emblema.cosmetico? %>
+                    <span class="custom-opcao-fita"
+                          style="--emblema-grad: <%= emblema.cosmetico_css %>"></span>
+                  <% end %>
+                </span>
+              </label>
+            <% end %>
+
+            <% if slot[:vinculos].empty? %>
+              <p class="custom-vazio">Nenhum emblema seu tem cor exclusiva ainda.</p>
+            <% end %>
+          </div>
+        </section>
+      <% end %>
+
+      <div class="custom-acoes">
+        <%= f.submit "Salvar customização", class: "btn btn-primary" %>
+      </div>
+    <% end %>
+  <% end %>
+</div>

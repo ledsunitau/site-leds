@@ -821,6 +821,39 @@ ALTER SEQUENCE public.diretorias_id_seq OWNED BY public.diretorias.id;
 
 
 --
+-- Name: discord_cargos; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.discord_cargos (
+    id bigint NOT NULL,
+    role_id character varying NOT NULL,
+    nome character varying,
+    cor character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: discord_cargos_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.discord_cargos_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: discord_cargos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.discord_cargos_id_seq OWNED BY public.discord_cargos.id;
+
+
+--
 -- Name: elos; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -834,6 +867,7 @@ CREATE TABLE public.elos (
     discord_role_id character varying,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    discord_sincronizar boolean DEFAULT false NOT NULL,
     CONSTRAINT elos_efeito_check CHECK (((efeito)::text = ANY ((ARRAY['nenhum'::character varying, 'brilho'::character varying, 'neon'::character varying, 'arco_iris'::character varying, 'pulso'::character varying])::text[]))),
     CONSTRAINT elos_pontos_check CHECK ((pontos_minimos >= 0))
 );
@@ -947,6 +981,7 @@ CREATE TABLE public.emblema_niveis (
     discord_role_id character varying,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    discord_sincronizar boolean DEFAULT false NOT NULL,
     CONSTRAINT emblema_niveis_limiar_check CHECK ((limiar > 0))
 );
 
@@ -1064,6 +1099,12 @@ CREATE TABLE public.emblemas (
     peso integer DEFAULT 1 NOT NULL,
     limite_donos integer,
     produto_id bigint,
+    cosmetico_gradiente character varying,
+    cosmetico_movimento character varying DEFAULT 'parado'::character varying NOT NULL,
+    cosmetico_velocidade integer DEFAULT 4 NOT NULL,
+    discord_sincronizar boolean DEFAULT false NOT NULL,
+    CONSTRAINT emblemas_cosmetico_movimento_check CHECK (((cosmetico_movimento)::text = ANY ((ARRAY['parado'::character varying, 'varredura'::character varying, 'fluxo'::character varying, 'pulso'::character varying])::text[]))),
+    CONSTRAINT emblemas_cosmetico_velocidade_check CHECK (((cosmetico_velocidade >= 1) AND (cosmetico_velocidade <= 30))),
     CONSTRAINT emblemas_criterio_check CHECK (((criterio IS NULL) OR ((criterio)::text = ANY ((ARRAY['novidades_publicadas'::character varying, 'ideias_aprovadas'::character varying, 'acoes_participadas'::character varying, 'comentarios'::character varying, 'avaliacoes'::character varying, 'pedidos_pagos'::character varying, 'dias_de_conta'::character varying])::text[])))),
     CONSTRAINT emblemas_criterio_meta_check CHECK (((((tipo)::text = 'escalonavel'::text) AND (meta IS NULL)) OR (((tipo)::text = 'unico'::text) AND (((criterio IS NULL) AND (meta IS NULL)) OR ((criterio IS NOT NULL) AND (meta > 0)))))),
     CONSTRAINT emblemas_efeito_check CHECK (((efeito)::text = ANY ((ARRAY['nenhum'::character varying, 'brilho'::character varying, 'neon'::character varying, 'arco_iris'::character varying, 'pulso'::character varying])::text[]))),
@@ -2139,6 +2180,8 @@ CREATE TABLE public.users (
     emblema_secundario_id bigint,
     pontos_emblemas integer DEFAULT 0 NOT NULL,
     elo_id bigint,
+    emblema_nome_id bigint,
+    emblema_halo_id bigint,
     CONSTRAINT users_role_check CHECK (((role)::text = ANY ((ARRAY['comunidade'::character varying, 'escritor'::character varying, 'parceiro'::character varying, 'membro'::character varying, 'diretoria'::character varying, 'presidencia'::character varying])::text[])))
 );
 
@@ -2392,6 +2435,13 @@ ALTER TABLE ONLY public.denuncias ALTER COLUMN id SET DEFAULT nextval('public.de
 --
 
 ALTER TABLE ONLY public.diretorias ALTER COLUMN id SET DEFAULT nextval('public.diretorias_id_seq'::regclass);
+
+
+--
+-- Name: discord_cargos id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.discord_cargos ALTER COLUMN id SET DEFAULT nextval('public.discord_cargos_id_seq'::regclass);
 
 
 --
@@ -2842,6 +2892,14 @@ ALTER TABLE ONLY public.denuncias
 
 ALTER TABLE ONLY public.diretorias
     ADD CONSTRAINT diretorias_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: discord_cargos discord_cargos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.discord_cargos
+    ADD CONSTRAINT discord_cargos_pkey PRIMARY KEY (id);
 
 
 --
@@ -3423,6 +3481,13 @@ CREATE UNIQUE INDEX index_diretorias_on_nome ON public.diretorias USING btree (n
 
 
 --
+-- Name: index_discord_cargos_on_role_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_discord_cargos_on_role_id ON public.discord_cargos USING btree (role_id);
+
+
+--
 -- Name: index_elos_on_nome; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3560,6 +3625,13 @@ CREATE INDEX index_emblema_usuarios_on_user_id ON public.emblema_usuarios USING 
 --
 
 CREATE UNIQUE INDEX index_emblema_usuarios_unicos ON public.emblema_usuarios USING btree (user_id, emblema_id);
+
+
+--
+-- Name: index_emblemas_cosmetico_unico; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_emblemas_cosmetico_unico ON public.emblemas USING btree (cosmetico_gradiente) WHERE (cosmetico_gradiente IS NOT NULL);
 
 
 --
@@ -4046,6 +4118,20 @@ CREATE INDEX index_users_on_emblema_destaque_id ON public.users USING btree (emb
 
 
 --
+-- Name: index_users_on_emblema_halo_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_users_on_emblema_halo_id ON public.users USING btree (emblema_halo_id);
+
+
+--
+-- Name: index_users_on_emblema_nome_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_users_on_emblema_nome_id ON public.users USING btree (emblema_nome_id);
+
+
+--
 -- Name: index_users_on_emblema_secundario_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4171,6 +4257,14 @@ ALTER TABLE ONLY public.emblemas
 
 ALTER TABLE ONLY public.enderecos
     ADD CONSTRAINT fk_rails_21a6c355e1 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: users fk_rails_2a936728f4; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT fk_rails_2a936728f4 FOREIGN KEY (emblema_halo_id) REFERENCES public.emblemas(id) ON DELETE SET NULL;
 
 
 --
@@ -4702,6 +4796,14 @@ ALTER TABLE ONLY public.apresentacoes
 
 
 --
+-- Name: users fk_rails_f27b64b634; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT fk_rails_f27b64b634 FOREIGN KEY (emblema_nome_id) REFERENCES public.emblemas(id) ON DELETE SET NULL;
+
+
+--
 -- Name: users fk_rails_f3af151dcf; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4748,6 +4850,9 @@ ALTER TABLE ONLY public.itens_pedido
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260826140000'),
+('20260826120000'),
+('20260826000000'),
 ('20260825000000'),
 ('20260824000000'),
 ('20260818000005'),

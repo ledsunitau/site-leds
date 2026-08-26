@@ -2,6 +2,16 @@ ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"
 
+# O dotenv roda em :development E :test (ver Gemfile), então as credenciais
+# REAIS do .env chegam aqui. Sem isto, qualquer teste que passe por uma tela de
+# Discord faz chamada de verdade à API — lento, instável, e capaz de criar ou
+# APAGAR cargo no servidor da liga a partir de uma suíte de teste.
+#
+# Quem precisa fingir que está configurado atribui as duas no próprio setup.
+ENV["DISCORD_BOT_TOKEN"] = nil
+ENV["DISCORD_GUILD_ID"] = nil
+ENV["DISCORD_WEBHOOK_URL"] = nil
+
 module ActiveSupport
   class TestCase
     # Run tests in parallel with specified workers.

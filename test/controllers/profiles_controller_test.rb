@@ -47,8 +47,8 @@ class ProfilesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1", text: "Meu perfil"
-    # informações, emblemas, projetos, ideias, novidades, loja, notificações
-    assert_select ".perfil-tab", count: 7
+    # informações, emblemas, customização, projetos, ideias, novidades, loja, notificações
+    assert_select ".perfil-tab", count: 8
   end
 
   test "desvincular conta externa remove só a identidade do próprio usuário" do

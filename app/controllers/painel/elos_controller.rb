@@ -55,6 +55,6 @@ class Painel::ElosController < Painel::BaseController
   end
 
   def elo_params
-    params.expect(elo: [ :nome, :cor, :efeito, :icone_svg, :pontos_minimos, :discord_role_id ])
+    params.expect(elo: [ :nome, :cor, :efeito, :icone_svg, :pontos_minimos, :discord_sincronizar ])
   end
 end

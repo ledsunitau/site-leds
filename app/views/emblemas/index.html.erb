@@ -1,6 +1,6 @@
-<%# Catálogo de emblemas (RF-EMB): "ver todos os emblemas", da aba do perfil.
-    Ordenado do mais raro para o mais comum. Emblema exclusivo que o usuário
-    ainda não tem nem chega aqui — o controller o filtra. %>
+<%# Catálogo de emblemas (RF-EMB) — vitrine de troféus: prateleiras por raridade,
+    do lendário para o comum, com o progresso no topo. Emblema exclusivo que o
+    usuário ainda não tem nem chega aqui (o controller o filtra). %>
 <% content_for :title, "Emblemas — LEDS" %>
 
 <%= render "shared/page_bg" %>
@@ -9,25 +9,52 @@
   <%= render "shared/navbar" %>
 
   <main class="content wrap emblemas-page">
-    <header class="emblemas-head">
-      <span class="eyebrow faint">// conquistas</span>
-      <h1 class="leds-h1">Emblemas</h1>
-      <p class="lead">
-        A raridade vem da conta: quanto menos gente tem um emblema, mais raro ele é.
-        <%= link_to "Ver o ranking", ranking_emblemas_path %> ·
-        <%= link_to "Voltar ao meu perfil", profile_path(anchor: "emblemas") %>.
-      </p>
-      <%= render "shared/elo", user: current_user %>
+    <header class="vitrine-topo">
+      <div class="vitrine-id">
+        <span class="eyebrow faint">// conquistas</span>
+        <h1 class="leds-h1">Emblemas</h1>
+        <p class="lead">
+          Quanto menos gente tem um emblema, mais raro ele é.
+          <%= link_to "Ver o ranking →", ranking_emblemas_path %>
+        </p>
+      </div>
+
+      <div class="vitrine-progresso">
+        <span class="vitrine-contador">
+          <strong><%= @desbloqueados %></strong><em>/<%= @emblemas.size %></em>
+        </span>
+        <span class="vitrine-rotulo">desbloqueados</span>
+        <span class="vitrine-barra"
+              style="--pct: <%= pct_do_progresso(@desbloqueados, @emblemas.size) %>%"></span>
+        <%= render "shared/elo", user: current_user %>
+      </div>
     </header>
 
     <% if @emblemas.any? %>
-      <div class="emblema-grid catalogo">
-        <% @emblemas.each do |emblema| %>
-          <% vinculo = @vinculos[emblema.id] %>
-          <%= render "shared/emblema", emblema: emblema, vinculo: vinculo, tamanho: "lg",
-                bloqueado: vinculo.nil?, progresso: emblema.progresso_de(current_user) %>
-        <% end %>
-      </div>
+      <% indice = 0 %>
+      <% @prateleiras.each do |raridade, emblemas| %>
+        <% tem = emblemas.count { |e| @vinculos.key?(e.id) } %>
+        <section class="prateleira r-<%= raridade %>">
+          <div class="prateleira-cabeca">
+            <h2 class="prateleira-titulo"><%= Emblema::FAIXAS.find { |_, c, _| c == raridade }.third %></h2>
+            <span class="prateleira-conta"><%= tem %>/<%= emblemas.size %></span>
+            <span class="prateleira-linha"></span>
+          </div>
+
+          <div class="emblema-grid catalogo">
+            <% emblemas.each do |emblema| %>
+              <% vinculo = @vinculos[emblema.id] %>
+              <%# animation-delay escalonado: os cards entram em cascata ao abrir
+                  a página, em vez de aparecerem todos de uma vez %>
+              <div class="vitrine-slot" style="--atraso: <%= [ indice * 45, 900 ].min %>ms">
+                <%= render "shared/emblema", emblema: emblema, vinculo: vinculo, tamanho: "lg",
+                      bloqueado: vinculo.nil?, progresso: emblema.progresso_de(current_user) %>
+              </div>
+              <% indice += 1 %>
+            <% end %>
+          </div>
+        </section>
+      <% end %>
     <% else %>
       <div class="empty-state">
         <span class="empty-mono">// nenhum emblema disponível</span>

@@ -75,6 +75,23 @@ class Emblema < ApplicationRecord
     "arco_iris" => "Arco-íris", "pulso" => "Pulso"
   }.freeze
 
+  # ------------------------------------------------------------- Cosmético
+  #
+  # A pintura que a pessoa VESTE (nome + anel do avatar) ao desbloquear este
+  # emblema. Separada de cor/efeito, que pintam o ÍCONE: o ícone é a identidade
+  # do emblema no catálogo, o cosmético é o que a pessoa leva para o perfil.
+  #
+  # A exclusividade mora no GRADIENTE, com índice único no banco — o movimento
+  # vem de uma lista fechada porque é só o motor da animação. Duas ou três cores
+  # próprias já dão combinação infinita, então nenhuma pintura se repete sem que
+  # a lista de efeitos precise crescer.
+  MOVIMENTOS = %w[parado varredura fluxo pulso].freeze
+  MOVIMENTO_LABEL = {
+    "parado" => "Parado", "varredura" => "Varredura (brilho passando)",
+    "fluxo" => "Fluxo (cores correndo)", "pulso" => "Pulso"
+  }.freeze
+  GRADIENTE_FORMATO = /\A#\h{6}(,#\h{6}){1,2}\z/
+
   # Faixas de raridade por % de donos, do mais comum ao mais raro. O primeiro
   # piso que o percentual alcança ganha; a última entra como piso zero.
   FAIXAS = [
@@ -114,7 +131,16 @@ class Emblema < ApplicationRecord
   validates :limite_donos, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validate :meta_acompanha_criterio
 
+  validates :cosmetico_gradiente,
+            format: { with: GRADIENTE_FORMATO,
+                      message: "deve ser 2 ou 3 cores hexadecimais separadas por vírgula" },
+            uniqueness: { message: "já é o cosmético de outro emblema — cada pintura é exclusiva" },
+            allow_blank: true
+  validates :cosmetico_movimento, inclusion: { in: MOVIMENTOS }
+  validates :cosmetico_velocidade, numericality: { only_integer: true, in: 1..30 }
+
   before_validation :sanitizar_icone
+  before_validation :normalizar_gradiente
 
   scope :ativos, -> { where(ativo: true) }
   scope :com_meta, -> { where.not(criterio: nil) }
@@ -122,6 +148,35 @@ class Emblema < ApplicationRecord
 
   def escalonavel? = tipo == "escalonavel"
   def unico? = tipo == "unico"
+
+  # ------------------------------------------------------------- Cosmético
+
+  def cosmetico? = cosmetico_gradiente.present?
+
+  def cosmetico_cores = cosmetico_gradiente.to_s.split(",")
+
+  # O gradiente pronto para o CSS. A primeira cor é repetida no fim para o
+  # movimento de fluxo emendar sem costura quando a posição dá a volta — mas só
+  # quando ela ainda NÃO fecha o ciclo: num "#FFEE04,#FF8A00,#FFEE04" a repetição
+  # criaria um trecho chapado de duas paradas iguais no meio da animação.
+  def cosmetico_css
+    return nil if cosmetico_cores.empty?
+
+    "linear-gradient(100deg, #{cosmetico_cores_fechadas})"
+  end
+
+  # A lista de cores com a primeira repetida no fim, quando ela ainda não fecha
+  # o ciclo. É o que faz o ladrilho emendar sem costura no linear e o anel do
+  # header (conic-gradient) fechar a volta sem um corte visível.
+  def cosmetico_cores_fechadas
+    cores = cosmetico_cores
+    return nil if cores.empty?
+
+    cores += [ cores.first ] unless cores.last == cores.first
+    cores.join(", ")
+  end
+
+  scope :com_cosmetico, -> { where.not(cosmetico_gradiente: nil) }
 
   # Escalonável sem critério sobe por registro (maratona); com critério, pela
   # métrica (ideias aprovadas). Único nunca "sobe" — é binário.
@@ -268,6 +323,20 @@ class Emblema < ApplicationRecord
     vinculo
   rescue ActiveRecord::RecordNotUnique
     nil # corrida no índice único de (user, emblema): o outro lado ganhou
+  end
+
+  # Sem normalizar, "#ff0000,#00ff00" e "#FF0000, #00FF00" passariam pelo índice
+  # único como pinturas diferentes — e sairiam idênticas na tela.
+  #
+  # Vazio vira NULL, não "": o índice único é PARCIAL (WHERE ... IS NOT NULL),
+  # então "" contaria como pintura e o SEGUNDO emblema sem cor colidiria com o
+  # primeiro. Um campo de texto em branco no formulário chega como "".
+  def normalizar_gradiente
+    if cosmetico_gradiente.blank?
+      self.cosmetico_gradiente = nil
+    else
+      self.cosmetico_gradiente = cosmetico_gradiente.gsub(/\s+/, "").upcase
+    end
   end
 
   def sanitizar_icone

@@ -57,11 +57,16 @@ class EmblemaUsuario < ApplicationRecord
 
   private
 
-  # update_all: escrita direta de duas colunas, sem recarregar nem revalidar o
-  # usuário (a validação de "só equipa o que é seu" leria a linha que acabou de
-  # sumir e reclamaria do estado que estamos justamente consertando).
+  # As TRÊS colunas que apontam para um emblema: a vitrine (destaque, sub) e a
+  # pintura vestida. Esquecer o cosmético deixaria a pessoa com o nome pintado
+  # pela cor de um emblema que não é mais dela.
+  #
+  # update_all: escrita direta, sem recarregar nem revalidar o usuário (a
+  # validação de "só equipa o que é seu" leria a linha que acabou de sumir e
+  # reclamaria do estado que estamos justamente consertando).
   def desequipar
-    User.where(id: user_id, emblema_destaque_id: emblema_id).update_all(emblema_destaque_id: nil)
-    User.where(id: user_id, emblema_secundario_id: emblema_id).update_all(emblema_secundario_id: nil)
+    User::SLOTS.each do |coluna|
+      User.where(id: user_id, coluna => emblema_id).update_all(coluna => nil)
+    end
   end
 end

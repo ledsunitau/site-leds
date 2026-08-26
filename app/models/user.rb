@@ -36,8 +36,20 @@ class User < ApplicationRecord
   # Emblemas (RF-EMB): desbloqueados + os dois equipados. cascade no banco.
   has_many :emblema_usuarios, dependent: :destroy
   has_many :emblemas, through: :emblema_usuarios
+  # QUATRO slots de customização, todos independentes (RF-EMB):
+  #   destaque/secundario — VITRINE: aparecem grandes no perfil e não pintam nada
+  #   nome/halo           — PINTURA: a cor exclusiva que cada emblema desbloqueia,
+  #                         e dá para misturar (o nome de um, o halo de outro)
   belongs_to :emblema_destaque, class_name: "Emblema", optional: true, inverse_of: false
   belongs_to :emblema_secundario, class_name: "Emblema", optional: true, inverse_of: false
+  belongs_to :emblema_nome, class_name: "Emblema", optional: true, inverse_of: false
+  belongs_to :emblema_halo, class_name: "Emblema", optional: true, inverse_of: false
+
+  # Os slots, na ordem em que a tela de customização os mostra. Lista única —
+  # validação, formulário e limpeza na revogação leem daqui.
+  SLOTS = %i[emblema_destaque_id emblema_secundario_id emblema_nome_id emblema_halo_id].freeze
+  # os que exigem que o emblema tenha pintura (gradiente) para valer
+  SLOTS_DE_PINTURA = %i[emblema_nome_id emblema_halo_id].freeze
   # elo: degrau alcançado pelos pontos dos emblemas (ver recalcular_elo!)
   belongs_to :elo, optional: true
   has_one_attached :foto
@@ -59,6 +71,7 @@ class User < ApplicationRecord
   validates :name, presence: true
   validate :emblemas_equipados_desbloqueados
   validate :destaque_diferente_do_secundario
+  validate :cosmetico_tem_pintura
 
   def discord_username
     # find (não find_by): aproveita o preload de oauth_identities nas listagens
@@ -120,15 +133,28 @@ class User < ApplicationRecord
   end
 
   # Equipar só o que é seu. Sem isto, um PATCH com id arbitrário exibiria no
-  # perfil um emblema que o usuário nunca conquistou.
+  # perfil um emblema que o usuário nunca conquistou — ou vestiria uma pintura
+  # exclusiva sem ter feito nada por ela.
   def emblemas_equipados_desbloqueados
-    ids = [ emblema_destaque_id, emblema_secundario_id ].compact
+    ids = SLOTS.filter_map { |slot| public_send(slot) }.uniq
     return if ids.empty?
 
     desbloqueados = EmblemaUsuario.where(user_id: id, emblema_id: ids).pluck(:emblema_id)
     return if (ids - desbloqueados).empty?
 
     errors.add(:base, "Você só pode equipar emblemas que já desbloqueou.")
+  end
+
+  # Emblema sem gradiente não tem pintura para vestir. Sem esta guarda o usuário
+  # escolheria uma cor que não existe e ficaria com o nome branco sem entender
+  # por quê.
+  def cosmetico_tem_pintura
+    SLOTS_DE_PINTURA.each do |slot|
+      emblema = public_send(slot.to_s.delete_suffix("_id"))
+      next if emblema.nil? || emblema.cosmetico?
+
+      errors.add(slot, "não tem cor exclusiva para usar")
+    end
   end
 
   def destaque_diferente_do_secundario

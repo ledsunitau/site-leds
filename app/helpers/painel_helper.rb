@@ -36,6 +36,7 @@ module PainelHelper
         [ "Emblemas", painel_emblemas_path, nil ],
         [ "Ranks de emblema", painel_emblema_ranks_path, nil ],
         [ "Elos", painel_elos_path, nil ],
+        [ "Discord", painel_discord_path, nil ],
         [ "Estrutura", painel_estrutura_path, nil ]
       ] ],
       [ "Sistema", [
@@ -80,7 +81,8 @@ module PainelHelper
     "ParceriaLead" => "Lead de parceria", "Member" => "Membro", "Mandato" => "Mandato",
     "Diretoria" => "Diretoria", "Gestao" => "Gestão", "Setting" => "Configuração",
     "AcaoParceiro" => "Vínculo com parceiro", "User" => "Usuário",
-    "Emblema" => "Emblema", "EmblemaRank" => "Rank de emblema", "Elo" => "Elo"
+    "Emblema" => "Emblema", "EmblemaRank" => "Rank de emblema", "Elo" => "Elo",
+    "DiscordCargo" => "Cargo do Discord"
   }.freeze
 
   def modelo_label(tipo) = MODELO_LABEL[tipo.to_s] || tipo.to_s

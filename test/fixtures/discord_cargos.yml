@@ -1,0 +1,11 @@
+# Cargos que o SITE criou no servidor. Só role_id que está aqui pode ser apagado.
+cargo_do_veterano:
+  role_id: "900000000000000001"
+  nome: Veterano
+  cor: "#1D84F5"
+
+# sem dono no site: é o órfão que o diff deve propor apagar
+orfao:
+  role_id: "900000000000000009"
+  nome: Emblema que já foi
+  cor: "#9A9AA2"

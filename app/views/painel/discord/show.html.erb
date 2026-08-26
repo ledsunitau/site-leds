@@ -1,0 +1,100 @@
+<% content_for :title, "Discord — Gestão LEDS" %>
+<% content_for :painel_titulo, "Cargos no Discord" %>
+
+<section class="painel-panel">
+  <h3 class="painel-panel-title">Espelho dos cargos</h3>
+  <p class="painel-dica" style="margin-top:0">
+    Os emblemas, ranks e elos marcados com <strong>“espelhar no Discord”</strong> viram
+    cargos no servidor. Esta tela mostra o que falta acertar <em>antes</em> de mexer em
+    nada — apagar cargo no Discord é irreversível e tira de todo mundo na hora.
+    Passo a passo da configuração em <code>docs/discord-bot.md</code>.
+  </p>
+
+  <% if @erro %>
+    <div class="painel-empty"><span class="empty-mono">// <%= @erro %></span></div>
+  <% elsif !@configurado %>
+    <div class="painel-empty">
+      <span class="empty-mono">// Discord não configurado</span>
+      <p class="painel-campo-dica" style="margin-top:8px">
+        Faltam <code>DISCORD_BOT_TOKEN</code> e <code>DISCORD_GUILD_ID</code> no ambiente.
+        O guia de <code>docs/discord-bot.md</code> explica como criar a aplicação e pegar os dois.
+      </p>
+    </div>
+  <% else %>
+    <% total = @plano.values.sum(&:size) %>
+
+    <% if total.zero? %>
+      <div class="painel-empty"><span class="empty-mono">// tudo em dia — nada a sincronizar</span></div>
+    <% else %>
+      <div class="discord-diff">
+        <% [ [ :criar, "Criar", "Ainda não existem no servidor.", "ativo" ],
+             [ :atualizar, "Atualizar", "Existem, mas o nome ou a cor mudaram no site.", "pendente" ],
+             [ :apagar, "Apagar", "Cargos que o site criou e que nenhum item marcado reivindica mais.", "inativo" ]
+           ].each do |chave, titulo, explicacao, cor| %>
+          <% itens = @plano[chave] %>
+          <section class="discord-bloco">
+            <div class="discord-bloco-cabeca">
+              <span class="painel-badge-status <%= cor %>"><%= titulo %></span>
+              <span class="painel-contador"><%= itens.size %></span>
+            </div>
+            <p class="painel-campo-dica"><%= explicacao %></p>
+
+            <% if itens.any? %>
+              <ul class="discord-lista">
+                <% itens.each do |item| %>
+                  <li>
+                    <span class="discord-amostra" style="--cargo-cor: <%= item.cor %>"></span>
+                    <span class="discord-nome"><%= item.nome %></span>
+                    <span class="discord-origem">
+                      <%= chave == :apagar ? "órfão" : item.registro.class.name.underscore.humanize.downcase %>
+                    </span>
+                  </li>
+                <% end %>
+              </ul>
+            <% else %>
+              <p class="empty-mono">// nada</p>
+            <% end %>
+          </section>
+        <% end %>
+      </div>
+
+      <div class="painel-form-acoes">
+        <%= button_to "Criar e atualizar", painel_discord_path, method: :post,
+              class: "btn btn-primary" %>
+
+        <% if @plano[:apagar].any? %>
+          <%= button_to "Aplicar e apagar os #{@plano[:apagar].size} órfão(s)",
+                painel_discord_path(apagar: 1), method: :post, class: "btn btn-secondary perigo",
+                params: { apagar: "1" },
+                form: { data: { turbo_confirm: "Apagar #{@plano[:apagar].size} cargo(s) no Discord? " \
+                                               "Quem os tiver perde na hora, e não dá para desfazer." } } %>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
+</section>
+
+<% if @cargos.any? %>
+  <section class="painel-form-secao">
+    <h4 class="painel-sub">Cargos que o site gerencia — <%= @cargos.size %></h4>
+    <p class="painel-campo-dica">
+      Só estes são tocados pela sincronização. Cargo criado à mão no servidor
+      (moderação, bots) nunca entra na conta e nunca é apagado.
+    </p>
+    <div class="painel-table-wrap">
+      <table class="painel-table">
+        <thead><tr><th></th><th>Nome</th><th>ID do cargo</th><th>Desde</th></tr></thead>
+        <tbody>
+          <% @cargos.each do |cargo| %>
+            <tr>
+              <td><span class="discord-amostra" style="--cargo-cor: <%= cargo.cor %>"></span></td>
+              <td><%= cargo.nome %></td>
+              <td class="painel-td-mono"><%= cargo.role_id %></td>
+              <td class="painel-td-mono"><%= data_e_hora(cargo.created_at) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+<% end %>

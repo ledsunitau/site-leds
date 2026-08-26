@@ -1,0 +1,26 @@
+<%# Botão de sincronizar com o Discord (RF-EMB). Locais:
+      url       — para onde submeter (nil = só link, sem POST)
+      texto     — rótulo
+      liberado  — false pinta opaco e some com a ação
+      aviso     — o que explicar no hover quando bloqueado
+      metodo    — :post por padrão
+
+    Bloqueado é <span>, não <button disabled>: elemento desabilitado não dispara
+    hover de forma confiável, e o aviso ficaria inacessível justamente para quem
+    precisa dele. %>
+<% metodo = local_assigns.fetch(:metodo, :post) %>
+
+<% if liberado %>
+  <%= button_to url, method: metodo, class: "btn btn-discord btn-sync" do %>
+    <%= render "shared/oauth_icon", provider: "discord" %>
+    <span><%= texto %></span>
+  <% end %>
+<% else %>
+  <span class="btn-sync-bloqueado" tabindex="0" role="note">
+    <span class="btn btn-discord btn-sync opaco" aria-disabled="true">
+      <%= render "shared/oauth_icon", provider: "discord" %>
+      <span><%= texto %></span>
+    </span>
+    <span class="btn-sync-aviso"><%= aviso %></span>
+  </span>
+<% end %>

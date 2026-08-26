@@ -57,25 +57,47 @@
         </ol>
       </section>
 
-      <%# ---- O topo ---- %>
+      <%# ---- O topo: pódio para os três primeiros, lista para o resto ---- %>
       <% if @elo_final %>
         <section class="perfil-secao">
           <h2 class="perfil-secao-title">Topo — <%= @elo_final.nome %></h2>
           <% if @topo.any? %>
-            <ol class="ranking-topo">
-              <% @topo.each_with_index do |usuario, i| %>
-                <li class="ranking-linha">
-                  <span class="ranking-pos">#<%= i + 1 %></span>
-                  <span class="ranking-avatar"><%= render "shared/avatar", user: usuario %></span>
-                  <%= link_to usuario_path(usuario), class: "ranking-nome" do %>
+            <% podio, resto = @topo.to_a.first(3), @topo.to_a.drop(3) %>
+            <%# ordem visual 2º–1º–3º: o campeão fica no meio e mais alto %>
+            <ol class="podio">
+              <% [ podio[1], podio[0], podio[2] ].compact.each do |usuario| %>
+                <% pos = podio.index(usuario) + 1 %>
+                <li class="podio-lugar p<%= pos %>">
+                  <span class="podio-medalha">#<%= pos %></span>
+                  <span class="podio-avatar"><%= render "shared/avatar", user: usuario %></span>
+                  <%= link_to usuario_path(usuario), class: "podio-nome" do %>
                     <%= nome_com_emblema(usuario) %>
                   <% end %>
-                  <span class="ranking-pts"><%= usuario.pontos_emblemas %> pts</span>
+                  <span class="podio-pts"><%= usuario.pontos_emblemas %> pts</span>
+                  <span class="podio-base"></span>
                 </li>
               <% end %>
             </ol>
+
+            <% if resto.any? %>
+              <ol class="ranking-topo" start="4">
+                <% resto.each_with_index do |usuario, i| %>
+                  <li class="ranking-linha <%= 'voce' if usuario == current_user %>">
+                    <span class="ranking-pos">#<%= i + 4 %></span>
+                    <span class="ranking-avatar"><%= render "shared/avatar", user: usuario %></span>
+                    <%= link_to usuario_path(usuario), class: "ranking-nome" do %>
+                      <%= nome_com_emblema(usuario) %>
+                    <% end %>
+                    <span class="ranking-pts"><%= usuario.pontos_emblemas %> pts</span>
+                  </li>
+                <% end %>
+              </ol>
+            <% end %>
           <% else %>
-            <p class="empty-mono">// ninguém chegou ao <%= @elo_final.nome %> ainda</p>
+            <div class="empty-state">
+              <span class="empty-mono">// o topo está vago</span>
+              <p>Ninguém chegou ao <%= @elo_final.nome %> ainda. Pode ser você.</p>
+            </div>
           <% end %>
         </section>
       <% end %>

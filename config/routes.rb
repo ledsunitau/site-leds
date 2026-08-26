@@ -15,6 +15,9 @@ Rails.application.routes.draw do
     collection do
       patch :equipar
       get :ranking
+      # cross-check dos cargos da própria pessoa (RF-EMB). Throttled: dispara
+      # chamadas externas ao Discord.
+      post :sincronizar_discord
     end
   end
   # Link exclusivo. Caminho curto porque é feito para colar em chat; deslogado,
@@ -226,6 +229,10 @@ Rails.application.routes.draw do
     # mexer em peso ou limiar muda a pontuação da base inteira.
     resources :emblema_ranks, only: %i[index create update destroy]
     resources :elos, only: %i[index create update destroy]
+    # Espelho dos cargos no servidor do Discord: o GET mostra o diff, o POST
+    # aplica. Apagar é sempre opt-in explícito no corpo do POST.
+    get "discord", to: "discord#show", as: :discord
+    post "discord", to: "discord#sincronizar"
     resources :membros, only: %i[index new create edit update destroy]
     resources :mandatos, only: %i[create update destroy]
     get "estrutura", to: "estrutura#index", as: :estrutura

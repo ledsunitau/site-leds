@@ -5,8 +5,8 @@
 module DeliveryMethods
   class DiscordDm < ApplicationDeliveryMethod
     include DiscordRest
+    include DiscordRest::PoliticaDeJob
 
-    API = "https://discord.com/api/v10".freeze
 
     def deliver
       token = ENV["DISCORD_BOT_TOKEN"]
@@ -22,18 +22,14 @@ module DeliveryMethods
     private
 
     def abrir_dm(token, uid)
-      resposta = post_discord("#{API}/users/@me/channels", { recipient_id: uid }, auth(token))
-      JSON.parse(resposta.body)["id"]
+      resposta = post_discord("#{API}/users/@me/channels", { recipient_id: uid }, auth_discord(token))
+      json_discord(resposta)&.dig("id")
     end
 
     def enviar_mensagem(token, canal_id)
       texto = "**#{event.titulo}**\n#{event.mensagem}"
       texto += "\n#{event.link_absoluto}" if event.link_absoluto
-      post_discord("#{API}/channels/#{canal_id}/messages", { content: texto }, auth(token))
-    end
-
-    def auth(token)
-      { "Authorization" => "Bot #{token}" }
+      post_discord("#{API}/channels/#{canal_id}/messages", { content: texto }, auth_discord(token))
     end
   end
 end

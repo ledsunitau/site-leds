@@ -125,8 +125,13 @@ class EmblemaTest < ActiveSupport::TestCase
       emblemas(:convidado_beta).conceder!(users(:ana), origem: "convite")
     end
 
+    # emblema sem cargo cadastrado não enfileira nada. Escolhido explicitamente
+    # por NÃO ter discord_role_id nas fixtures — o veterano passou a ter um
+    # quando a sincronização entrou, e servia de exemplo do caso oposto.
+    sem_cargo = emblemas(:primeira_novidade)
+    assert_nil sem_cargo.discord_role_id, "a premissa deste teste é o emblema sem cargo"
     assert_no_enqueued_jobs only: DiscordCargoJob do
-      emblemas(:veterano).conceder!(users(:diretor), origem: "concessao")
+      sem_cargo.conceder!(users(:diretor), origem: "concessao")
     end
   end
 

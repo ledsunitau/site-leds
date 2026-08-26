@@ -12,9 +12,14 @@ primeira_novidade:
   criterio: novidades_publicadas
   meta: 1
   usuarios_count: 1
+  cosmetico_gradiente: "#00C55B,#7CF0B0"
+  cosmetico_movimento: fluxo
+  cosmetico_velocidade: 5
 
 # meta alta: ninguém das fixtures alcança — serve para testar o "não concede"
 veterano:
+  discord_sincronizar: true
+  discord_role_id: "900000000000000001"
   nome: Veterano
   descricao: Mil dias de conta.
   icone_svg: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="9"/></svg>'
@@ -23,6 +28,9 @@ veterano:
   criterio: dias_de_conta
   meta: 1000
   usuarios_count: 0
+  cosmetico_gradiente: "#1D84F5,#8AC6FF,#1D84F5"
+  cosmetico_movimento: varredura
+  cosmetico_velocidade: 6
 
 # sem critério: só concessão a dedo ou link
 fundador_honorario:
@@ -32,6 +40,9 @@ fundador_honorario:
   cor: "#FFEE04"
   efeito: brilho
   usuarios_count: 1
+  cosmetico_gradiente: "#FFEE04,#FF9B00"
+  cosmetico_movimento: pulso
+  cosmetico_velocidade: 3
 
 # exclusivo: fica fora do catálogo de quem não tem
 convidado_beta:
@@ -43,6 +54,9 @@ convidado_beta:
   exclusivo: true
   discord_role_id: "999888777666555444"
   usuarios_count: 0
+  cosmetico_gradiente: "#F84A54,#B026FF,#1D84F5"
+  cosmetico_movimento: fluxo
+  cosmetico_velocidade: 4
 
 # desligado: não aparece no catálogo nem é concedido
 aposentado:
@@ -55,6 +69,7 @@ aposentado:
 
 # escalonável por REGISTRO: sobe a cada maratona lançada por link/concessão
 maratonista:
+  discord_sincronizar: true
   nome: Maratonista
   descricao: Participou de maratonas de programação.
   icone_svg: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 20L20 4"/></svg>'
@@ -63,6 +78,9 @@ maratonista:
   tipo: escalonavel
   peso: 2
   usuarios_count: 1
+  cosmetico_gradiente: "#1D84F5,#00C5C5"
+  cosmetico_movimento: varredura
+  cosmetico_velocidade: 5
 
 # escalonável por MÉTRICA: o rank acompanha as ideias aprovadas
 pensador:

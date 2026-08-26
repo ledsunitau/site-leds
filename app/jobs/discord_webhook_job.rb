@@ -4,7 +4,8 @@ require "net/http"
 # (disparado pelo after_commit do Post). Sem bot persistente — um POST
 # simples no webhook do canal, via Solid Queue.
 class DiscordWebhookJob < ApplicationJob
-  include DiscordRest # ErroPermanente + retry/discard + post_discord
+  include DiscordRest              # REST
+  include DiscordRest::PoliticaDeJob # retry/discard
 
   queue_as :default
 
