@@ -1,9 +1,26 @@
-# Deploy do Sistema LEDS via Kamal 2 (RNF-13). VPS único, Postgres como acessório
-# na mesma máquina, Active Storage no Cloudflare R2, SSL do proxy (Let's Encrypt)
-# atrás do Cloudflare em modo Full. Segredos vêm de .kamal/secrets (via ENV do
-# operador / gerenciador de senha) — NADA sensível é commitado aqui.
+# Deploy do Sistema LEDS via Kamal 2 (RNF-13). VPS único, Active Storage no
+# Cloudflare R2, SSL do proxy (Let's Encrypt) atrás do Cloudflare em modo Full.
+# Segredos vêm de .kamal/secrets (via ENV do operador / gerenciador de senha) —
+# NADA sensível é commitado aqui.
 #
-# ANTES do primeiro deploy, troque os PLACEHOLDERS marcados com "TODO:".
+# Não há placeholder para editar aqui: IP e domínio vêm do ambiente via ERB
+# (ver `servers:` e `proxy:` abaixo). Basta ter o .env.production exportado.
+#
+# ---------------------------------------------------------------------------
+# POSTGRES É EXTERNO — o Kamal NÃO sobe nem gerencia banco aqui.
+#
+# O Postgres roda num container próprio na VPS, compartilhado com outras
+# aplicações. Por isso NÃO existe bloco `accessories:` neste arquivo: se
+# existisse, o Kamal criaria um segundo Postgres e o `kamal remove` levaria o
+# banco dos outros projetos junto.
+#
+# Como o app alcança esse banco: o Kamal roda todo container do app na rede
+# docker `kamal` (isso é fixo no gem, não dá para configurar). Então é o
+# container do POSTGRES que precisa entrar nessa rede — aí o DB_HOST é
+# simplesmente o nome dele, resolvido pelo DNS interno do Docker.
+#
+# O passo a passo na VPS (rede, bancos, usuário) está em docs/deploy.md §1.1.
+# ---------------------------------------------------------------------------
 
 service: site_leds
 
@@ -11,9 +28,16 @@ service: site_leds
 # (github.com/ledsunitau/site-leds), então não é mais placeholder.
 image: ledsunitau/site_leds
 
+# O Kamal renderiza ERB neste arquivo ANTES de parsear o YAML — por isso o
+# `<%= %>` abaixo funciona. Sem ele, `VPS_IP` seria só a string "VPS_IP" e o
+# Kamal tentaria abrir SSH para um host com esse nome.
+#
+# ENV.fetch (e não ENV[]) de propósito: variável ausente estoura na hora, com o
+# nome dela na mensagem. Com ENV[] viria nil, o host ficaria vazio e o erro
+# apareceria bem depois, irreconhecível.
 servers:
   web:
-    - TODO_IP_DO_VPS # TODO: IP público (ou privado, se atrás do CF) do servidor
+    - <%= ENV.fetch("VPS_IP") %>
   # Fila em processo no Puma (SOLID_QUEUE_IN_PUMA=true). Além dos jobs de
   # domínio (Discord, etiquetas, alertas), é ela que processa o
   # ActiveStorage::TransformJob das variantes de imagem — com a fila parada as
@@ -24,14 +48,20 @@ servers:
   # estas linhas:
   # job:
   #   hosts:
-  #     - TODO_IP_DO_VPS
+  #     - VPS_IP
   #   cmd: bin/jobs
 
 # SSL automático (Let's Encrypt) no proxy do Kamal. Com Cloudflare na frente,
 # ponha o SSL/TLS em "Full" para cifrar CF↔app.
+#
+# Reusa APP_HOST em vez de uma variável própria: é obrigatoriamente o MESMO
+# domínio. O certificado é emitido para este host, e o APP_HOST é o que entra
+# nos links do mailer e nas back_urls do Mercado Pago. Duas variáveis para um
+# valor só é só uma chance de elas divergirem — e a divergência aparece como
+# certificado de um domínio e e-mail apontando para outro.
 proxy:
   ssl: true
-  host: TODO_DOMINIO # TODO: ex. loja.leds.unitau.br (mesmo valor de APP_HOST)
+  host: <%= ENV.fetch("APP_HOST") %>
 
 registry:
   server: ghcr.io
@@ -45,12 +75,19 @@ registry:
 env:
   clear:
     SOLID_QUEUE_IN_PUMA: true
-    # host do acessório Postgres na rede docker do Kamal (nome: <service>-db)
-    DB_HOST: site_leds-db
-    POSTGRES_USER: site_leds
     MELHOR_ENVIO_SANDBOX: false
   secret:
     - RAILS_MASTER_KEY
+    # Conexão com o Postgres EXTERNO. Vem do .env do operador (via
+    # .kamal/secrets) em vez de literal aqui: o nome do container e o usuário
+    # são topologia da SUA VPS, não do repositório — e mudar de servidor não
+    # deveria pedir commit.
+    #   DB_HOST         nome do container do Postgres na rede `kamal`
+    #   DB_PORT         opcional; database.yml assume 5432 se vazio
+    #   POSTGRES_USER   role dona dos 4 bancos do app
+    - DB_HOST
+    - DB_PORT
+    - POSTGRES_USER
     - POSTGRES_PASSWORD
     - APP_HOST
     - GOOGLE_CLIENT_ID
@@ -88,8 +125,11 @@ aliases:
   logs: app logs -f
   dbc: app exec --interactive --reuse "bin/rails dbconsole --include-password"
   # Cria as 4 bases (primary + Solid cache/queue/cable) na primeira subida E
-  # aplica migrações pendentes nas seguintes — db:prepare faz os dois, então
-  # este é o comando de TODO deploy que traz migração, não só do primeiro.
+  # aplica migrações pendentes nas seguintes.
+  #
+  # No dia a dia NÃO precisa chamar: o hook .kamal/hooks/pre-deploy roda isto
+  # sozinho a cada deploy, antes do container novo receber tráfego. O alias fica
+  # para rodar à mão (primeira subida, ou depois de um `--skip-hooks`).
   prepare: app exec "bin/rails db:prepare"
   # Gera as variantes de imagem que ainda não existem (registros anteriores à
   # introdução das variantes). Idempotente. Ver docs/deploy.md §4.2.
@@ -107,17 +147,6 @@ builder:
   # assets:precompile roda com SECRET_KEY_BASE_DUMMY=1 no Dockerfile — não
   # precisa de RAILS_MASTER_KEY no build.
 
-# Postgres na mesma máquina, na rede local do Kamal. Volume persistente + backup
-# off-server recomendado. As 4 bases do Solid Trifecta vivem neste mesmo servidor.
-accessories:
-  db:
-    image: postgres:17
-    host: TODO_IP_DO_VPS # TODO: mesmo servidor (ou um dedicado ao banco)
-    port: "127.0.0.1:5432:5432"
-    env:
-      clear:
-        POSTGRES_USER: site_leds
-      secret:
-        - POSTGRES_PASSWORD
-    directories:
-      - data:/var/lib/postgresql/data
+# SEM `accessories:` de propósito — ver o cabeçalho do arquivo. O Postgres é um
+# container externo, compartilhado, gerenciado fora do Kamal. Backup e volume
+# são responsabilidade de quem mantém aquele container, não deste deploy.

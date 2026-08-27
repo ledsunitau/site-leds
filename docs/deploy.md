@@ -1,11 +1,14 @@
 # Deploy — Sistema LEDS (Kamal 2 + Cloudflare + R2)
 
-Runbook do `feature/deploy-producao`. VPS único, Postgres acessório na mesma
-máquina, Active Storage no Cloudflare R2, SSL do proxy Kamal atrás do Cloudflare.
+Runbook de produção. VPS único, **Postgres externo** (container próprio,
+compartilhado com outras aplicações — o Kamal não o gerencia), Active Storage no
+Cloudflare R2, SSL do proxy Kamal atrás do Cloudflare.
 
 ## 1. Pré-requisitos
 
 - VPS Linux (Docker instalado ou o Kamal instala) — anote o IP.
+- **Container Postgres já rodando na VPS**, com a rede e os bancos preparados
+  conforme a §1.1 abaixo.
 - Domínio apontado ao Cloudflare (ex.: `loja.leds.unitau.br`).
 - Bucket Cloudflare R2 + par de chaves (Access Key / Secret) + endpoint
   `https://<account_id>.r2.cloudflarestorage.com`.
@@ -15,11 +18,148 @@ máquina, Active Storage no Cloudflare R2, SSL do proxy Kamal atrás do Cloudfla
   webhook + bot token, VAPID (`WebPush.generate_key`), Mercado Pago (produção),
   Melhor Envio (produção, `MELHOR_ENVIO_SANDBOX=false`, CPF do responsável).
 
+### 1.1 Postgres externo — o que preparar na VPS
+
+O banco NÃO é gerenciado pelo Kamal. Ele roda num container próprio, que pode
+servir outras aplicações. Três coisas precisam estar prontas antes do primeiro
+deploy.
+
+**a) A rede docker `kamal`, com o Postgres dentro dela.**
+
+O Kamal roda todo container do app na rede `kamal` — isso é fixo no gem, não há
+opção de configuração. Logo, é o container do Postgres que entra nessa rede; aí
+o `DB_HOST` passa a ser o nome dele, resolvido pelo DNS interno do Docker.
+
+```bash
+# na VPS — a rede é criada pelo kamal, mas pode ser criada antes; é idempotente
+docker network inspect kamal >/dev/null 2>&1 || docker network create kamal
+
+docker network connect kamal <nome-do-container-do-postgres>
+```
+
+Um `docker compose down/up` na stack do banco **recria** o container e desfaz
+essa ligação. Para não depender de lembrar disso, declare a rede como externa no
+compose **do Postgres**:
+
+```yaml
+services:
+  postgres:                 # use o nome real do serviço
+    networks: [ default, kamal ]
+
+networks:
+  kamal:
+    external: true
+```
+
+O hook `.kamal/hooks/pre-deploy` verifica isso a cada deploy e para com o
+comando exato se a ligação tiver caído — em vez de deixar o deploy falhar lá na
+frente com "container failed to start".
+
+**b) Role e bancos.** O app usa **quatro** bancos (primary + a trifecta do
+Solid). Conectado ao Postgres da VPS:
+
+```sql
+CREATE ROLE site_leds LOGIN PASSWORD 'a-mesma-de-POSTGRES_PASSWORD';
+
+CREATE DATABASE site_leds_production        OWNER site_leds;
+CREATE DATABASE site_leds_production_cache  OWNER site_leds;
+CREATE DATABASE site_leds_production_queue  OWNER site_leds;
+CREATE DATABASE site_leds_production_cable  OWNER site_leds;
+```
+
+Alternativa: `ALTER ROLE site_leds CREATEDB;` e deixar o `db:prepare` criar os
+quatro sozinho no primeiro boot. Num Postgres compartilhado, criar à mão dá mais
+controle sobre quem pode criar o quê.
+
+> As extensões que o schema usa (`citext`) exigem superusuário na primeira vez.
+> Se o `db:prepare` reclamar de permissão, rode uma vez como superusuário:
+> `CREATE EXTENSION IF NOT EXISTS citext;` **dentro de `site_leds_production`**.
+
+**c) O Postgres precisa aceitar conexão da rede docker.** A imagem oficial já
+escuta em `0.0.0.0` e usa `scram-sha-256` — normalmente não há nada a fazer. Se
+for um Postgres customizado, confira `listen_addresses` e a linha de `pg_hba.conf`
+que cobre a faixa da rede `kamal`.
+
+**Conferindo antes de deployar:**
+
+```bash
+# na VPS: o app enxerga o banco pelo nome?
+docker run --rm --network kamal postgres:17 \
+  pg_isready -h <nome-do-container-do-postgres> -U site_leds
+```
+
+### 1.2 Máquina de deploy — WSL2 no Windows
+
+O `kamal` roda na SUA máquina, não na VPS: ele faz o build da imagem, dá push no
+registro e conversa com o servidor por SSH. Os hooks (`.kamal/hooks/`) também
+rodam aqui — são scripts `sh`, e é por isso que WSL2 é o caminho e não o
+PowerShell.
+
+**Uma vez, dentro do WSL:**
+
+```bash
+sudo apt update
+sudo apt install -y ruby-full build-essential   # ruby-dev é necessário: o kamal
+                                                # puxa ed25519/bcrypt_pbkdf, que
+                                                # compilam extensão nativa
+gem install --user-install kamal -v 2.12.0      # mesma versão do Gemfile.lock
+echo 'export PATH="$(ruby -e "puts Gem.user_dir")/bin:$PATH"' >> ~/.bashrc
+exec bash
+
+kamal version   # deve imprimir 2.12.0
+```
+
+Não é preciso instalar as gems do app: o `kamal` é standalone e o Rails só roda
+dentro do container. Por isso use o comando `kamal` direto, **não** o `bin/kamal`
+do repositório (aquele é um binstub do bundler e ia querer o Gemfile inteiro).
+
+**Onde clonar o repositório:** dentro do filesystem do WSL (`~/site-leds`), não
+em `/mnt/c/...`. O Kamal manda o diretório de trabalho inteiro como contexto de
+build, e ler isso através da fronteira Windows↔WSL é ordens de grandeza mais
+lento — ainda mais em pasta sincronizada pelo OneDrive.
+
+```bash
+cd ~ && git clone https://github.com/ledsunitau/site-leds.git
+cd site-leds
+```
+
+O fluxo passa a ser: desenvolve no Windows → `git push` → no WSL `git pull` →
+`kamal deploy`. O Kamal usa o SHA do commit como versão da imagem e avisa se
+houver alteração não commitada, então o que sobe é sempre um commit real.
+
+**Ainda no WSL:**
+
+- **Docker**: habilite a integração do Docker Desktop com a distro
+  (Settings → Resources → WSL Integration). Confira com `docker version`.
+- **Chave SSH** com acesso root (ou sudo) na VPS, em `~/.ssh`. Teste:
+  `ssh root@<IP_DA_VPS> docker version`.
+- **`.env.production`** na raiz do clone, **fora do git** (já está no
+  `.gitignore` via `.env*`). É o arquivo da §2.
+
 ## 2. Preencher os placeholders
 
-- `config/deploy.yml`: os `TODO:` restantes são **IP do VPS** (`servers.web` e
-  `accessories.db.host`) e **domínio** (`proxy.host`). O owner da imagem já está
-  resolvido (`ledsunitau`, confere com o remote do repositório).
+- `config/deploy.yml`: **não tem mais placeholder para editar.** IP e domínio
+  saem do ambiente, via ERB — o Kamal renderiza ERB no arquivo antes de parsear
+  o YAML:
+
+  ```yaml
+  servers:
+    web:
+      - <%= ENV.fetch("VPS_IP") %>
+  proxy:
+    host: <%= ENV.fetch("APP_HOST") %>
+  ```
+
+  `ENV.fetch` sem default de propósito: variável ausente estoura no ato, com o
+  nome dela na mensagem (`KeyError: key not found: "VPS_IP"`), em vez de virar
+  host vazio e falhar dez passos depois.
+
+  Note que o **domínio é o `APP_HOST`**, não uma variável separada: o proxy emite
+  o certificado para esse host e o app usa o mesmo valor nos links de e-mail e nas
+  back_urls do Mercado Pago. São obrigatoriamente iguais.
+
+  O owner da imagem já está resolvido (`ledsunitau`, confere com o remote). Não
+  há `accessories:` — o banco é externo (§1.1).
 - ENV do operador (o `.kamal/secrets` lê daqui). Crie um `.env.production` **fora
   do git** e exporte antes de deployar:
 
@@ -28,14 +168,46 @@ máquina, Active Storage no Cloudflare R2, SSL do proxy Kamal atrás do Cloudfla
   ```
 
   Deve conter tudo listado em `.kamal/secrets` (senhas, tokens, R2, SMTP, OAuth,
-  `KAMAL_REGISTRY_USERNAME/PASSWORD`, `APP_HOST`, `POSTGRES_PASSWORD`).
+  `KAMAL_REGISTRY_USERNAME/PASSWORD`) mais:
+
+  | Variável | Para quê |
+  |---|---|
+  | `VPS_IP` | host do `servers.web` (lido só pelo deploy.yml, não pelo app) |
+  | `APP_HOST` | domínio: certificado do proxy + links do mailer + back_urls do MP |
+  | `DB_HOST` | nome do **container** do Postgres na rede `kamal` |
+  | `DB_PORT` | opcional — vazio usa 5432 |
+  | `POSTGRES_USER` / `POSTGRES_PASSWORD` | role dona dos 4 bancos |
+
+  `.env.example` tem a lista completa comentada.
 
 ## 3. Cloudflare
 
-- **DNS**: registro A do domínio → IP do VPS, **proxied** (nuvem laranja).
+- **DNS**: registro A do domínio → IP do VPS.
 - **SSL/TLS**: **Full (Strict)** — o proxy Kamal serve um certificado Let's Encrypt
   válido no origin, então dá para exigir Strict (fecha MITM entre CF e o servidor).
   "Full" (sem Strict) também funciona.
+
+> **Ordem importa no PRIMEIRO deploy.** O proxy do Kamal (`ssl: true`) emite o
+> certificado pelo Let's Encrypt, e o desafio precisa chegar até a VPS. Com a
+> nuvem LARANJA ligada, quem atende o Let's Encrypt é o Cloudflare, não o seu
+> servidor — e a emissão pode falhar antes de existir qualquer certificado.
+>
+> Caminho seguro: deixe o registro em **DNS only (nuvem cinza)** para o
+> `kamal setup`, confirme que o certificado saiu, e só então ligue a nuvem
+> laranja. Verificação:
+>
+> ```bash
+> kamal proxy logs | grep -i "certificate\|acme"      # sem erro de ACME
+> curl -sI https://<APP_HOST>/up | head -1            # 200 direto no origin
+> ```
+>
+> Antes disso, confira que **80 e 443 estão abertos** no firewall da VPS — o
+> proxy publica as duas, e a 80 é usada tanto pelo redirect quanto pelo desafio.
+>
+> Se mais para frente uma RENOVAÇÃO falhar com a nuvem laranja ligada, a saída
+> definitiva é trocar o Let's Encrypt por um **Origin Certificate** do Cloudflare
+> (15 anos, gratuito): o Kamal aceita certificado próprio em
+> `proxy.ssl.certificate_pem` / `private_key_pem`, lidos dos secrets.
 
 ### 3.1 Rate limiting — camada 1 de borda (RNF-15)
 
@@ -98,34 +270,45 @@ Trocando `<APP_HOST>` pelo domínio de produção:
 
 ## 4. Deploy
 
-```bash
-kamal setup          # 1ª vez: provisiona proxy, registro, sobe app + acessório db
-kamal prepare        # cria/migra as 4 bases (primary + solid cache/queue/cable)
-kamal variantes      # gera as variantes de imagem que faltarem (ver 4.2)
+Com a §1.1 pronta e o `.env.production` exportado:
 
-kamal deploy         # deploys subsequentes
-kamal prepare        # ...seguido disto SEMPRE que o deploy trouxer migração
+```bash
+kamal setup          # 1ª vez: instala docker, sobe proxy e app
+kamal variantes      # uma vez: gera as variantes de imagem que faltarem (§4.2)
+
+kamal deploy         # daí em diante, só isto
 ```
 
-> **Este deploy traz migração.** `20260826160000_indices_das_listagens_publicas`
-> cria três índices compostos — `acoes(status, created_at DESC)`,
-> `posts(status, published_at DESC)` e `produtos(status, nome)` — que sustentam
-> filtro + ordenação + `LIMIT` das listagens paginadas. São `CREATE INDEX`
-> simples, sem reescrita de tabela; em tabela pequena roda em milissegundos.
-> Sem eles o site funciona igual, só faz sort de tudo para devolver 24 linhas.
->
-> O Kamal **não** migra sozinho (os hooks em `.kamal/hooks/` são todos
-> `.sample`, inativos). `kamal prepare` é o passo manual, e `db:prepare` é
-> idempotente: cria o que falta, migra o que está pendente, não faz nada se
-> estiver tudo em dia.
+**Migração é automática — não há passo manual.** Duas coisas cuidam disso:
 
-- **Erros no log durante o `setup`**: o Puma sobe com o Solid Queue embutido
-  ANTES do `db:prepare`, então o supervisor loga erro de conexão na base `queue`
-  (ainda inexistente) até você rodar o `prepare`. É transitório — rode o
-  `prepare` logo em seguida e os erros somem. O `/up` já responde 200 antes disso.
+1. `.kamal/hooks/pre-deploy` roda antes do container novo subir e confirma que o
+   Postgres externo está alcançável na rede `kamal`. Se não estiver, o deploy
+   para ali, com o comando de correção — em vez de falhar depois num health
+   check obscuro.
+2. `bin/docker-entrypoint` executa `db:prepare` no boot do container, porque o
+   `CMD` termina em `./bin/rails server` (é a condição que o script testa). Como
+   o proxy só manda tráfego depois do health check, a migração acontece antes de
+   qualquer request.
+
+`db:prepare` é idempotente: cria o que falta, migra o que está pendente, não faz
+nada se estiver tudo em dia. O alias `kamal prepare` continua existindo para
+rodar à mão — útil depois de um `kamal deploy --skip-hooks`, ou para diagnóstico.
+
+> **Correção:** uma versão anterior deste runbook dizia que "o Kamal não migra
+> sozinho" e mandava rodar `kamal prepare` a cada deploy com migração. Estava
+> errado — o entrypoint já fazia isso desde sempre. O passo manual era
+> desnecessário (inofensivo, mas desnecessário).
+
+- **Erros no log durante o `setup`**: se os bancos ainda não existirem, o Solid
+  Queue embutido no Puma loga erro de conexão à base `queue` até o `db:prepare`
+  do entrypoint terminar. É transitório. Se persistir, o problema é permissão —
+  ver §1.1(b).
 - As 4 bases do Solid Trifecta vivem no mesmo Postgres (ver `config/database.yml`).
   `queue`/`cable` usam `schema_format: ruby` (schemas dos gems); não esqueça —
   sem isso o `db:prepare` deixaria esses bancos vazios.
+- **Rede do banco**: se o container do Postgres for recriado, ele sai da rede
+  `kamal` e o próximo deploy para no hook. A correção definitiva é a rede externa
+  no compose dele — §1.1(a).
 - **Jobs**: rodam no Puma (`SOLID_QUEUE_IN_PUMA=true`). Quando a loja gerar
   volume, descomente o role `job:` no `deploy.yml` e mova para máquina dedicada.
 
@@ -182,6 +365,14 @@ do app.
 ## 5. Smoke test pós-deploy
 
 - [ ] `GET https://<dominio>/up` → 200 (health check).
+- [ ] **O app está falando com o Postgres externo, e só com ele.**
+      `kamal app exec "bin/rails runner 'puts ActiveRecord::Base.connection.execute(%q{select current_database(), inet_server_addr()}).first'"`
+      deve devolver `site_leds_production` e o IP do container do banco na rede
+      `kamal`. E `docker ps` na VPS não deve mostrar nenhum Postgres novo criado
+      pelo deploy — se aparecer um `site_leds-db`, sobrou `accessories:` no
+      `deploy.yml`.
+- [ ] **As 4 bases existem e migraram**: `kamal app exec "bin/rails runner 'puts ActiveRecord::Base.connection.migration_context.needs_migration?'"`
+      → `false`.
 - [ ] Login por e-mail/senha e por Google/Discord (redirect URIs de produção).
 - [ ] Recuperação de senha envia e-mail (SMTP).
 - [ ] Upload de imagem de produto → aparece servida do R2.
