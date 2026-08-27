@@ -1,5 +1,10 @@
-# Ambiente de desenvolvimento: `docker compose up` sobe Postgres + Rails.
-# Produção NÃO usa este arquivo (deploy é via Kamal, ver config/deploy.yml).
+# Ambiente de DESENVOLVIMENTO LOCAL: `docker compose up` sobe Postgres + Rails.
+#
+# Este arquivo NUNCA vai para a VPS. O deploy é via Kamal (config/deploy.yml), que
+# não lê docker-compose nenhum — ele roda `docker run` direto a partir da imagem.
+# O Postgres do serviço `db` abaixo é só o banco de teste da máquina de quem
+# desenvolve; em produção o banco é um container externo, já existente na VPS e
+# compartilhado com outras aplicações (ver docs/deploy.md §1.1).
 services:
   db:
     image: postgres:17
