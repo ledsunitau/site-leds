@@ -35,6 +35,10 @@ image: ledsunitau/site_leds
 # ENV.fetch (e não ENV[]) de propósito: variável ausente estoura na hora, com o
 # nome dela na mensagem. Com ENV[] viria nil, o host ficaria vazio e o erro
 # apareceria bem depois, irreconhecível.
+ssh:
+  user: daniel_stein
+  port: 22022
+
 servers:
   web:
     - <%= ENV.fetch("VPS_IP") %>
@@ -76,6 +80,7 @@ env:
   clear:
     SOLID_QUEUE_IN_PUMA: true
     MELHOR_ENVIO_SANDBOX: false
+    DISCORD_GUILD_ID: 1523478019866361906
   secret:
     - RAILS_MASTER_KEY
     # Conexão com o Postgres EXTERNO. Vem do .env do operador (via
