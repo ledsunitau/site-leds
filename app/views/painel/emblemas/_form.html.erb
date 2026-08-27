@@ -12,7 +12,7 @@
 
     <div class="emblema-editor">
       <div class="emblema-editor-previa">
-        <div class="emblema-previa" data-emblema-target="previa"
+        <div class="emblema-previa <%= emblema_svg_classe(emblema) %>" data-emblema-target="previa"
              style="--emblema-cor: <%= emblema.cor %>">
           <%= emblema.icone_svg.present? ? emblema_svg(emblema) : medalha %>
         </div>
@@ -52,10 +52,23 @@
           <span>Ícone (SVG)</span>
           <%= f.text_area :icone_svg, rows: 6, class: "painel-input painel-mono", required: true %>
         </label>
+        <label class="painel-check">
+          <%= f.check_box :svg_original %>
+          <span>Usar as cores do próprio SVG</span>
+        </label>
         <p class="painel-campo-dica">
-          Use <code>fill="currentColor"</code> nos traços que devem receber a cor.
-          <code>script</code>, <code>style</code>, <code>on*</code> e links externos são
-          <strong>removidos ao salvar</strong>. Máximo 20&nbsp;KB.
+          <strong>Desligado</strong> (padrão): o desenho inteiro é repintado com a
+          <em>Cor</em> acima — é o modo certo para ícone de traço simples, e é o que
+          deixa o mesmo desenho mudar de cor a cada rank. Use
+          <code>fill="currentColor"</code> nos traços que devem receber a cor.<br>
+          <strong>Ligado</strong>: o SVG sai exatamente como foi colado — gradientes e
+          paleta própria preservados. A <em>Cor</em> passa a valer só para o brilho dos
+          efeitos (neon, brilho), e o rank deixa de recolorir o desenho.
+        </p>
+        <p class="painel-campo-dica">
+          Em qualquer um dos modos, <code>script</code>, <code>style</code>,
+          <code>on*</code> e links externos são <strong>removidos ao salvar</strong>.
+          Máximo 20&nbsp;KB.
         </p>
       </div>
     </div>

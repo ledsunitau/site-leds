@@ -70,7 +70,10 @@
       <ol class="nivel-escada">
         <% @niveis.each do |nivel| %>
           <li class="nivel-degrau">
-            <span class="emblema emblema-lg <%= "emblema-fx-#{nivel.efeito}" unless nivel.efeito == 'nenhum' %>"
+            <%# Com svg_original, o rank não recolore o desenho — só o brilho do
+                efeito muda. A escada precisa mostrar isso, senão promete uma
+                troca de cor que o site não vai fazer. %>
+            <span class="emblema emblema-lg <%= emblema_svg_classe(@emblema) %> <%= "emblema-fx-#{nivel.efeito}" unless nivel.efeito == 'nenhum' %>"
                   style="--emblema-cor: <%= nivel.cor %>"><%= emblema_svg(@emblema) %></span>
             <span class="nivel-rank" style="--emblema-cor: <%= nivel.cor %>"><%= nivel.nome %></span>
             <span class="nivel-limiar">a partir de <strong><%= nivel.limiar %></strong></span>

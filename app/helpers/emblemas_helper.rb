@@ -8,6 +8,18 @@ module EmblemasHelper
     sanitize fonte.icone_svg, tags: Emblema::TAGS_SVG, attributes: Emblema::ATRIBUTOS_SVG
   end
 
+  # A fonte usa as cores do próprio SVG? Só Emblema tem a coluna — Elo também
+  # desenha por aqui e nunca teve, então responde false em vez de estourar.
+  def svg_original?(fonte)
+    fonte.respond_to?(:svg_original?) && fonte.svg_original?
+  end
+
+  # Classe do wrapper para quem renderiza o SVG fora do emblema_icone (a prévia
+  # do formulário e a escada de ranks). Mantém o escape num lugar só.
+  def emblema_svg_classe(fonte)
+    "svg-original" if svg_original?(fonte)
+  end
+
   # Forma genérica para prever cor e efeito de um RANK, que não tem desenho
   # próprio (o desenho é sempre do emblema; o rank só troca cor e animação).
   MEDALHA = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' \
@@ -28,6 +40,11 @@ module EmblemasHelper
     classes = [ "emblema", "emblema-#{tamanho}" ]
     classes << "emblema-fx-#{efeito}" unless bloqueado || efeito == "nenhum"
     classes << "bloqueado" if bloqueado
+    # Desliga o repinte do CSS: o desenho sai com as cores próprias. A `cor`
+    # continua sendo aplicada como --emblema-cor porque os efeitos (neon,
+    # brilho) tiram o brilho dela — só o preenchimento das formas é que passa
+    # a ser do SVG. Ver .emblema:not(.svg-original) no application.css.
+    classes << "svg-original" if svg_original?(emblema)
 
     tag.span(emblema_svg(emblema), class: classes,
              style: "--emblema-cor: #{cor}", title: emblema.nome)

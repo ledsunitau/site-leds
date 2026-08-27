@@ -119,7 +119,7 @@ class Painel::EmblemasController < Painel::BaseController
   end
 
   def emblema_params
-    params.expect(emblema: [ :nome, :descricao, :icone_svg, :cor, :efeito,
+    params.expect(emblema: [ :nome, :descricao, :icone_svg, :cor, :efeito, :svg_original,
                              :criterio, :meta, :exclusivo, :ativo,
                              :tipo, :peso, :limite_donos, :produto_id,
                              :cosmetico_gradiente, :cosmetico_movimento, :cosmetico_velocidade,
