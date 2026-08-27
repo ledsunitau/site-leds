@@ -26,24 +26,48 @@ test:
 # Produção usa o layout multi-database do Rails 8: primary + Solid Trifecta
 # (cache/queue/cable), todos no MESMO servidor PostgreSQL.
 production:
-  primary: &primary_production
-    <<: *default
+  primary:
+    adapter: postgresql
+    encoding: unicode
+    pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+    host: <%= ENV["DB_HOST"].presence || "localhost" %>
+    port: <%= ENV["DB_PORT"].presence || 5432 %>
+    username: <%= ENV["POSTGRES_USER"].presence || "postgres" %>
+    password: <%= ENV["POSTGRES_PASSWORD"].presence || "postgres" %>
     database: site_leds_production
+
   cache:
-    <<: *primary_production
+    adapter: postgresql
+    encoding: unicode
+    pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+    host: <%= ENV["DB_HOST"].presence || "localhost" %>
+    port: <%= ENV["DB_PORT"].presence || 5432 %>
+    username: <%= ENV["POSTGRES_USER"].presence || "postgres" %>
+    password: <%= ENV["POSTGRES_PASSWORD"].presence || "postgres" %>
     database: site_leds_production_cache
     migrations_paths: db/cache_migrate
-  # queue/cable usam schema Ruby (db/queue_schema.rb, db/cable_schema.rb —
-  # formato em que os installers dos gems os mantêm); sem este override o
-  # schema_format global :sql procuraria db/*_structure.sql inexistentes e
-  # deixaria os bancos vazios no primeiro db:prepare de produção.
+
   queue:
-    <<: *primary_production
+    adapter: postgresql
+    encoding: unicode
+    pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+    host: <%= ENV["DB_HOST"].presence || "localhost" %>
+    port: <%= ENV["DB_PORT"].presence || 5432 %>
+    username: <%= ENV["POSTGRES_USER"].presence || "postgres" %>
+    password: <%= ENV["POSTGRES_PASSWORD"].presence || "postgres" %>
     database: site_leds_production_queue
     migrations_paths: db/queue_migrate
     schema_format: ruby
+
   cable:
-    <<: *primary_production
+    adapter: postgresql
+    encoding: unicode
+    pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+    host: <%= ENV["DB_HOST"].presence || "localhost" %>
+    port: <%= ENV["DB_PORT"].presence || 5432 %>
+    username: <%= ENV["POSTGRES_USER"].presence || "postgres" %>
+    password: <%= ENV["POSTGRES_PASSWORD"].presence || "postgres" %>
     database: site_leds_production_cable
     migrations_paths: db/cable_migrate
     schema_format: ruby
+
