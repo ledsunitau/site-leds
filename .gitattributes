@@ -11,6 +11,11 @@ db/*.sql text eol=lf
 bin/* text eol=lf
 bin/*.cmd text eol=crlf
 
+# Hooks do Kamal são scripts sh. Com CRLF o shebang vira "/bin/sh\r" e o shell
+# responde "bad interpreter" — mesmo motivo dos binstubs acima. Os .sample ficam
+# de fora: são exemplos do gem, nunca executados.
+.kamal/hooks/* text eol=lf
+
 # Mark any vendored files as having been vendored.
 vendor/* linguist-vendored
 config/credentials/*.yml.enc diff=rails_credentials

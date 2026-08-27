@@ -1,0 +1,80 @@
+#!/bin/sh
+# Roda ANTES do container novo subir, na máquina de quem deploya (hooks do Kamal
+# são locais — quem toca a VPS é o `kamal server exec` abaixo).
+#
+# POR QUE ESTE HOOK EXISTE
+#
+# O Postgres é EXTERNO: um container próprio na VPS, compartilhado com outras
+# aplicações, fora do controle do Kamal (ver config/deploy.yml). O Kamal roda
+# todo container do app na rede docker `kamal` — isso é fixo no gem. Então o
+# container do Postgres PRECISA estar nessa mesma rede para o DB_HOST resolver.
+#
+# Quando essa ligação se perde (típico: `docker compose down/up` na stack do
+# banco recria o container fora da rede), o sintoma sem este hook é ruim: o
+# deploy vai até o fim, o container novo sobe, o db:prepare do entrypoint falha,
+# o health check estoura e o Kamal reverte com "container failed to start" — sem
+# dizer que o problema era rede. Aqui o deploy para antes, com o comando exato.
+#
+# NÃO roda migração: o bin/docker-entrypoint já executa `db:prepare` no boot do
+# container (o CMD termina em `./bin/rails server`, que é a condição de lá).
+set -eu
+
+# `[ cond ] && exit 0` NÃO serve aqui: com set -e, o teste falso devolve 1 e
+# aborta o hook — reprovando um deploy perfeitamente válido. Tem que ser if/fi.
+
+# Rollback usa imagem antiga; não é hora de validar topologia nova.
+if [ "${KAMAL_COMMAND:-}" = "rollback" ]; then
+  exit 0
+fi
+
+# Escotilha para quando o DB_HOST não for um container na rede (IP, host
+# externo, banco gerenciado). Aí a checagem abaixo não se aplica.
+if [ "${KAMAL_SKIP_DB_CHECK:-}" = "1" ]; then
+  exit 0
+fi
+
+if [ -z "${DB_HOST:-}" ]; then
+  echo "pre-deploy: DB_HOST não está no ambiente." >&2
+  echo "  Exporte as variáveis antes de deployar:  set -a; . .env.production; set +a" >&2
+  exit 1
+fi
+
+KAMAL="${KAMAL_BIN:-kamal}"
+
+# A rede `kamal` é criada pelo `proxy boot`, que roda DEPOIS deste hook. Na
+# primeira subida ela ainda não existe, então garantimos aqui — idempotente.
+$KAMAL server exec --quiet \
+  "docker network inspect kamal >/dev/null 2>&1 || docker network create kamal"
+
+# O container do Postgres está mesmo nessa rede?
+# --raw: só a saída do comando, sem o "Host:" nem o "Running ..." do Kamal —
+# é o que torna a saída parseável aqui.
+if ! $KAMAL server exec --raw \
+     "docker network inspect kamal --format '{{range .Containers}}{{.Name}} {{end}}'" \
+     | tr ' ' '\n' | grep -qx "$DB_HOST"; then
+  cat >&2 <<FIM
+
+pre-deploy: o container "$DB_HOST" não está na rede docker \`kamal\`.
+
+  O app não vai conseguir resolver o DB_HOST. Na VPS:
+
+      docker network connect kamal $DB_HOST
+
+  Para não precisar refazer isso toda vez que a stack do banco for recriada,
+  declare a rede como externa no compose DO POSTGRES:
+
+      services:
+        $DB_HOST:
+          networks: [ default, kamal ]
+      networks:
+        kamal:
+          external: true
+
+  Detalhes em docs/deploy.md §1.1.
+  (Se o DB_HOST não for um container docker, use KAMAL_SKIP_DB_CHECK=1.)
+
+FIM
+  exit 1
+fi
+
+echo "pre-deploy: Postgres \"$DB_HOST\" alcançável na rede kamal."
