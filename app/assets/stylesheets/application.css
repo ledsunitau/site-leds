@@ -3033,8 +3033,18 @@ a.painel-resumo.ativo { box-shadow: inset 0 0 0 1px var(--r-cor); }
    sólido se pintássemos tudo. */
 .emblema { display: inline-grid; place-items: center; color: var(--emblema-cor); line-height: 0; }
 .emblema svg { width: 100%; height: 100%; display: block; }
-.emblema svg :not([fill="none"]) { fill: currentColor; }
-.emblema svg [stroke]:not([stroke="none"]) { stroke: currentColor; }
+/* Repinte de cor única: toda forma vira a cor do emblema. É o que permite o
+   mesmo desenho mudar de cor por rank sem redesenhar.
+
+   `:not(.svg-original)` é o escape: com o modo "cores do próprio SVG" ligado
+   (Emblema#svg_original), o desenho sai como foi colado — gradiente, paleta,
+   tudo. Sem esse escape, uma arte com gradiente vira um disco chapado, porque
+   todas as formas recebem a MESMA cor e a maior cobre as outras.
+
+   Os efeitos continuam valendo nos dois modos: brilho/neon/arco-íris/pulso são
+   filter/transform sobre o conjunto, não dependem de repintar forma a forma. */
+.emblema:not(.svg-original) svg :not([fill="none"]) { fill: currentColor; }
+.emblema:not(.svg-original) svg [stroke]:not([stroke="none"]) { stroke: currentColor; }
 
 .emblema-mini { width: 22px; height: 22px; }
 .emblema-sm   { width: 34px; height: 34px; }
@@ -3229,8 +3239,10 @@ a.painel-resumo.ativo { box-shadow: inset 0 0 0 1px var(--r-cor); }
   color: var(--emblema-cor); line-height: 0;
 }
 .emblema-previa svg { width: 100%; height: 100%; }
-.emblema-previa svg :not([fill="none"]) { fill: currentColor; }
-.emblema-previa svg [stroke]:not([stroke="none"]) { stroke: currentColor; }
+/* Mesma regra da prévia do formulário — inclusive o escape, senão a prévia
+   mentiria sobre como o emblema vai sair no site. */
+.emblema-previa:not(.svg-original) svg :not([fill="none"]) { fill: currentColor; }
+.emblema-previa:not(.svg-original) svg [stroke]:not([stroke="none"]) { stroke: currentColor; }
 
 .painel-input.painel-cor { min-width: 0; width: 74px; padding: 4px 6px; height: 38px; cursor: pointer; }
 .painel-input.painel-mono { font-family: var(--font-mono); font-size: 12px; line-height: 1.5; }

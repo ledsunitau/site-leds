@@ -21,6 +21,7 @@ CREATE EXTENSION IF NOT EXISTS citext WITH SCHEMA public;
 -- Name: EXTENSION citext; Type: COMMENT; Schema: -; Owner: -
 --
 
+COMMENT ON EXTENSION citext IS 'data type for case-insensitive character strings';
 
 
 --
@@ -1102,6 +1103,7 @@ CREATE TABLE public.emblemas (
     cosmetico_movimento character varying DEFAULT 'parado'::character varying NOT NULL,
     cosmetico_velocidade integer DEFAULT 4 NOT NULL,
     discord_sincronizar boolean DEFAULT false NOT NULL,
+    svg_original boolean DEFAULT false NOT NULL,
     CONSTRAINT emblemas_cosmetico_movimento_check CHECK (((cosmetico_movimento)::text = ANY ((ARRAY['parado'::character varying, 'varredura'::character varying, 'fluxo'::character varying, 'pulso'::character varying])::text[]))),
     CONSTRAINT emblemas_cosmetico_velocidade_check CHECK (((cosmetico_velocidade >= 1) AND (cosmetico_velocidade <= 30))),
     CONSTRAINT emblemas_criterio_check CHECK (((criterio IS NULL) OR ((criterio)::text = ANY ((ARRAY['novidades_publicadas'::character varying, 'ideias_aprovadas'::character varying, 'acoes_participadas'::character varying, 'comentarios'::character varying, 'avaliacoes'::character varying, 'pedidos_pagos'::character varying, 'dias_de_conta'::character varying])::text[])))),
@@ -4870,6 +4872,7 @@ ALTER TABLE ONLY public.itens_pedido
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260827120000'),
 ('20260826160000'),
 ('20260826140000'),
 ('20260826120000'),
