@@ -666,7 +666,24 @@ h1, h2, h3, p { margin: 0; }
 
 @media (max-width: 720px) {
   .membro-body { grid-template-columns: 1fr; }
-  .membro-foto { min-height: 240px; }
+  /* Aqui o card vira UMA coluna, então a foto passa a ocupar a largura inteira.
+     Com `min-height: 240px` o box virava PAISAGEM (~310×240) enquanto a foto de
+     perfil é retrato — e o `cover` do .membro-foto escondia ~42% da altura,
+     cortando a cabeça de quem estava na foto.
+
+     `aspect-ratio: 3/4` dá ao box a mesma proporção da foto, então ela aparece
+     praticamente inteira e continua preenchendo o bloco (sem faixa vazia, que é
+     o que `contain` traria). O `min-height: 0` zera a regra de 360px do desktop
+     — sem isso, num celular estreito ela venceria e distorceria a proporção.
+
+     3/4 e não 5/6 (a proporção do desktop) porque aqui a largura é toda do card:
+     5/6 deixaria ~10% de corte, e o ponto deste ajuste é não cortar rosto.
+     Foto em PAISAGEM passa a cortar nas laterais — troca aceita, já que foto de
+     perfil de membro é retrato na prática.
+
+     Nitidez continua: o box fica ~310×413, e a variante :retrato (675×900, ver
+     User#foto) cobre isso em 2x. */
+  .membro-foto { min-height: 0; aspect-ratio: 3 / 4; }
   .membros-tab { font-size: 20px; }
   .membro-links { gap: 22px; }
 }
