@@ -167,18 +167,60 @@ docker compose up
 Sobe o PostgreSQL e o app em <http://localhost:3000>. Na primeira execução o
 `db:prepare` cria os bancos e carrega `db/structure.sql` automaticamente.
 
-Comandos do dia a dia (sempre dentro do container):
+### Entrar
+
+`bin/rails db:seed` popula um ambiente de demonstração — e é idempotente, então
+rode quantas vezes quiser (inclusive para recuperar a senha de um usuário de
+seed que você tenha trocado). Todos usam a senha **`leds-mudar-123`**:
+
+| Conta | Papel |
+|---|---|
+| `presidente@leds.dev` | presidência (abre o `/painel`) |
+| `midias@leds.dev` | diretoria |
+| `bruno@leds.dev` | comunidade |
+
+Essas contas só existem em dev e teste — o seed as cria dentro de um
+`if Rails.env.local?`, então produção nunca as vê.
+
+### Integrações externas ficam DESLIGADAS localmente
+
+`docker-compose.override.yml` (aplicado automaticamente pelo Compose) zera as
+credenciais de Discord, Mercado Pago, Melhor Envio e OAuth no ambiente local.
+
+Isso não é higiene, é contenção: com credenciais reais no `.env`, publicar uma
+novidade no painel local **anunciaria no Discord de verdade** da liga, e clicar
+em "Continuar com Google" levaria você para o callback de **produção** — saindo
+do ambiente local sem aviso.
+
+Consequências práticas no dev:
+
+- Entre por **e-mail e senha**. Os botões de OAuth aparecem, mas dão erro.
+- Os botões de "Sincronizar Discord" aparecem bloqueados, com o motivo no hover.
+- Checkout e cotação de frete respondem "indisponível" em vez de chamar as APIs.
+- E-mail não é enviado: vira arquivo em **`tmp/mails/`** (um por destinatário).
+  É lá que está o link de recuperação de senha.
+
+Para rodar **com** as credenciais reais do `.env` — depurar o Mercado Pago, por
+exemplo — aponte só o arquivo base, o que desliga a fusão do override:
+
+```bash
+docker compose -f docker-compose.yml up
+```
+
+### Comandos do dia a dia
+
+Sempre dentro do container:
 
 ```bash
 docker compose exec web bin/rails test        # suíte completa
 docker compose exec web bin/rails console     # console
 docker compose exec web bin/rubocop           # lint
+docker compose exec web bin/rails db:seed     # repovoar / resetar senhas de seed
 docker compose exec web bundle install        # após mudar o Gemfile
 docker compose exec web bin/rails db:prepare  # criar/migrar banco
 ```
 
-Integrações externas (OAuth, Discord, Mercado Pago, Melhor Envio) leem de um
-`.env` na raiz — **nunca commitado**. Sem ele o app sobe normalmente; só os
+O `.env` da raiz **nunca é commitado**. Sem ele o app sobe normalmente — só os
 fluxos que dependem de cada serviço ficam indisponíveis.
 
 > Rodar fora do Docker exige Ruby 3.4 e o cliente `psql` instalados por conta

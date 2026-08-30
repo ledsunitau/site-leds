@@ -1,0 +1,67 @@
+# Ambiente de DESENVOLVIMENTO local — aplicado automaticamente.
+#
+# O Docker Compose funde este arquivo com o docker-compose.yml em TODO comando
+# `docker compose ...`, sem precisar de flag. Ele existe para não ter que editar
+# nem o docker-compose.yml nem o .env — que hoje carrega valores de PRODUÇÃO
+# (o mesmo .env alimenta o deploy).
+#
+# A mecânica: `environment:` tem precedência sobre `env_file:`. Então cada
+# variável abaixo vence a do .env, uma a uma, sem apagar as outras.
+#
+# Nunca chega na VPS: o Kamal não lê docker-compose nenhum — ele roda
+# `docker run` direto a partir da imagem (ver config/deploy.yml).
+#
+# ---------------------------------------------------------------------------
+# PARA RODAR COM AS CREDENCIAIS REAIS DO .env
+# (ex.: depurar a integração do Mercado Pago contra o sandbox de verdade)
+#
+#     docker compose -f docker-compose.yml up
+#
+# Apontar o -f explicitamente desliga a fusão automática deste arquivo.
+# ---------------------------------------------------------------------------
+services:
+  web:
+    environment:
+      # ---- Banco -------------------------------------------------------------
+      # O .env aponta para o Postgres da VPS; aqui volta para o container `db`
+      # deste compose, cujo superusuário é postgres/postgres. Sem isto o Rails
+      # tenta autenticar com a role de produção e leva
+      # `FATAL: password authentication failed`.
+      DB_HOST: db
+      DB_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+      # ---- Integrações externas: DESLIGADAS ----------------------------------
+      # Vazio = "não configurado" é o interruptor que o próprio app usa
+      # (DiscordSync.configurado?, MercadoPago.configurado?,
+      # MelhorEnvio.configurado?) e o mesmo que o test/test_helper.rb faz.
+      #
+      # Isto não é higiene, é contenção: com as credenciais reais, publicar uma
+      # novidade no painel local ANUNCIA no Discord de verdade da liga, e um
+      # checkout local fala com a API de produção do Mercado Pago.
+      DISCORD_BOT_TOKEN: ""
+      DISCORD_GUILD_ID: ""
+      DISCORD_WEBHOOK_URL: ""
+      MERCADO_PAGO_ACCESS_TOKEN: ""
+      MERCADO_PAGO_PUBLIC_KEY: ""
+      MERCADO_PAGO_WEBHOOK_SECRET: ""
+      MELHOR_ENVIO_TOKEN: ""
+
+      # ---- OAuth -------------------------------------------------------------
+      # Com as credenciais de produção, clicar em "Continuar com Google" manda
+      # para o Google, que redireciona para o CALLBACK DE PRODUÇÃO — você sai do
+      # ambiente local sem perceber e vai parar no site no ar. Vazio corta isso.
+      #
+      # Os botões continuam desenhados na tela de login (dão erro se clicados);
+      # entre com e-mail e senha dos usuários de seed. Já os botões de
+      # "Sincronizar Discord" somem sozinhos, porque as telas deles consultam
+      # DiscordSync.configurado?.
+      GOOGLE_CLIENT_ID: ""
+      GOOGLE_CLIENT_SECRET: ""
+      DISCORD_CLIENT_ID: ""
+      DISCORD_CLIENT_SECRET: ""
+
+      # R2, SMTP, VAPID e APP_HOST ficam de FORA de propósito: o development.rb
+      # já usa active_storage.service = :local, o e-mail vai para tmp/mails/ e o
+      # resto é inerte no dev. Zerar por zerar só encheria este arquivo.

@@ -51,6 +51,14 @@ ActiveRecord::Base.transaction do
         u.role = f[:role]
         u.password = senha_dev
       end
+      # O bloco acima só roda na CRIAÇÃO. Sem a linha abaixo, um usuário de
+      # seed que teve a senha trocada na mão fica inacessível para sempre — e o
+      # db:seed deixa de ser o caminho de volta a um ambiente conhecido, que é
+      # justamente o que o cabeçalho deste arquivo promete. Estes são fixtures
+      # com senha publicada no repo; o estado conhecido é o ponto deles.
+      # Guardado por valid_password? para não gastar bcrypt (nem sujar
+      # updated_at) quando já está certa.
+      user.update!(password: senha_dev) unless user.valid_password?(senha_dev)
 
       member = Member.find_or_create_by!(user: user) { |m| m.founder = true }
 
@@ -141,8 +149,9 @@ ActiveRecord::Base.transaction do
     compradores.each do |nome, dados|
       user = User.find_or_create_by!(email: dados[:email]) do |u|
         u.name = nome
-        u.password = "leds-mudar-123"
+        u.password = senha_dev
       end
+      user.update!(password: senha_dev) unless user.valid_password?(senha_dev) # ver nota nos fundadores
       usuarios[nome] = user
       next if user.pedidos.any? # idempotente
 

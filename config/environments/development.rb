@@ -40,6 +40,18 @@ Rails.application.configure do
   # Set localhost to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
 
+  # E-mail vira ARQUIVO em tmp/mails/, um por destinatário.
+  #
+  # Sem isto o dev cai no padrão do Rails (:smtp em localhost:25), que não
+  # existe no container: a entrega falha e o raise_delivery_errors = false acima
+  # engole o erro em silêncio. Resultado: nenhum e-mail sai — o que é o certo —,
+  # mas o link de recuperação de senha do Devise também não aparece em lugar
+  # nenhum, e não dá para testar o fluxo.
+  #
+  # :file é entrega nativa do Action Mailer, sem gem nova. O smtp_settings de
+  # verdade vive só no production.rb, então isto não encosta em produção.
+  config.action_mailer.delivery_method = :file
+
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
 
