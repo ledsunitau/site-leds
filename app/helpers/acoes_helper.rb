@@ -52,8 +52,12 @@ module AcoesHelper
     end
   end
 
-  def foto_de_membro(member)
-    FotoUrl.para(member.foto_para_card, :avatar) || image_path("avatar-default.svg")
+  # `variante` porque os dois consumos têm ordens de grandeza diferentes: os
+  # participantes do card de ação são círculos de 34px (:avatar), e a foto do
+  # card em /membros é 300×360 (:retrato). Servir :avatar aos dois foi o bug da
+  # foto pixelada — o default aqui é o caso pequeno, que é a maioria.
+  def foto_de_membro(member, variante = :avatar)
+    FotoUrl.para(member.foto_para_card, variante) || image_path("avatar-default.svg")
   end
 
   # Ícone de tecnologia/tema: ícone salvo no banco > ícone empacotado pelo nome

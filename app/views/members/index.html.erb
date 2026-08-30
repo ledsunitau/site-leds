@@ -92,7 +92,9 @@
           </header>
 
           <div class="membro-body">
-            <div class="membro-foto" style="background-image:url('<%= foto_de_membro(member) %>')"></div>
+            <%# :retrato, não :avatar — este box é 300×360 (240 de altura e
+                largura cheia no mobile), não um círculo de cromo. %>
+            <div class="membro-foto" style="background-image:url('<%= foto_de_membro(member, :retrato) %>')"></div>
 
             <div class="membro-info">
               <% if member.bio.present? %><p class="membro-desc"><%= member.bio %></p><% end %>

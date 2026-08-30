@@ -15,8 +15,12 @@ class Member < ApplicationRecord
 
   # Foto institucional do card (RF-MEM-06); sem ela, o card usa a foto de
   # perfil do usuário (fallback em foto_para_card).
+  # Espelha User#foto — o porquê dos dois tamanhos está lá. Tem que ser igual:
+  # foto_para_card devolve esta OU a do user, e o chamador pede a variante sem
+  # saber de qual das duas ela veio.
   has_one_attached :foto do |anexo|
-    anexo.variant :avatar, resize_to_limit: [ 96, 96 ], **ImagemValidavel::VARIANTE
+    anexo.variant :avatar,  resize_to_fill:  [ 192, 192 ], **ImagemValidavel::VARIANTE
+    anexo.variant :retrato, resize_to_limit: [ 720, 900 ], **ImagemValidavel::VARIANTE
   end
 
   validates :user_id, uniqueness: true
