@@ -4,6 +4,21 @@
 class PostsController < ApplicationController
   before_action :authenticate_user!, except: %i[index show ultimas]
 
+  # Registrado DEPOIS do handler do ApplicationController, então ganha nas duas
+  # (no Rails o último rescue_from compatível é o que roda). Lá a resposta é
+  # JSON — contrato da API, e continua valendo aqui para tudo que não é HTML.
+  # Na tela de escrita, porém, redirecionar ou devolver JSON jogaria fora o texto
+  # que a pessoa acabou de digitar; então o formulário volta preenchido, com os
+  # erros e 422.
+  rescue_from ActiveRecord::RecordInvalid do |e|
+    if request.format.html?
+      @post = e.record
+      render(@post.persisted? ? :edit : :new, status: :unprocessable_entity)
+    else
+      render_invalido(e.record)
+    end
+  end
+
   POR_PAGINA = 6 # mesmo número que a paginação client-side mostrava
 
   def index
@@ -60,7 +75,36 @@ class PostsController < ApplicationController
     authorize Post, :index?
 
     posts = base_scope.where(autor: current_user).order(updated_at: :desc)
-    render json: { posts: paginar(posts).map { |p| post_json(p) } }
+
+    respond_to do |format|
+      format.json { render json: { posts: paginar(posts).map { |p| post_json(p) } } }
+      format.html do
+        @pagina = pagina_atual
+        @total_paginas = total_de_paginas(posts, por_pagina: 20) # 20 = padrão do paginar
+        @posts = paginar(posts).to_a
+      end
+    end
+  end
+
+  # --- tela de escrita fora do painel (RF-NOV-04) ---
+  #
+  # Existe porque escritor e jornalista NÃO entram em /painel (só diretoria e
+  # presidência passam pelo exigir_gestao!), e sem tela a permissão da PostPolicy
+  # não valia nada. A gestão continua com a tela do painel; esta é a mesma
+  # máquina de estados, com a moldura do site público.
+
+  def new
+    # tipo inicial = o primeiro que a policy deixa: escritor cai em blog,
+    # jornalista em notícia, e a liga em notícia (a ordem de Post::TIPOS).
+    # helpers.: a lista mora no HomeHelper, que é quem a view também consulta —
+    # duas cópias divergiriam no dia em que a policy mudasse.
+    @post = Post.new(tipo: helpers.tipos_de_novidade_permitidos.first, formato: "rico")
+    authorize @post
+  end
+
+  def edit
+    @post = Post.find(params[:id])
+    authorize @post, :update?
   end
 
   # RF-INI-07: últimas notícias publicadas para a landing (cache TTL — RNF-01;
@@ -99,7 +143,13 @@ class PostsController < ApplicationController
     authorize post
 
     post.save!
-    render json: post_json(post, completo: true), status: :created
+    # O JSON é contrato de API e não muda de forma nenhuma; o HTML é a tela nova
+    # e responde com redirect porque o Turbo descarta resposta de formulário que
+    # não seja redirect (303 — ver Painel::BaseController#voltar_para).
+    respond_to do |format|
+      format.json { render json: post_json(post, completo: true), status: :created }
+      format.html { redirect_to edit_post_path(post), notice: "Rascunho criado.", status: :see_other }
+    end
   end
 
   def update
@@ -115,7 +165,10 @@ class PostsController < ApplicationController
       post.save!
     end
 
-    render json: post_json(post, completo: true)
+    respond_to do |format|
+      format.json { render json: post_json(post, completo: true) }
+      format.html { redirect_to edit_post_path(post), notice: mensagem_de_edicao(post), status: :see_other }
+    end
   end
 
   def destroy
@@ -133,7 +186,14 @@ class PostsController < ApplicationController
     authorize post
 
     post.submeter!
-    render json: post_json(post, completo: true)
+
+    respond_to do |format|
+      format.json { render json: post_json(post, completo: true) }
+      format.html do
+        redirect_to meus_posts_path, status: :see_other,
+                    notice: "“#{post.titulo}” foi para a fila de aprovação. A gestão revisa e publica."
+      end
+    end
   end
 
   def aprovar
@@ -173,7 +233,19 @@ class PostsController < ApplicationController
   # status NUNCA entra por aqui: publicar é aprovar (fluxo próprio) — senão
   # qualquer autor se auto-publica (RN-02).
   def post_params
-    params.require(:post).permit(:tipo, :titulo, :subtitulo, :caller, :corpo, :thumbnail)
+    params.require(:post).permit(:tipo, :titulo, :subtitulo, :caller, :corpo, :thumbnail,
+                                 :formato, :corpo_markdown)
+  end
+
+  # RF-NOV-06: qualquer edição de conteúdo publicado volta para a fila. O model
+  # faz isso sozinho — a tela precisa DIZER, senão parece que a edição sumiu.
+  # (mesma mensagem do Painel::PostsController, para quem escreve nos dois lugares)
+  def mensagem_de_edicao(post)
+    if post.saved_change_to_status? && post.em_aprovacao?
+      "Salvo. Como já estava publicada, voltou para a fila de aprovação (RN-02)."
+    else
+      "Alterações salvas."
+    end
   end
 
   def base_scope

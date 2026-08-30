@@ -1,0 +1,43 @@
+<%# Editar a própria novidade, fora do painel. O botão de enviar para aprovação
+    fica aqui (e não no form) porque é outra requisição — publicar ninguém
+    publica sozinho: quem libera é a gestão (RN-02). %>
+<% content_for :title, "#{@post.titulo} — LEDS" %>
+
+<%= render "shared/page_bg" %>
+
+<div class="page">
+  <%= render "shared/navbar", active: "NOVIDADES" %>
+
+  <main class="content wrap escrita-page">
+    <a class="voltar-link" href="<%= meus_posts_path %>">← Minhas novidades</a>
+
+    <div class="escrita-head">
+      <div>
+        <span class="eyebrow blue">// editando</span>
+        <h1 class="leds-h1"><%= @post.titulo %></h1>
+      </div>
+      <span class="post-status <%= post_status_cor(@post.status) %>"><%= post_status_label(@post.status) %></span>
+    </div>
+
+    <%= render "posts/form", post: @post %>
+
+    <div class="escrita-fluxo">
+      <p class="escrita-dica">
+        Toda edição de novidade já publicada volta para a fila de aprovação
+        (RN-02) — a liberação anterior não vale para o texto novo. Quem escreve
+        não se aprova.
+      </p>
+
+      <div class="btn-row">
+        <% if @post.rascunho? || @post.rejeitado? %>
+          <%= button_to "Enviar para aprovação", submeter_post_path(@post), class: "btn btn-primary" %>
+        <% end %>
+        <%# Rascunho só o autor e a gestão enxergam (PostPolicy#show?), então
+            esta é a prévia: a página exatamente como ela sairá publicada. %>
+        <%= link_to "Ver como vai ficar", post_path(@post), class: "btn btn-secondary" %>
+      </div>
+    </div>
+  </main>
+
+  <%= render "shared/footer" %>
+</div>

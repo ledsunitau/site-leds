@@ -68,6 +68,22 @@ ActiveRecord::Base.transaction do
       end
     end
 
+    # Papéis de ESCRITA (RF-NOV-04). Não são gestão e não têm perfil de membro:
+    # escrevem novidade pela tela pública (/posts/new) e continuam barrados no
+    # /painel. Existem no seed porque é o único jeito de experimentar essa tela
+    # — nenhuma conta de fundador exercita esse caminho, todas entram no painel.
+    [ { nome: "Elisa Escritora",  email: "escritor@leds.dev",   role: "escritor" },
+      { nome: "João Jornalista",  email: "jornalista@leds.dev", role: "jornalista" } ].each do |e|
+      user = User.find_or_create_by!(email: e[:email]) do |u|
+        u.name = e[:nome]
+        u.role = e[:role]
+        u.password = senha_dev
+      end
+      # mesma reaplicação de senha dos fundadores, pelo mesmo motivo
+      user.update!(password: senha_dev) unless user.valid_password?(senha_dev)
+      user.update!(role: e[:role]) unless user.role == e[:role]
+    end
+
     # --- Loja: catálogo demo (só dev/test; em produção a gestão cadastra) ---
     cats = [ "Vestuário", "Acessórios", "Papelaria" ]
            .index_with { |nome| Categoria.find_or_create_by!(nome: nome) }

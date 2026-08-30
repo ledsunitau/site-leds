@@ -42,6 +42,16 @@
       </nav>
     <% end %>
 
+    <%# Guardado pela PostPolicy, não por user.gestao?: escritor e jornalista
+        escrevem sem nunca entrar no painel (RF-NOV-04). %>
+    <% if pode_escrever_novidade? %>
+      <nav class="drawer-nav">
+        <span class="drawer-section-title">Publicação</span>
+        <a href="<%= new_post_path %>" data-action="drawer#close">Escrever novidade</a>
+        <a href="<%= meus_posts_path %>" data-action="drawer#close">Minhas novidades</a>
+      </nav>
+    <% end %>
+
     <nav class="drawer-nav">
       <span class="drawer-section-title">Atalhos</span>
       <a href="<%= profile_path %>" data-action="drawer#close">Meu perfil</a>

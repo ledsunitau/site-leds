@@ -1,0 +1,53 @@
+<%# "Minhas novidades": os posts do próprio autor em QUALQUER status — é a única
+    tela onde um escritor vê o rascunho e o rejeitado dele, já que /novidades só
+    lista publicados e /painel é fechado para quem não é gestão. %>
+<% content_for :title, "Minhas novidades — LEDS" %>
+
+<%= render "shared/page_bg" %>
+
+<div class="page">
+  <%= render "shared/navbar", active: "NOVIDADES" %>
+
+  <main class="content wrap escrita-page">
+    <div class="escrita-head">
+      <div>
+        <span class="eyebrow blue">// suas publicações</span>
+        <h1 class="leds-h1">Minhas novidades</h1>
+      </div>
+      <% if pode_escrever_novidade? %>
+        <%= link_to "Escrever novidade →", new_post_path, class: "btn btn-primary" %>
+      <% end %>
+    </div>
+
+    <% if @posts.any? %>
+      <ul class="escrita-lista">
+        <% @posts.each do |post| %>
+          <li class="escrita-item">
+            <div class="escrita-item-id">
+              <span class="tag solid" style="--tag-color:var(--cat-<%= post.tipo %>)"><%= post.noticia? ? "Notícia" : "Blog" %></span>
+              <span class="escrita-item-titulo"><%= post.titulo %></span>
+            </div>
+            <div class="escrita-item-meta">
+              <span class="post-status <%= post_status_cor(post.status) %>"><%= post_status_label(post.status) %></span>
+              <span class="meta-mono">editada em <%= data_por_extenso(post.updated_at) %></span>
+              <%= link_to "Editar", edit_post_path(post), class: "btn btn-secondary btn-sm" %>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+      <%# frame "_top": esta lista não vive dentro de turbo-frame nenhum, então o
+          pager navega a página inteira mesmo. %>
+      <%= render "shared/paginacao", pagina: @pagina, total: @total_paginas,
+            classe: "novidades-pag", frame: "_top" %>
+    <% else %>
+      <p class="escrita-vazio">
+        Você ainda não escreveu nenhuma novidade.
+        <% if pode_escrever_novidade? %>
+          <%= link_to "Comece a primeira →", new_post_path %>
+        <% end %>
+      </p>
+    <% end %>
+  </main>
+
+  <%= render "shared/footer" %>
+</div>

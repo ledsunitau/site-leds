@@ -1,0 +1,103 @@
+<%# Campos da novidade. Usado pelas DUAS telas de escrita — a pública
+    (posts/_form) e a do painel (painel/posts/_form) — porque campo novo tem que
+    nascer uma vez só; duas cópias divergiriam na primeira mudança.
+
+    Locals:
+      f              form builder
+      post           o Post
+      classe_campo   classe do <label> ("auth-field" no site, "painel-campo" no painel)
+      classe_input   classe dos inputs (vazia no site: .auth-field já estiliza
+                     seus filhos; "painel-input" no painel)
+
+    O container precisa de data-controller="editor": é ele que carrega o Trix e
+    alterna entre os dois modos de escrita. %>
+
+<%
+  tipos = tipos_de_novidade_permitidos
+  # Post já criado no editor rico não volta para markdown (Post#formato_nao_volta_
+  # para_markdown). A opção some da tela em vez de aparecer e dar erro no submit.
+  pode_markdown = !post.persisted? || post.markdown?
+%>
+
+<label class="<%= classe_campo %>">
+  <span>Tipo</span>
+  <%= f.select :tipo, tipos.map { |t| [ t == "noticia" ? "Notícia" : "Blog", t ] },
+        {}, class: classe_input, disabled: tipos.size < 2 %>
+  <% if tipos.size < 2 %>
+    <%# disabled não é enviado no POST — sem isto o tipo chegaria nil e a
+        validação do enum devolveria 422 num campo que a pessoa nem podia mexer %>
+    <%= f.hidden_field :tipo, value: tipos.first %>
+  <% end %>
+</label>
+
+<label class="<%= classe_campo %>">
+  <span>Capa <em>(mínimo 1200x630px — abaixo disso ela fica pixelada no banner)</em></span>
+  <%= f.file_field :thumbnail, accept: "image/jpeg,image/png,image/webp", class: classe_input %>
+</label>
+
+<label class="<%= classe_campo %>">
+  <span>Título</span>
+  <%= f.text_field :titulo, class: classe_input, required: true %>
+</label>
+
+<label class="<%= classe_campo %>">
+  <span>Subtítulo</span>
+  <%= f.text_field :subtitulo, class: classe_input %>
+</label>
+
+<label class="<%= classe_campo %>">
+  <span>Chamada <em>(o resumo curto que aparece no card)</em></span>
+  <%= f.text_area :caller, rows: 2, class: classe_input %>
+</label>
+
+<%# ---- Corpo: os dois modos de editor (RF-NOV-04) ---- %>
+<div class="editor-modos">
+  <span class="editor-modos-titulo">Como você quer escrever</span>
+  <div class="editor-abas" role="radiogroup" aria-label="Modo do editor">
+    <label class="editor-aba">
+      <%= f.radio_button :formato, "rico", data: { action: "editor#trocarModo", editor_target: "modo" } %>
+      <span>Editor de texto</span>
+    </label>
+    <label class="editor-aba <%= "desabilitada" unless pode_markdown %>">
+      <%= f.radio_button :formato, "markdown", disabled: !pode_markdown,
+            data: { action: "editor#trocarModo", editor_target: "modo" } %>
+      <span>Markdown</span>
+    </label>
+  </div>
+  <em class="editor-modos-dica">
+    <% if pode_markdown %>
+      No editor de texto você formata pelos botões. Em Markdown você escreve o
+      código e a página publicada sai exatamente como o Markdown manda.
+      <strong>Dá para migrar de Markdown para o editor de texto, mas não voltar</strong> —
+      a volta perderia formatação.
+    <% else %>
+      Esta novidade foi escrita no editor de texto. Voltar para Markdown não é
+      possível: a conversão de volta perderia formatação.
+    <% end %>
+  </em>
+</div>
+
+<%# NÃO é um <label>, e isso é o ponto do bloco.
+    Dentro de um <label>, o "controle rotulado" é o primeiro elemento rotulável
+    descendente. O <input type="hidden"> do Action Text não é rotulável e o
+    <trix-editor> também não — mas o Trix injeta a <trix-toolbar> aqui dentro, e
+    os botões dela SÃO. Resultado: todo clique no texto disparava a ativação do
+    label e jogava o foco no botão "Negrito". Era impossível digitar, e a
+    formatação não aplicava porque o editor perdia a seleção a cada clique.
+    O rótulo vira <span> + aria-labelledby, que rotula sem ativar nada. %>
+<div class="<%= classe_campo %> editor-campo" data-editor-target="campoRico">
+  <span id="rotulo-corpo-rico">Texto</span>
+  <%# .editor-rico é o "shell": o Trix insere a barra como IRMÃ do editor, então
+      é este div que junta os dois numa moldura só, com a barra grudada em cima. %>
+  <div class="editor-rico">
+    <%= f.rich_text_area :corpo, class: "painel-trix",
+          aria: { labelledby: "rotulo-corpo-rico" },
+          placeholder: "Escreva aqui. Use a barra acima para formatar." %>
+  </div>
+</div>
+
+<label class="<%= classe_campo %> editor-campo" data-editor-target="campoMarkdown">
+  <span>Texto <em>(Markdown: <code>## título</code>, <code>**negrito**</code>, <code>- lista</code>, <code>[link](url)</code>)</em></span>
+  <%= f.text_area :corpo_markdown, rows: 22, class: "#{classe_input} editor-markdown",
+        spellcheck: true, placeholder: "## Um subtítulo\n\nSeu texto em **markdown**." %>
+</label>

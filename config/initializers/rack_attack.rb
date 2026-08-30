@@ -47,6 +47,14 @@ class Rack::Attack
     req.ip if req.post? && normalized_path(req) == "/ideias"
   end
 
+  # Criação de novidade (RF-NOV-04): exige login E um papel de escrita, mas o
+  # papel é concedido de fora da gestão (escritor, jornalista) — uma conta
+  # roubada não pode virar uma fábrica de rascunhos na fila de aprovação.
+  # Limite folgado: 20/h é muito mais do que qualquer pessoa escreve de verdade.
+  throttle("posts/ip", limit: 20, period: 1.hour) do |req|
+    req.ip if req.post? && normalized_path(req) == "/posts"
+  end
+
   # Formulário público "seja um parceiro" (RF-PAR-03): sem login nenhum, é o
   # alvo mais óbvio de spam de formulário.
   throttle("parceria_leads/ip", limit: 10, period: 1.hour) do |req|

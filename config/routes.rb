@@ -106,7 +106,10 @@ Rails.application.routes.draw do
 
   # Novidades (RF-NOV): notícias/blog com fila de aprovação (RN-02) +
   # últimas notícias da landing (RF-INI-07) + histórico de versões (RF-NOV-07)
-  resources :posts, only: %i[index show create update destroy] do
+  # new/edit: a tela de escrita fora do painel (RF-NOV-04). Sem ela, escritor e
+  # jornalista teriam a autorização da PostPolicy e nenhuma tela para exercê-la —
+  # /painel é só diretoria e presidência.
+  resources :posts, only: %i[index show new edit create update destroy] do
     collection do
       get :ultimas
       get :meus

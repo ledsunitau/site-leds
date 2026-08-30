@@ -7,7 +7,8 @@ module ApplicationHelper
 
   # Rótulo amigável do papel de acesso (User#role).
   PAPEL_LABEL = {
-    "comunidade" => "Comunidade", "escritor" => "Escritor", "parceiro" => "Parceiro",
+    "comunidade" => "Comunidade", "escritor" => "Escritor", "jornalista" => "Jornalista",
+    "parceiro" => "Parceiro",
     "membro" => "Membro", "diretoria" => "Diretoria", "presidencia" => "Presidência"
   }.freeze
 

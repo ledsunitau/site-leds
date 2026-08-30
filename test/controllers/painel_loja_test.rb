@@ -75,6 +75,93 @@ class PainelLojaTest < ActionDispatch::IntegrationTest
     assert_equal variante.id, produto.reload.variantes.first.id, "o id da variante não pode mudar"
   end
 
+  # --- Galeria de fotos (#LOJA3) ---
+  #
+  # O modelo já tinha has_many_attached :galeria e a página do produto já a
+  # desenhava; faltava só a gestão conseguir subir foto. A armadilha é que
+  # atribuir a uma has_many_attached SUBSTITUI a coleção: mandar as fotos novas
+  # sozinhas apagaria as antigas, que é o oposto de "adicionar mais uma".
+
+  def png
+    fixture_file_upload("test/fixtures/files/capa_grande.png", "image/png")
+  end
+
+  test "a tela de edição traz o campo de fotos extras" do
+    sign_in users(:diretor)
+    get edit_painel_produto_path(produtos(:camiseta))
+
+    assert_select "input[type=file][name=?][multiple]", "produto[galeria][]"
+  end
+
+  test "subir fotos ACRESCENTA à galeria em vez de trocar as que já existem" do
+    produto = produtos(:camiseta)
+    produto.galeria.attach(io: StringIO.new("x"), filename: "antiga.png", content_type: "image/png")
+    antiga = produto.galeria.attachments.first
+    sign_in users(:diretor)
+
+    patch painel_produto_path(produto), params: { produto: {
+      nome: produto.nome, preco: produto.preco, galeria: [ "", png, png ]
+    } }
+
+    produto.reload
+    assert_equal 3, produto.galeria.attachments.size
+    assert_includes produto.galeria.attachments.map(&:id), antiga.id,
+                    "a foto que já estava lá não pode ser substituída pelas novas"
+  end
+
+  test "quantas fotos quiser: não há teto no caminho da gestão" do
+    produto = produtos(:camiseta)
+    sign_in users(:diretor)
+
+    patch painel_produto_path(produto), params: { produto: {
+      nome: produto.nome, preco: produto.preco,
+      galeria: [ "" ] + Array.new(9) { png }
+    } }
+
+    assert_equal 9, produto.reload.galeria.attachments.size
+  end
+
+  test "remover_galeria tira só as marcadas, e mantém as outras intactas" do
+    produto = produtos(:camiseta)
+    3.times { |i| produto.galeria.attach(io: StringIO.new("x"), filename: "f#{i}.png", content_type: "image/png") }
+    fica, sai, fica2 = produto.galeria.attachments.to_a
+    sign_in users(:diretor)
+
+    patch painel_produto_path(produto), params: { produto: {
+      nome: produto.nome, preco: produto.preco, remover_galeria: [ sai.id.to_s ]
+    } }
+
+    ids = produto.reload.galeria.attachments.map(&:id)
+    assert_equal [ fica.id, fica2.id ].sort, ids.sort
+    assert_not ActiveStorage::Attachment.exists?(sai.id)
+  end
+
+  test "PATCH que não fala de fotos não mexe na galeria" do
+    produto = produtos(:camiseta)
+    produto.galeria.attach(io: StringIO.new("x"), filename: "intacta.png", content_type: "image/png")
+    sign_in users(:diretor)
+
+    patch painel_produto_path(produto), params: { produto: { nome: "Nome novo", preco: produto.preco } }
+
+    assert_equal 1, produto.reload.galeria.attachments.size, "chave ausente = não mexer"
+    assert_equal "Nome novo", produto.nome
+  end
+
+  test "foto de galeria fora do formato é recusada com aviso na tela" do
+    produto = produtos(:camiseta)
+    sign_in users(:diretor)
+
+    patch painel_produto_path(produto), params: { produto: {
+      nome: produto.nome, preco: produto.preco,
+      # PDF de verdade: o Active Storage re-identifica o tipo pelos BYTES
+      # (Marcel), então declarar "application/pdf" num PNG não testa nada.
+      galeria: [ "", fixture_file_upload("test/fixtures/files/documento.pdf", "application/pdf") ]
+    } }
+
+    assert flash[:alert].present?
+    assert_equal 0, produto.reload.galeria.attachments.size
+  end
+
   test "promoção acima do preço é recusada com aviso na tela" do
     sign_in users(:diretor)
 

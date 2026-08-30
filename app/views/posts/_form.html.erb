@@ -1,0 +1,34 @@
+<%# Formulário de escrita no site público. Local: `post`.
+    Os campos vêm de posts/_campos, o mesmo partial do painel — só as classes de
+    CSS mudam, porque aqui a moldura é a do site e lá é a do painel. %>
+
+<%# O trix.css (gem action_text-trix) desenha a barra de ferramentas E os ícones,
+    que são SVG embutidos nos ::before dos botões. O layout público não o carrega
+    — só o do painel carregava — então a barra saía SEM ÍCONE NENHUM e sem
+    agrupamento: uma fileira de botões vazios. Entra aqui, e não no layout, para
+    seguir a mesma regra do painel: editor só pesa na tela que tem editor.
+    Antes do application.css (o yield :head vem primeiro no layout), então o tema
+    escuro do projeto continua vencendo o tema claro do gem. %>
+<% content_for :head do %>
+  <%= stylesheet_link_tag "trix", "data-turbo-track": "reload" %>
+<% end %>
+<%= form_with model: post, url: (post.persisted? ? post_path(post) : posts_path),
+              method: (post.persisted? ? :patch : :post), class: "escrita-form",
+              data: { controller: "editor" } do |f| %>
+
+  <% if post.errors.any? %>
+    <div class="auth-flash alert">
+      <ul class="auth-errors">
+        <% post.errors.full_messages.each do |m| %><li><%= m %></li><% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= render "posts/campos", f: f, post: post,
+        classe_campo: "auth-field", classe_input: "" %>
+
+  <div class="btn-row">
+    <%= f.submit post.persisted? ? "Salvar" : "Criar rascunho", class: "btn btn-primary" %>
+    <%= link_to "Cancelar", meus_posts_path, class: "btn btn-secondary" %>
+  </div>
+<% end %>

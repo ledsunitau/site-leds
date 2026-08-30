@@ -86,7 +86,10 @@ class User < ApplicationRecord
 
   # Papel de ACESSO (autorização via Pundit). O cargo detalhado e histórico do
   # membro (presidente, diretor…) vive em mandatos — ver modelagem, Cluster 1.
-  ROLES = %w[comunidade escritor parceiro membro diretoria presidencia].freeze
+  # escritor e jornalista são papéis de ESCRITA, não de gestão: cada um cobre um
+  # tipo de novidade (blog e notícia — PostPolicy#pode_escrever?), e nenhum dos
+  # dois aprova nada.
+  ROLES = %w[comunidade escritor jornalista parceiro membro diretoria presidencia].freeze
   # Papéis com poder de gestão — fonte ÚNICA da definição (policies e o gate
   # do /admin derivam daqui; ver ApplicationPolicy#gestor?).
   ROLES_DE_GESTAO = %w[diretoria presidencia].freeze
