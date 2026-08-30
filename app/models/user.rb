@@ -52,9 +52,36 @@ class User < ApplicationRecord
   SLOTS_DE_PINTURA = %i[emblema_nome_id emblema_halo_id].freeze
   # elo: degrau alcançado pelos pontos dos emblemas (ver recalcular_elo!)
   belongs_to :elo, optional: true
-  # :avatar cobre o maior uso real (anel do header a ~40px) em 2x.
+  # DOIS tamanhos porque há dois usos com ordens de grandeza diferentes — e
+  # confundi-los foi um bug real: a foto do card em /membros saía a 96px num box
+  # de 300×360 e ficava pixelada.
+  #
+  #   :avatar  — cromo da interface: navbar (38), drawer (52), pódio (58) e o
+  #              avatar do perfil (84). 192 = o maior deles em 2x.
+  #   :retrato — .membro-foto, que é 300×360 no desktop. Precisa 600×720 em 2x;
+  #              uma foto 3:4 vira 675×900 aqui, com folga.
+  #
+  # E cada uma usa uma TRANSFORMAÇÃO diferente, porque os dois displays são
+  # diferentes:
+  #
+  #   _fill no :avatar — todo avatar do site é um quadrado com border-radius:50%
+  #   e object-fit:cover. A proporção é sempre 1:1, em qualquer breakpoint, então
+  #   o corte quadrado no servidor é exatamente o que a tela faz. Com _limit uma
+  #   foto 3:4 sairia 144×192 e o lado curto (144) ficaria abaixo dos 168 que o
+  #   avatar do perfil pede em 2x.
+  #
+  #   _limit no :retrato — aqui a proporção INVERTE por breakpoint: abaixo de
+  #   720px o card vira uma coluna e a foto passa de retrato (300×360) para
+  #   paisagem (largura cheia × 240). Nenhum corte fixo serve os dois, e um 16:9
+  #   para agradar o mobile cortaria a cabeça da pessoa no desktop. O corte fica
+  #   com o CSS, que já o faz por breakpoint.
+  #
+  # Member#foto declara as MESMAS variantes: foto_para_card cai aqui quando o
+  # membro não tem foto própria, e variant(:nome) levanta para nome não
+  # declarado.
   has_one_attached :foto do |anexo|
-    anexo.variant :avatar, resize_to_limit: [ 96, 96 ], **ImagemValidavel::VARIANTE
+    anexo.variant :avatar,  resize_to_fill:  [ 192, 192 ], **ImagemValidavel::VARIANTE
+    anexo.variant :retrato, resize_to_limit: [ 720, 900 ], **ImagemValidavel::VARIANTE
   end
 
   # Papel de ACESSO (autorização via Pundit). O cargo detalhado e histórico do
