@@ -21,7 +21,32 @@ module EscritaDeProduto
   def produto_params
     params.require(:produto).permit(:nome, :descricao, :modo_venda, :preco,
                                     :preco_promocional, :status, :quantidade_alvo,
-                                    :categoria_id, :destaque, :imagem)
+                                    :categoria_id, :destaque, :imagem, galeria: [])
+  end
+
+  # Atributos do produto com a galeria já resolvida.
+  #
+  # has_many_attached SUBSTITUI ao ser atribuída — mandar só as fotos novas
+  # apagaria as que já estavam lá, que é exatamente o oposto de "adicionar mais
+  # uma foto". A lista final é "as que ficam + as novas": a mesma união que o
+  # Attached::Many#attach faz por dentro, mas num save só, para erro de validação
+  # sair pelo caminho normal do update! (e não num attach que devolve false
+  # calado). Reatribuir blob que já está anexado NÃO recria o anexo nem reenvia o
+  # arquivo — o id do attachment e o do blob seguem os mesmos.
+  #
+  # remover_galeria: ids de attachment marcados na tela. Fora da lista permitida
+  # de propósito — não é atributo do produto, é instrução para esta montagem.
+  def produto_params_com_galeria(produto)
+    atributos = produto_params
+    enviou_fotos = atributos.key?(:galeria)
+    remover = Array(params[:produto][:remover_galeria]).map(&:to_s)
+    return atributos.except(:galeria) unless enviou_fotos || remover.any?
+
+    # o campo multiple manda uma string vazia junto (o hidden do Rails)
+    novas = Array(atributos[:galeria]).reject(&:blank?)
+    mantidas = produto.galeria.attachments.reject { |a| remover.include?(a.id.to_s) }.map(&:blob)
+
+    atributos.merge(galeria: mantidas + novas)
   end
 
   # Semântica de editor: a lista enviada é o estado final. Chave ausente = não

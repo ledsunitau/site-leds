@@ -6,6 +6,29 @@ module HomeHelper
     FotoUrl.para(record.thumbnail, :card) || image_path("card-placeholder.svg")
   end
 
+  # Capa em tamanho de HERO (.artigo-banner, 1180x506 CSS). Existe separada da
+  # card_image_url porque servir a :card aqui é ampliar uma imagem de 720 em uma
+  # caixa de 1180 — o mesmo defeito que a foto de membro tinha antes do b9bf7c7.
+  # Só Post declara :banner; card e carrossel continuam na :card.
+  def banner_image_url(record)
+    FotoUrl.para(record.thumbnail, :banner) || image_path("card-placeholder.svg")
+  end
+
+  # O botão "Escrever" de /novidades e do drawer. Deriva da PostPolicy em vez de
+  # olhar o papel: escritor escreve blog, jornalista escreve notícia, a liga
+  # escreve os dois — e a regra mora numa única casa.
+  #
+  # policy(Post) (a CLASSE) não serve: pode_escrever? chama record.tipo.
+  def pode_escrever_novidade?
+    tipos_de_novidade_permitidos.any?
+  end
+
+  def tipos_de_novidade_permitidos
+    return [] unless user_signed_in?
+
+    Post::TIPOS.select { |t| policy(Post.new(tipo: t)).create? }
+  end
+
   MESES_ABREV = %w[jan fev mar abr mai jun jul ago set out nov dez].freeze
 
   # "02 ago 2026" — data das novidades (dia mês ano, mês abreviado pt-BR).

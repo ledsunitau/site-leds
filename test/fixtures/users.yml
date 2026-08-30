@@ -40,6 +40,13 @@ escritor_user:
   role: escritor
   encrypted_password: <%= Devise::Encryptor.digest(User, "senha-segura-123") %>
 
+# escreve NOTÍCIA (o escritor escreve blog) — nenhum dos dois é gestão
+jornalista_user:
+  email: jornalista@example.com
+  name: João Jornalista
+  role: jornalista
+  encrypted_password: <%= Devise::Encryptor.digest(User, "senha-segura-123") %>
+
 # compra na loja, mas não cadastra produto (matriz de permissões)
 parceiro_user:
   email: parceiro@example.com

@@ -33,9 +33,12 @@ acadêmico</b> (quem apadrinhou quem, ao longo das gestões).
 </td></tr>
 
 <tr><td><b>Novidades</b></td><td>
-Notícias e blog com corpo rico (Action Text), <b>fila de aprovação</b>
-(rascunho → em aprovação → publicado/rejeitado), histórico de versões
-navegável, comentários e denúncias moderadas. Ao publicar, anuncia no Discord.
+Notícias e blog com <b>dois modos de editor</b> — rico (Action Text/Trix) ou
+Markdown —, <b>fila de aprovação</b> (rascunho → em aprovação →
+publicado/rejeitado), histórico de versões navegável, comentários e denúncias
+moderadas. Ao publicar, anuncia no Discord. A tela de escrita fica <b>fora do
+painel</b>: escritor (blog) e jornalista (notícia) publicam sem nunca ter
+acesso à gestão.
 </td></tr>
 
 <tr><td><b>Ideias</b></td><td>
@@ -177,6 +180,8 @@ seed que você tenha trocado). Todos usam a senha **`leds-mudar-123`**:
 |---|---|
 | `presidente@leds.dev` | presidência (abre o `/painel`) |
 | `midias@leds.dev` | diretoria |
+| `escritor@leds.dev` | escritor — escreve **blog** em `/novidades`, sem `/painel` |
+| `jornalista@leds.dev` | jornalista — escreve **notícia** em `/novidades`, sem `/painel` |
 | `bruno@leds.dev` | comunidade |
 
 Essas contas só existem em dev e teste — o seed as cria dentro de um

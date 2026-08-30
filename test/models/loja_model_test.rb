@@ -36,15 +36,51 @@ class LojaModelTest < ActiveSupport::TestCase
     assert_not_includes vitrine, produtos(:caneca_antiga), "indisponível não entra na vitrine"
   end
 
-  test "galeria aceita até 6 fotos e recusa a 7ª" do
+  # Havia um teto de 6 fotos ("regra do display"). Não existe mais: o display
+  # nunca precisou dele — a tira mostra 3 miniaturas e colapsa o resto em "+N".
+  test "galeria não tem teto de quantidade" do
     p = Produto.create!(nome: "Kit Fotos", preco: 10, modo_venda: "estoque",
                         status: "ativo", criador: members(:membro_comum))
-    6.times { |i| p.galeria.attach(io: StringIO.new("x"), filename: "f#{i}.png", content_type: "image/png") }
-    assert p.valid?, p.errors.full_messages.to_sentence
+    12.times { |i| p.galeria.attach(io: StringIO.new("x"), filename: "f#{i}.png", content_type: "image/png") }
 
-    p.galeria.attach(io: StringIO.new("x"), filename: "f7.png", content_type: "image/png")
+    assert p.valid?, p.errors.full_messages.to_sentence
+    assert_equal 12, p.galeria.attachments.size
+  end
+
+  # A galeria não tinha validação NENHUMA de tipo ou tamanho — só a imagem
+  # principal tinha. Era upload de usuário entrando sem passar por porta.
+  test "galeria recusa arquivo que não é imagem e arquivo grande demais" do
+    p = Produto.create!(nome: "Kit Ruim", preco: 10, modo_venda: "estoque",
+                        status: "ativo", criador: members(:membro_comum))
+
+    p.galeria.attach(io: StringIO.new("%PDF-1.4"), filename: "manual.pdf", content_type: "application/pdf")
     assert_not p.valid?
-    assert p.errors[:galeria].any?
+    assert_match(/JPEG, PNG, WebP ou SVG/, p.errors[:galeria].to_sentence)
+
+    p.galeria.detach
+    p.galeria.attach(io: StringIO.new("x" * 6.megabytes), filename: "enorme.png", content_type: "image/png")
+    assert_not p.valid?
+    assert_match(/5 MB/, p.errors[:galeria].to_sentence)
+  end
+
+  # O seed usa SVG como stand-in das fotos de demonstração, e o Active Storage
+  # serve svg+xml como binário — mesmo motivo do logo de parceiro.
+  test "galeria aceita SVG" do
+    p = Produto.create!(nome: "Kit SVG", preco: 10, modo_venda: "estoque",
+                        status: "ativo", criador: members(:membro_comum))
+    p.galeria.attach(io: StringIO.new("<svg/>"), filename: "logo.svg", content_type: "image/svg+xml")
+
+    assert p.valid?, p.errors.full_messages.to_sentence
+  end
+
+  # Uma mensagem por problema, não uma por arquivo.
+  test "várias fotos erradas não repetem a mesma mensagem" do
+    p = Produto.create!(nome: "Kit Repetido", preco: 10, modo_venda: "estoque",
+                        status: "ativo", criador: members(:membro_comum))
+    3.times { |i| p.galeria.attach(io: StringIO.new("x"), filename: "f#{i}.pdf", content_type: "application/pdf") }
+
+    assert_not p.valid?
+    assert_equal 1, p.errors[:galeria].size
   end
 
   # --- Avaliacao: faixa da nota ---

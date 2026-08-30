@@ -61,6 +61,13 @@ gem "omniauth-rails_csrf_protection"
 # Autorização por papéis (matriz de permissões, seção 3.1 da spec)
 gem "pundit"
 
+# Modo markdown do editor de novidades (RF-NOV-04) — ver app/lib/markdown.rb.
+# Redcarpet e não commonmarker: extensão em C puro, que compila em qualquer
+# plataforma. O commonmarker depende de gem pré-compilada por plataforma, e este
+# projeto já se queimou com extensão nativa ausente no runner do CI (o
+# `require: false` do ruby-vips logo acima existe por isso).
+gem "redcarpet", "~> 3.6"
+
 # Rate limiting na camada de aplicação (RNF-15)
 gem "rack-attack"
 

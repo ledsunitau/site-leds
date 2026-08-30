@@ -692,6 +692,56 @@ h1, h2, h3, p { margin: 0; }
    Página de Novidades
    ===================================================================== */
 .novidades-page { padding-top: 40px; padding-bottom: 80px; }
+.novidades-head { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; margin: 8px 0 22px; }
+
+/* ---- Escrever novidade (RF-NOV-04) ----
+   A tela de escrita fora do painel: escritor e jornalista não entram em /painel,
+   então esta é a única porta que eles têm. */
+.escrita-page { padding-top: 34px; padding-bottom: 90px; max-width: 900px; }
+.escrita-lead { margin: 10px 0 26px; }
+.escrita-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; flex-wrap: wrap; margin-bottom: 26px; }
+/* .post-status nasceu absolute para flutuar sobre a imagem do card; aqui ele é
+   um selo em fluxo normal, ao lado do título. */
+.escrita-head .post-status, .escrita-item .post-status { position: static; flex: none; }
+.escrita-form { display: flex; flex-direction: column; gap: 4px; }
+.escrita-form .btn-row { margin-top: 22px; }
+.escrita-fluxo { margin-top: 34px; padding-top: 22px; border-top: 1px solid var(--border-hair); }
+.escrita-dica { font-size: 14px; line-height: 1.7; color: var(--text-subtle); margin-bottom: 16px; }
+.escrita-vazio { color: var(--text-subtle); margin-top: 20px; }
+
+.escrita-lista { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.escrita-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding: 14px 18px; border-radius: var(--radius-card);
+  background: var(--surface-card); box-shadow: inset 0 0 0 1px var(--border-hair);
+}
+.escrita-item-id { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.escrita-item-titulo { color: var(--text-strong); font-weight: 600; }
+.escrita-item-meta { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+
+/* ---- Seletor dos dois modos de editor ---- */
+.editor-modos { margin: 20px 0 6px; }
+.editor-modos-titulo { display: block; font-family: var(--font-mono); font-size: 12px; color: var(--text-subtle); margin-bottom: 8px; }
+.editor-abas { display: flex; gap: 10px; flex-wrap: wrap; }
+.editor-aba {
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  padding: 9px 16px; border-radius: var(--radius-btn);
+  box-shadow: inset 0 0 0 1px var(--border-hair); color: var(--text-lead);
+}
+.editor-aba:has(input:checked) { box-shadow: inset 0 0 0 1px rgba(255,255,255,.42); color: var(--text-strong); }
+.editor-aba.desabilitada { opacity: .45; cursor: not-allowed; }
+.editor-modos-dica { display: block; margin-top: 10px; font-size: 13px; line-height: 1.6; color: var(--text-subtle); }
+/* [hidden] sozinho perde para o display:flex de .auth-field/.painel-campo — sem
+   isto o modo escondido continuaria na tela, os dois editores empilhados. */
+.editor-campo[hidden] { display: none; }
+/* .editor-campo na frente para vencer `.auth-field textarea` (que fixa a fonte
+   de display mais abaixo neste arquivo): markdown é código, e código se lê em
+   monoespaçada — sem ela o alinhamento de tabela e de lista não bate. */
+.editor-campo textarea.editor-markdown {
+  font-family: var(--font-mono); font-size: 14px; line-height: 1.75;
+  min-height: 420px; padding: 18px 20px; resize: vertical;
+}
+.editor-campo textarea.editor-markdown:focus { outline: none; border-color: rgba(255,255,255,.42); }
 
 /* ---- Carrossel (3 mais recentes) ---- */
 .novidades-carrossel { margin-bottom: 34px; }
@@ -799,6 +849,31 @@ h1, h2, h3, p { margin: 0; }
 .artigo-corpo img { max-width: 100%; border-radius: var(--radius-card); margin: 20px 0; }
 .artigo-corpo ul, .artigo-corpo ol { padding-left: 24px; margin-bottom: 18px; }
 .artigo-corpo li { margin-bottom: 6px; }
+/* Markup que o modo markdown gera e o Trix nunca gerou (RF-NOV-04). Sem isto a
+   tabela sai sem borda nenhuma e o bloco de código sai como texto corrido —
+   e o trix.css, que estiliza parte disso, é carregado SÓ no layout do painel. */
+.artigo-corpo h4, .artigo-corpo h5, .artigo-corpo h6 { color: var(--text-strong); margin: 22px 0 10px; line-height: 1.3; }
+.artigo-corpo blockquote {
+  margin: 20px 0; padding: 4px 0 4px 18px;
+  border-left: 3px solid var(--border-hair); color: var(--text-subtle); font-style: italic;
+}
+.artigo-corpo code {
+  font-family: var(--font-mono); font-size: .9em;
+  background: rgba(255,255,255,.07); padding: 2px 6px; border-radius: 4px;
+}
+.artigo-corpo pre {
+  margin: 20px 0; padding: 16px 18px; overflow-x: auto;
+  background: rgba(0,0,0,.28); border-radius: var(--radius-card);
+  box-shadow: inset 0 0 0 1px var(--border-hair);
+}
+.artigo-corpo pre code { background: none; padding: 0; font-size: 13px; line-height: 1.6; }
+.artigo-corpo hr { margin: 30px 0; border: 0; border-top: 1px solid var(--border-hair); }
+/* A tabela rola dentro de si mesma: uma tabela larga não pode empurrar a
+   largura da página e criar scroll horizontal no artigo inteiro. */
+.artigo-corpo table { display: block; overflow-x: auto; width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 15px; }
+.artigo-corpo th, .artigo-corpo td { padding: 9px 14px; border: 1px solid var(--border-hair); text-align: left; }
+.artigo-corpo th { color: var(--text-strong); font-weight: 600; background: rgba(255,255,255,.04); }
+
 .artigo-relacionadas { margin-top: 60px; }
 .artigo-relacionadas .section-head { margin-bottom: 22px; }
 
@@ -2323,6 +2398,37 @@ a.painel-fila-titulo:hover { color: var(--leds-green); }
   font-family: var(--font-mono); font-size: 11px; letter-spacing: .7px;
   text-transform: uppercase; color: var(--text-faint); padding: 0 8px;
 }
+/* ---- Galeria de fotos do produto (#LOJA3) ----
+   Prefixo -galeria- e não -foto-: .painel-foto já é a célula de miniatura das
+   TABELAS do painel (38x38, em ações/membros/parceiros/novidades/produtos), e
+   reusar o nome fazia a regra de lá encolher estas fotos para 38px.
+
+   auto-fill e não uma contagem fixa de colunas: a galeria não tem teto de
+   fotos, então a grade acompanha quantas forem. */
+.painel-galeria {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 12px; margin-bottom: 16px;
+}
+.painel-galeria-item {
+  display: flex; flex-direction: column; gap: 8px; cursor: pointer;
+  padding: 8px; border-radius: var(--radius-tag);
+  box-shadow: inset 0 0 0 1px var(--border-hair);
+}
+.painel-galeria-item img {
+  width: 100%; aspect-ratio: 4 / 5; object-fit: cover;
+  border-radius: var(--radius-tag); background: var(--surface-chip);
+}
+.painel-galeria-remover {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-subtle);
+}
+.painel-galeria-remover input { accent-color: var(--leds-red); }
+/* marcada para remover: apaga antes de sumir, para o gestor ver o que vai perder
+   ao salvar em vez de descobrir depois. */
+.painel-galeria-item:has(input:checked) { box-shadow: inset 0 0 0 1px var(--leds-red); }
+.painel-galeria-item:has(input:checked) img { opacity: .35; }
+.painel-galeria-item:has(input:checked) .painel-galeria-remover { color: var(--leds-red); }
+
 .painel-checks { display: flex; flex-wrap: wrap; gap: 10px 18px; }
 .painel-check-inline { display: flex; align-items: center; gap: 7px; font-size: 13.5px; color: var(--text-muted); }
 .painel-check-inline input { accent-color: var(--leds-green); }
@@ -2398,49 +2504,121 @@ a.painel-fila-titulo:hover { color: var(--leds-green); }
 /* ---- Editor de texto rico (Trix) ----
    O Trix traz CSS próprio (gem action_text-trix) desenhado para fundo claro.
    Aqui só o necessário para ele viver no escuro do LEDS — sem reescrever o
-   componente. */
-.painel-trix, trix-editor {
-  min-height: 320px; padding: 16px 18px;
-  background: var(--surface-chip); color: var(--text-primary);
-  border: 1px solid var(--border-strong); border-radius: 0 0 var(--radius-btn) var(--radius-btn);
-  font-family: var(--font-display); font-size: 15px; line-height: 1.7;
+   componente.
+
+   .editor-rico é a moldura: o Trix insere a <trix-toolbar> como IRMÃ do
+   <trix-editor>, então quem junta os dois numa peça só é o pai. Antes cada um
+   tinha a própria borda e o próprio raio, e o conjunto lia como dois blocos
+   soltos empilhados em vez de um editor. */
+/* Sem overflow: hidden — ele tornaria esta caixa o container de rolagem mais
+   próximo, e a barra `position: sticky` lá embaixo viraria enfeite. O
+   arredondamento vem do raio próprio da barra e do editor. */
+.editor-rico {
+  border: 1px solid var(--border-strong); border-radius: var(--radius-btn);
+  background: var(--surface-chip);
 }
-trix-editor:focus { outline: none; border-color: rgba(255,255,255,.34); }
-trix-editor:empty:not(:focus)::before { color: var(--text-faint); }
-trix-editor h1 { font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--text-strong); margin: 0 0 10px; }
+/* O anel de foco é da MOLDURA, não do campo de texto: quem tem o foco de fato é
+   o contenteditable lá dentro, e um anel só nele deixaria a barra de fora,
+   parecendo desligada do que está sendo editado. */
+.editor-rico:focus-within { border-color: rgba(255,255,255,.42); }
+
+.painel-trix, trix-editor {
+  min-height: 380px; padding: 20px 22px; border: 0; border-radius: 0;
+  background: transparent; color: var(--text-primary);
+  font-family: var(--font-display); font-size: 16px; line-height: 1.75;
+}
+trix-editor:focus { outline: none; }
+trix-editor:empty:not(:focus)::before { color: var(--text-faint); font-style: italic; }
+/* Espaçamento de documento, não de formulário: é o que faz o campo parecer um
+   editor de texto e não um textarea grande. */
+trix-editor > * + * { margin-top: 14px; }
+trix-editor h1 { font-family: var(--font-display); font-size: 26px; font-weight: 700; color: var(--text-strong); line-height: 1.25; }
 trix-editor a { color: var(--leds-green); text-decoration: underline; }
 trix-editor blockquote {
-  border-left: 2px solid var(--leds-green); margin: 12px 0; padding: 4px 0 4px 14px; color: var(--text-muted);
+  border-left: 2px solid var(--leds-green); padding: 4px 0 4px 14px; color: var(--text-muted);
 }
 trix-editor pre {
   font-family: var(--font-mono); font-size: 13px; background: rgba(0,0,0,.4);
   padding: 12px 14px; border-radius: var(--radius-tag); overflow-x: auto;
 }
-trix-editor ul, trix-editor ol { padding-left: 22px; }
+trix-editor ul, trix-editor ol { padding-left: 24px; }
+trix-editor li + li { margin-top: 4px; }
 
+/* Barra grudada no topo da moldura: num texto longo ela sai da tela junto com o
+   parágrafo, e formatar o fim do artigo obrigava a rolar tudo de volta. */
 trix-toolbar {
-  background: var(--surface-card); border: 1px solid var(--border-strong); border-bottom: none;
-  border-radius: var(--radius-btn) var(--radius-btn) 0 0; padding: 8px 10px;
+  position: sticky; top: 0; z-index: 2;
+  display: block; background: var(--surface-card);
+  border-bottom: 1px solid var(--border-strong);
+  border-radius: var(--radius-btn) var(--radius-btn) 0 0;
+  padding: 8px 10px;
 }
-trix-toolbar .trix-button-group { border-color: var(--border-hair); margin-bottom: 0; }
+/* O espaçador tem flex-grow: 1 (o gem usa para empurrar undo/redo para a
+   direita). Com wrap, ele come a linha inteira e joga o grupo do histórico para
+   uma SEGUNDA linha — a barra em duas fileiras. O próprio gem já o esconde no
+   breakpoint dele; aqui vale sempre, porque a barra é uma fileira só. */
+trix-toolbar .trix-button-group-spacer { display: none; }
+/* O padrão do Trix empilha os grupos em linhas separadas com margem embaixo —
+   é o que fazia a barra parecer desorganizada. Aqui é uma fileira só, com
+   separador entre grupos. */
+trix-toolbar .trix-button-row {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+  /* o padrão é nowrap + space-between + overflow-x: no celular a barra virava
+     uma faixa rolável com os grupos jogados nas pontas */
+  justify-content: flex-start; overflow-x: visible;
+}
+trix-toolbar .trix-button-group {
+  display: flex; align-items: center; gap: 2px;
+  margin: 0; border: 0; border-radius: var(--radius-tag);
+}
+/* :not(:first-child) e não `+`: o espaçador continua no DOM (só escondido), então
+   o grupo do histórico não é irmão ADJACENTE do de blocos e ficava sem
+   separador, com um respiro maior que os outros (o margin-left: 1.5vw do gem).
+   Mesma especificidade da regra do gem, e este arquivo carrega depois. */
+trix-toolbar .trix-button-group:not(:first-child) {
+  margin-left: 6px; padding-left: 8px; border-left: 1px solid var(--border-hair);
+}
+/* float: left e border-bottom cinza são do tema claro do gem; aqui os botões são
+   itens de flex numa barra escura. */
 trix-toolbar .trix-button {
-  background: transparent; border-color: var(--border-hair); color: var(--text-nav);
+  float: none; width: 34px; height: 32px; padding: 0;
+  border: 0; border-radius: var(--radius-tag);
+  background: transparent; color: var(--text-nav);
+  font-family: var(--font-mono); font-size: 12px;
 }
-trix-toolbar .trix-button:not(:disabled):hover { background: var(--surface-hover, rgba(255,255,255,.06)); }
+/* max-width: calc(0.8em + 4vw) é do gem e vence a largura acima em tela
+   estreita — abaixo de ~700px os botões encolhiam e a barra ficava espremida. */
+trix-toolbar .trix-button--icon { max-width: none; }
+/* O gem põe um traço à esquerda de CADA botão (o visual de "barra de ferramentas
+   de 2005"). É o que fazia a barra parecer desorganizada: separador entre tudo,
+   em vez de entre grupos. A regra dele também é (0,2,1), então precisa ser
+   desfeita com o mesmo seletor — `border: 0` no botão perde por especificidade. */
+trix-toolbar .trix-button:not(:first-child) { border-left: 0; }
+trix-toolbar .trix-button:not(:disabled):hover { background: rgba(255,255,255,.08); }
+trix-toolbar .trix-button:disabled { opacity: .3; }
 trix-toolbar .trix-button.trix-active { background: var(--surface-invert); color: var(--text-on-invert); }
-/* os ícones do Trix são SVG pretos embutidos: invertidos ficam legíveis no escuro */
-trix-toolbar .trix-button--icon::before { filter: invert(1) opacity(.75); }
+/* O ícone é o ::before, esticado nos 4 lados do botão com background-size:
+   contain — num botão de 34px o desenho ficava do tamanho do botão inteiro.
+   Medida fixa + centro (o background-position: center já vem do gem).
+   São SVG pretos embutidos: invertidos ficam legíveis no escuro. A opacidade
+   sai do filter, não do opacity do gem, senão os dois se multiplicam e o ícone
+   apaga. */
+trix-toolbar .trix-button--icon::before { background-size: 16px; opacity: 1; filter: invert(1) opacity(.75); }
+trix-toolbar .trix-button--icon:hover::before { filter: invert(1); }
 trix-toolbar .trix-button--icon.trix-active::before { filter: none; }
 trix-toolbar .trix-dialog {
-  background: var(--surface-card); border-radius: var(--radius-btn);
+  background: var(--surface-card); border-radius: var(--radius-btn); padding: 12px;
   box-shadow: inset 0 0 0 1px var(--border-strong), 0 12px 34px rgba(0,0,0,.5);
 }
 trix-toolbar .trix-input--dialog {
   background: var(--surface-chip); color: var(--text-strong);
   border: 1px solid var(--border-strong); border-radius: var(--radius-tag); padding: 8px 10px;
 }
+trix-toolbar .trix-dialog .trix-button { width: auto; padding: 0 12px; background: var(--surface-chip); }
 
-/* Conteúdo já publicado (mesma classe do site) dentro do painel */
+/* Conteúdo já publicado (mesma classe do site) dentro do painel. A tela pública
+   de escrita não entra aqui: ela não renderiza corpo nenhum — a prévia é a
+   própria página da novidade, que usa .artigo-corpo. */
 .painel-content .trix-content { color: var(--text-muted); line-height: 1.7; }
 
 /* ---- Diff de versões ---- */

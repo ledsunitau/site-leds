@@ -13,7 +13,8 @@
     </div>
 
     <div class="wrap">
-      <div class="artigo-banner" style="background-image:url('<%= card_image_url(@post) %>')">
+      <%# :banner, não :card — esta caixa tem 1180px e a :card tem 720 %>
+      <div class="artigo-banner" style="background-image:url('<%= banner_image_url(@post) %>')">
         <span class="tag solid" style="--tag-color:var(--cat-<%= @post.tipo %>)"><%= @post.noticia? ? "Notícia" : "Blog" %></span>
       </div>
     </div>

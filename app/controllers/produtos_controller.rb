@@ -106,7 +106,9 @@ class ProdutosController < ApplicationController
 
     produto = nil
     ActiveRecord::Base.transaction do
-      produto = Produto.create!(produto_params.merge(criador: criador))
+      produto = Produto.new
+      produto.assign_attributes(produto_params_com_galeria(produto).merge(criador: criador))
+      produto.save!
       substitui_variantes(produto)
     end
 
@@ -118,7 +120,7 @@ class ProdutosController < ApplicationController
     authorize produto
 
     ActiveRecord::Base.transaction do
-      produto.update!(produto_params)
+      produto.update!(produto_params_com_galeria(produto))
       substitui_variantes(produto)
     end
 

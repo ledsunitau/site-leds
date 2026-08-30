@@ -16,6 +16,14 @@ bin/*.cmd text eol=crlf
 # de fora: são exemplos do gem, nunca executados.
 .kamal/hooks/* text eol=lf
 
+# Imagens de fixture (test/fixtures/files) são lidas byte a byte pelo analisador
+# do Active Storage, que mede largura e altura. Qualquer conversão de fim de
+# linha corrompe o PNG — explícito porque o teste que depende delas só falharia
+# na máquina Windows, e com uma mensagem que não fala em CRLF.
+*.png binary
+*.jpg binary
+*.webp binary
+
 # Mark any vendored files as having been vendored.
 vendor/* linguist-vendored
 config/credentials/*.yml.enc diff=rails_credentials

@@ -1,0 +1,24 @@
+<%# Escrever uma novidade, fora do painel (RF-NOV-04). Quem chega aqui já passou
+    pela PostPolicy — escritor (blog), jornalista (notícia) ou a liga (os dois). %>
+<% content_for :title, "Escrever novidade — LEDS" %>
+
+<%= render "shared/page_bg" %>
+
+<div class="page">
+  <%= render "shared/navbar", active: "NOVIDADES" %>
+
+  <main class="content wrap escrita-page">
+    <a class="voltar-link" href="<%= meus_posts_path %>">← Minhas novidades</a>
+
+    <span class="eyebrow blue">// nova novidade</span>
+    <h1 class="leds-h1">Escrever</h1>
+    <p class="leds-lead escrita-lead">
+      O texto começa como <strong>rascunho</strong>, só seu. Quando estiver pronto,
+      você envia para aprovação e a gestão publica.
+    </p>
+
+    <%= render "posts/form", post: @post %>
+  </main>
+
+  <%= render "shared/footer" %>
+</div>

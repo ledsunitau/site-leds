@@ -10,7 +10,16 @@
   <%= render "shared/navbar", active: "NOVIDADES" %>
 
   <main class="content wrap novidades-page">
-    <h1 class="leds-h1" style="margin:8px 0 22px">Novidades</h1>
+    <%# FORA do turbo-frame de _lista: lá dentro, filtrar por chip apagaria o botão. %>
+    <div class="novidades-head">
+      <h1 class="leds-h1">Novidades</h1>
+      <% if pode_escrever_novidade? %>
+        <div class="btn-row">
+          <%= link_to "Minhas novidades", meus_posts_path, class: "btn btn-secondary btn-sm" %>
+          <%= link_to "Escrever novidade →", new_post_path, class: "btn btn-primary btn-sm" %>
+        </div>
+      <% end %>
+    </div>
 
     <%# ---- Carrossel dos 3 mais recentes ---- %>
     <% if @carrossel.any? %>

@@ -53,6 +53,42 @@
       </label>
     </div>
 
+    <%# ---- Galeria (#LOJA3) ----
+        O detalhe do produto mostra [imagem principal] + estas, como 3 miniaturas
+        com "+N" e um lightbox com todas. Sem teto de quantidade. %>
+    <fieldset class="painel-fieldset">
+      <legend>Fotos extras</legend>
+      <p class="painel-campo-dica">
+        Aparecem no detalhe do produto junto da imagem principal, que continua
+        sendo a primeira. Pode enviar várias de uma vez, quantas quiser — e
+        enviar de novo depois <strong>acrescenta</strong>, não substitui.
+      </p>
+
+      <% if produto.galeria.attached? %>
+        <div class="painel-galeria">
+          <% produto.galeria.attachments.each do |foto| %>
+            <label class="painel-galeria-item">
+              <img src="<%= foto_url(foto, :card) %>" alt="" loading="lazy" width="96" height="120">
+              <span class="painel-galeria-remover">
+                <%# nome fora do produto_params: é instrução de montagem da
+                    galeria, não atributo (ver EscritaDeProduto). %>
+                <%= check_box_tag "produto[remover_galeria][]", foto.id, false, id: "remover_#{foto.id}" %>
+                <span>remover</span>
+              </span>
+            </label>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="painel-chart-vazio">// nenhuma foto extra</p>
+      <% end %>
+
+      <label class="painel-campo">
+        <span>Adicionar fotos <em>(pode selecionar várias)</em></span>
+        <%= f.file_field :galeria, multiple: true, class: "painel-input",
+              accept: "image/jpeg,image/png,image/webp,image/svg+xml" %>
+      </label>
+    </fieldset>
+
     <label class="painel-check">
       <%= f.check_box :destaque %>
       <span>Destaque <em>(aparece nos banners da home da loja)</em></span>

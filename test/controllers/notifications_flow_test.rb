@@ -130,7 +130,7 @@ class NotificationsFlowTest < ActionDispatch::IntegrationTest
     post_alvo = posts(:rascunho_do_membro) # autor: membro_user (não é gestão)
 
     sign_in users(:membro_user)
-    post submeter_post_path(post_alvo)
+    post submeter_post_path(post_alvo), as: :json
     assert_response :success
     gestor_notif = users(:diretor).notifications.joins(:event)
                                   .where(noticed_events: { type: "PostSubmetidoNotifier" })

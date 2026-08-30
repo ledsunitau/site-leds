@@ -1850,6 +1850,9 @@ CREATE TABLE public.posts (
     published_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    formato character varying DEFAULT 'rico'::character varying NOT NULL,
+    corpo_markdown text,
+    CONSTRAINT posts_formato_check CHECK (((formato)::text = ANY ((ARRAY['rico'::character varying, 'markdown'::character varying])::text[]))),
     CONSTRAINT posts_status_check CHECK (((status)::text = ANY ((ARRAY['rascunho'::character varying, 'em_aprovacao'::character varying, 'publicado'::character varying, 'rejeitado'::character varying])::text[]))),
     CONSTRAINT posts_tipo_check CHECK (((tipo)::text = ANY ((ARRAY['noticia'::character varying, 'blog'::character varying])::text[])))
 );
@@ -2183,7 +2186,7 @@ CREATE TABLE public.users (
     elo_id bigint,
     emblema_nome_id bigint,
     emblema_halo_id bigint,
-    CONSTRAINT users_role_check CHECK (((role)::text = ANY ((ARRAY['comunidade'::character varying, 'escritor'::character varying, 'parceiro'::character varying, 'membro'::character varying, 'diretoria'::character varying, 'presidencia'::character varying])::text[])))
+    CONSTRAINT users_role_check CHECK (((role)::text = ANY ((ARRAY['comunidade'::character varying, 'escritor'::character varying, 'jornalista'::character varying, 'parceiro'::character varying, 'membro'::character varying, 'diretoria'::character varying, 'presidencia'::character varying])::text[])))
 );
 
 
@@ -4872,6 +4875,8 @@ ALTER TABLE ONLY public.itens_pedido
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260830120001'),
+('20260830120000'),
 ('20260827120000'),
 ('20260826160000'),
 ('20260826140000'),

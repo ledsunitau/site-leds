@@ -27,16 +27,23 @@ class Produto < ApplicationRecord
     anexo.variant :full, resize_to_limit: [ 1200, 1500 ], **ImagemValidavel::VARIANTE
   end
   valida_imagem :imagem
-  # Galeria do detalhe (#LOJA3): fotos extras além da principal. A gestão sobe no
-  # futuro; a view mostra [imagem] + galeria como miniaturas.
+  # Galeria do detalhe (#LOJA3): fotos extras além da principal. A view mostra
+  # [imagem] + galeria: 3 miniaturas, "+N" no resto e o lightbox com todas.
   has_many_attached :galeria do |anexo|
     anexo.variant :card, resize_to_limit: [ 640, 800 ], **ImagemValidavel::VARIANTE
     anexo.variant :full, resize_to_limit: [ 1200, 1500 ], **ImagemValidavel::VARIANTE
   end
-
-  # No máximo 6 fotos no total (principal + galeria) — regra do display (#LOJA3).
-  MAX_FOTOS = 6
-  validate :galeria_dentro_do_limite
+  # SVG entra aqui e não na principal pelo mesmo motivo do logo de parceiro: o
+  # Active Storage serve svg+xml como binário (content_types_to_serve_as_binary),
+  # então não executa script no navegador de ninguém. O seed usa SVG como
+  # stand-in das fotos de demonstração.
+  valida_imagem :galeria, tipos: ImagemValidavel::TIPOS + %w[image/svg+xml],
+                          formatos: "JPEG, PNG, WebP ou SVG"
+  # SEM teto de quantidade: a gestão sobe quantas fotos quiser (pedido do
+  # usuário). Existia um MAX_FOTOS = 6 justificado como "regra do display", mas
+  # o display nunca precisou dele — a tira de miniaturas já mostra 3 e colapsa o
+  # resto em "+N", e o lightbox é um carrossel. O custo real de muitas fotos é
+  # peso de página e geração de variante, não quebra de layout.
 
   # Todas as fotos do detalhe (principal primeiro), como objetos que o
   # rails_blob_path aceita. Vazio se não houver nenhuma.
@@ -142,11 +149,6 @@ class Produto < ApplicationRecord
   end
 
   private
-
-  def galeria_dentro_do_limite
-    total = (imagem.attached? ? 1 : 0) + galeria.attachments.size
-    errors.add(:galeria, "no máximo #{MAX_FOTOS} fotos") if total > MAX_FOTOS
-  end
 
   def promocional_nao_pode_superar_preco
     return if preco_promocional.nil? || preco.nil?

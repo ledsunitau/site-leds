@@ -39,7 +39,8 @@ class Painel::ProdutosController < Painel::BaseController
   end
 
   def create
-    @produto = Produto.new(produto_params)
+    @produto = Produto.new
+    @produto.assign_attributes(produto_params_com_galeria(@produto))
     authorize @produto
     criador = member_atual
     return if criador.nil?
@@ -60,7 +61,7 @@ class Painel::ProdutosController < Painel::BaseController
     # reservas (RN-11), e o model notifica os reservantes — por isso passa pelo
     # caminho ActiveRecord, nunca por update_column.
     ActiveRecord::Base.transaction do
-      @produto.update!(produto_params)
+      @produto.update!(produto_params_com_galeria(@produto))
       substitui_variantes(@produto)
     end
 
@@ -69,8 +70,10 @@ class Painel::ProdutosController < Painel::BaseController
 
   private
 
+  # preload da galeria: o formulário desenha uma miniatura por foto, e sem isto
+  # é uma consulta de blob por foto na tela de edição.
   def carregar_produto
-    @produto = Produto.find(params[:id])
+    @produto = Produto.includes(galeria_attachments: :blob).find(params[:id])
   end
 
   def carregar_opcoes
