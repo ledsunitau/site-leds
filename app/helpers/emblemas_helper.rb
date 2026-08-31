@@ -8,8 +8,9 @@ module EmblemasHelper
     sanitize fonte.icone_svg, tags: Emblema::TAGS_SVG, attributes: Emblema::ATRIBUTOS_SVG
   end
 
-  # A fonte usa as cores do próprio SVG? Só Emblema tem a coluna — Elo também
-  # desenha por aqui e nunca teve, então responde false em vez de estourar.
+  # A fonte usa as cores do próprio SVG? Emblema e Elo têm a coluna; o rank e a
+  # prévia do formulário passam por aqui sem ter, então responde false em vez
+  # de estourar.
   def svg_original?(fonte)
     fonte.respond_to?(:svg_original?) && fonte.svg_original?
   end
@@ -52,10 +53,16 @@ module EmblemasHelper
 
   # Ícone do elo. Sem SVG cadastrado vira a inicial do nome — um elo sem
   # desenho ainda precisa aparecer no perfil.
+  #
+  # `svg_original` vale aqui como no emblema: ligado, o desenho sai com as cores
+  # próprias e a `cor` do elo fica só para o resto (ranking, nome do degrau e o
+  # brilho dos efeitos). A inicial, quando não há SVG, é sempre pintada — não é
+  # arte de ninguém, é texto.
   def elo_icone(elo, tamanho: "md")
     classes = [ "emblema", "emblema-#{tamanho}", "elo-icone" ]
     classes << "emblema-fx-#{elo.efeito}" unless elo.efeito == "nenhum"
     conteudo = elo.icone_svg.present? ? emblema_svg(elo) : tag.strong(elo.nome.first)
+    classes << "svg-original" if elo.icone_svg.present? && svg_original?(elo)
 
     tag.span(conteudo, class: classes, style: "--emblema-cor: #{elo.cor}", title: elo.nome)
   end

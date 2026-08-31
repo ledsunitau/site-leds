@@ -867,6 +867,7 @@ CREATE TABLE public.elos (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     discord_sincronizar boolean DEFAULT false NOT NULL,
+    svg_original boolean DEFAULT false NOT NULL,
     CONSTRAINT elos_efeito_check CHECK (((efeito)::text = ANY ((ARRAY['nenhum'::character varying, 'brilho'::character varying, 'neon'::character varying, 'arco_iris'::character varying, 'pulso'::character varying])::text[]))),
     CONSTRAINT elos_pontos_check CHECK ((pontos_minimos >= 0))
 );
@@ -4929,6 +4930,7 @@ ALTER TABLE ONLY public.itens_pedido
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260831130000'),
 ('20260831120000'),
 ('20260830120001'),
 ('20260830120000'),

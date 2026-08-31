@@ -47,6 +47,10 @@
               <summary><%= elo.icone_svg.present? ? "Trocar ícone" : "Sem ícone — usa a inicial do nome" %></summary>
               <%= f.text_area :icone_svg, rows: 3, class: "painel-input painel-mono",
                     placeholder: '<svg viewBox="0 0 24 24" fill="currentColor">…' %>
+              <label class="painel-check">
+                <%= f.check_box :svg_original %>
+                <span>Usar as cores do próprio SVG <em>(a Cor fica só para o ranking e o brilho dos efeitos)</em></span>
+              </label>
             </details>
           <% end %>
 
@@ -90,6 +94,10 @@
     <label class="painel-campo" style="margin-top:12px">
       <span>Ícone (SVG) <em>(opcional — sem ele, o elo mostra a inicial do nome)</em></span>
       <%= f.text_area :icone_svg, rows: 3, class: "painel-input painel-mono" %>
+    </label>
+    <label class="painel-check">
+      <%= f.check_box :svg_original %>
+      <span>Usar as cores do próprio SVG <em>(a Cor fica só para o ranking e o brilho dos efeitos)</em></span>
     </label>
   <% end %>
 </section>

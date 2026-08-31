@@ -79,11 +79,26 @@ class EmblemasHelperTest < ActionView::TestCase
     assert_includes emblema_icone(e), "emblema-fx-neon"
   end
 
-  # Elo desenha pelo mesmo CSS e nunca teve a coluna: não pode estourar.
-  test "elo_icone não quebra por não ter a coluna svg_original" do
-    elo = Elo.new(nome: "Ferro", cor: "#888888", efeito: "nenhum",
-                  icone_svg: '<svg viewBox="0 0 24 24"><circle cx="1" cy="1" r="1"></circle></svg>')
-    assert_nothing_raised { elo_icone(elo) }
-    assert_not_includes elo_icone(elo), "svg-original"
+  # Elo desenha pelo mesmo CSS e tem a mesma chave de escape.
+  def elo(svg_original:, icone_svg: SVG_COM_GRADIENTE)
+    Elo.new(nome: "Ferro", cor: "#888888", efeito: "nenhum", pontos_minimos: 0,
+            icone_svg: icone_svg, svg_original: svg_original)
+  end
+
+  test "elo com svg_original marca o wrapper e mantém a cor para o efeito" do
+    html = elo_icone(elo(svg_original: true))
+    assert_includes html, "svg-original"
+    assert_includes html, "--emblema-cor: #888888"
+    assert_includes html, "linearGradient"
+  end
+
+  test "elo sem svg_original segue repintado com a cor do degrau" do
+    assert_not_includes elo_icone(elo(svg_original: false)), "svg-original"
+  end
+
+  # Sem desenho o conteúdo é a inicial do nome — texto, não arte: continua
+  # pintado com a cor do elo mesmo com a chave ligada.
+  test "elo sem SVG não escapa o repinte da inicial" do
+    assert_not_includes elo_icone(elo(svg_original: true, icone_svg: nil)), "svg-original"
   end
 end
