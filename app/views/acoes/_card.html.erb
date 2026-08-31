@@ -8,7 +8,7 @@
     "consultas não crescem com o número de ações" quebra. %>
 <% cat = a.detalhe_type.downcase %>
 <% parts = participantes_da_acao(a) %>
-<article class="acao-card <%= "destacada" if @destaque == a %>"
+<article class="acao-card"
          data-action="click->analytics#rastrear" data-evento="acao_view"
          data-meta='<%= { tipo: a.detalhe_type, id: a.id }.to_json %>'>
   <%# background-image não tem loading="lazy"; quem limita o custo aqui é a

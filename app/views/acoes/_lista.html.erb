@@ -10,15 +10,6 @@
     (acoes#show é JSON), mas o dia em que tiver, sem isto ele responderia
     "Content missing" — foi exatamente o que aconteceu em Novidades. %>
 <turbo-frame id="acoes-lista" target="_top" data-turbo-action="advance">
-  <%# Aviso do ?destaque=ID (clique num card da home). Fica DENTRO do frame: ao
-      trocar de chip o destaque some junto com o realce do card. %>
-  <% if @destaque %>
-    <div class="acoes-membro-filtro">
-      <span>Em destaque: <strong><%= @destaque.titulo %></strong></span>
-      <a href="<%= acoes_path %>" data-turbo-frame="acoes-lista">Ver todas →</a>
-    </div>
-  <% end %>
-
   <div class="acoes-toolbar" data-controller="acoes">
     <div class="chips">
       <% [ [ nil, "Todos" ], [ "Artigo", "Artigos" ], [ "Evento", "Eventos" ], [ "Projeto", "Projetos" ] ].each do |val, label| %>

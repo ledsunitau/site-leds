@@ -55,11 +55,11 @@ class AcoesController < ApplicationController
                          por_pagina: POR_PAGINA).to_a
 
         # ?destaque=ID vem do card da home (acoes#show é JSON, não tem página):
-        # a ação clicada abre esta lista já no topo e realçada. Só na página 1 —
-        # nas seguintes o realce apareceria fora de lugar.
+        # a ação clicada abre esta lista em primeiro lugar. Só na página 1 — nas
+        # seguintes ela apareceria fora de ordem.
         if params[:destaque].present? && @pagina == 1
-          @destaque = escopo.includes(:detalhe, thumbnail_attachment: :blob).find_by(id: params[:destaque])
-          @acoes = [ @destaque ] + (@acoes - [ @destaque ]) if @destaque
+          destaque = escopo.includes(:detalhe, thumbnail_attachment: :blob).find_by(id: params[:destaque])
+          @acoes = [ destaque ] + (@acoes - [ destaque ]) if destaque
         end
 
         preload_cards_de_acao(@acoes)
