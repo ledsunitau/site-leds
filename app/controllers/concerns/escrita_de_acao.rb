@@ -75,9 +75,9 @@ module EscritaDeAcao
     when Projeto
       substitui_juncao_auditada(detalhe.projeto_tecnologias, :tecnologia_id,
                                 ids_do_payload(:tecnologia_ids))
-      substitui_colecao(detalhe.contribuicoes, contribuicoes_do_payload)
+      substitui_colecao(detalhe.contribuicoes, papeis_do_payload(:contribuicoes))
     when Evento
-      substitui_colecao(detalhe.evento_membros, lista_do_payload(:evento_membros, :member_id, :papel))
+      substitui_colecao(detalhe.evento_membros, papeis_do_payload(:evento_membros))
       atualiza_convidados(detalhe)
     when Artigo
       substitui_colecao(detalhe.autores,
@@ -86,16 +86,17 @@ module EscritaDeAcao
     end
   end
 
-  # Contribuição é (membro, papel), mas quem preenche pensa por PESSOA: a mesma
-  # pessoa acumula backend + infra no mesmo projeto. Por isso o painel manda uma
-  # linha por membro com `papeis: []`, e a API segue mandando um `papel` por
-  # item — as duas formas viram a mesma lista de {member_id, papel}.
+  # Contribuição e participação em evento são (membro, papel), mas quem preenche
+  # pensa por PESSOA: a mesma pessoa acumula backend + infra no mesmo projeto, ou
+  # organiza E participa do mesmo evento. Por isso o painel manda uma linha por
+  # membro com `papeis: []`, e a API segue mandando um `papel` por item — as duas
+  # formas viram a mesma lista de {member_id, papel}.
   #
   # .uniq porque marcar o mesmo par duas vezes (duas linhas do mesmo membro) é
   # erro de digitação, não pedido de violar o índice único: salvar em silêncio é
   # melhor que devolver 422 e perder o formulário inteiro.
-  def contribuicoes_do_payload
-    lista = lista_do_payload(:contribuicoes, :member_id, :papel, { papeis: [] })
+  def papeis_do_payload(chave)
+    lista = lista_do_payload(chave, :member_id, :papel, { papeis: [] })
     return nil if lista.nil?
 
     lista.flat_map { |item|

@@ -94,6 +94,41 @@ class PainelConteudoTest < ActionDispatch::IntegrationTest
     assert_equal %w[backend frontend infra], marcados.sort
   end
 
+  # RF-ACO-04: mesma forma do projeto — o índice único do evento também é
+  # (evento, membro, papel), então quem organiza E participa é UMA linha.
+  test "uma linha de participação com vários papéis vira um registro por papel" do
+    sign_in users(:diretor)
+    membro = members(:membro_comum)
+
+    post painel_acoes_path, params: {
+      acao: {
+        tipo: "evento", titulo: "Semana da computação", status: "publicada",
+        evento: { data_inicio: 10.days.from_now.to_fs(:db) },
+        evento_membros: {
+          "0" => { member_id: membro.id, papeis: [ "", "organizador", "participante" ] },
+          "zzz_marcador" => { member_id: "" }
+        }
+      }
+    }
+
+    participacoes = Acao.find_by(titulo: "Semana da computação").detalhe.evento_membros
+    assert_equal %w[organizador participante], participacoes.pluck(:papel).sort
+    assert_equal [ membro.id ], participacoes.pluck(:member_id).uniq
+  end
+
+  test "o formulário do evento traz uma linha por membro, não uma por papel" do
+    evento = eventos(:hackathon)
+    # diretor_cientifica já organiza (fixture); passa a participar também
+    evento.evento_membros.create!(member: members(:diretor_cientifica), papel: "participante")
+
+    sign_in users(:diretor)
+    get edit_painel_acao_path(acoes(:acao_hackathon))
+    assert_response :success
+
+    # três participações, duas pessoas — duas linhas
+    assert_select ".painel-colecao-linhas select[name^='acao[evento_membros]'][name$='[member_id]']", count: 2
+  end
+
   test "esvaziar uma coleção pela tela realmente esvazia" do
     acao = acoes(:acao_site)
     assert acao.detalhe.contribuicoes.any?, "fixture precisa ter contribuição"

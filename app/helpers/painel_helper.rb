@@ -18,7 +18,8 @@ module PainelHelper
         [ "Ações", painel_acoes_path, nil ],
         [ "Novidades", painel_posts_path, nil ],
         [ "Ideias", painel_ideias_path, nil ],
-        [ "Catálogos", painel_catalogos_path, nil ]
+        [ "Catálogos", painel_catalogos_path, nil ],
+        [ "Funções", painel_funcoes_path, nil ]
       ] ],
       [ "Parceiros", [
         [ "Parceiros", painel_parceiros_path, nil ],

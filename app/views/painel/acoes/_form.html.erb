@@ -121,7 +121,8 @@
             campos: [
               { nome: "member_id", tipo: :select, rotulo: "Membro", opcoes: @membros.map { |m| [ m.name, m.id ] },
                 valor: ->(c) { c.first.member_id } },
-              { nome: "papeis", tipo: :checks, rotulo: "Papéis", opcoes: Contribuicao::PAPEIS.map { |p| [ p.humanize, p ] },
+              { nome: "papeis", tipo: :checks, rotulo: "Papéis",
+                opcoes: @funcoes_projeto.map { |f| [ f.nome.humanize, f.nome ] },
                 valor: ->(c) { c.map(&:papel) } }
             ] %>
 
@@ -146,12 +147,18 @@
         O estado do evento (vai acontecer / acontecendo / já aconteceu) é derivado das datas — não se escolhe.
       </p>
 
+      <%# Uma linha por membro, igual às contribuições do projeto: o índice único
+          é (evento, membro, papel), então quem organiza E participa é uma pessoa
+          com dois papéis, não duas linhas. %>
       <%= render "painel/acoes/colecao",
             titulo: "Membros presentes", chave: "evento_membros", vazio: "Nenhum membro.",
-            itens: (detalhe.persisted? ? detalhe.evento_membros.includes(member: :user) : []),
+            itens: (detalhe.persisted? ? detalhe.evento_membros.includes(member: :user).group_by(&:member_id).values : []),
             campos: [
-              { nome: "member_id", tipo: :select, rotulo: "Membro", opcoes: @membros.map { |m| [ m.name, m.id ] } },
-              { nome: "papel", tipo: :select, rotulo: "Papel", opcoes: EventoMembro::PAPEIS.map { |p| [ p.humanize, p ] } }
+              { nome: "member_id", tipo: :select, rotulo: "Membro", opcoes: @membros.map { |m| [ m.name, m.id ] },
+                valor: ->(c) { c.first.member_id } },
+              { nome: "papeis", tipo: :checks, rotulo: "Papéis",
+                opcoes: @funcoes_evento.map { |f| [ f.nome.humanize, f.nome ] },
+                valor: ->(c) { c.map(&:papel) } }
             ] %>
 
       <%= render "painel/acoes/colecao",

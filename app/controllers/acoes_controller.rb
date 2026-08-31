@@ -241,8 +241,11 @@ class AcoesController < ApplicationController
       end
     when Evento
       participacoes = detalhe.evento_membros.includes(member: :user)
-      json[:organizadores] = participacoes.select(&:organizador?).map { |em| participante_json(em) }
-      json[:participantes] = participacoes.select(&:participante?).map { |em| participante_json(em) }
+      # papel virou varchar livre (tabela `funcoes`), então não há mais
+      # predicado de enum. Estes dois nomes são protegidos no cadastro justamente
+      # para este contrato não quebrar; papel extra não entra em nenhuma lista.
+      json[:organizadores] = participacoes.select { |em| em.papel == "organizador" }.map { |em| participante_json(em) }
+      json[:participantes] = participacoes.select { |em| em.papel == "participante" }.map { |em| participante_json(em) }
       # sem id: convidados são recriados a cada edição (replace-all)
       json[:convidados] = detalhe.convidados.includes(:links).map do |c|
         { nome: c.nome, bio: c.bio, links: c.links.map { |l| { rede: l.rede, url: l.url } } }
