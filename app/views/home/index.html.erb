@@ -118,7 +118,7 @@
           <% @acoes.each_with_index do |a, i| %>
             <% cat = a.detalhe_type.downcase %>
             <% cor = cores_acoes[i % cores_acoes.size] %>
-            <article class="action-card" style="--accent:<%= cor %>">
+            <a class="action-card" href="<%= acao_path(a) %>" style="--accent:<%= cor %>">
               <div class="action-media" style="background-image:url('<%= card_image_url(a) %>')"></div>
               <div class="action-body">
                 <div class="meta-row">
@@ -128,7 +128,7 @@
                 <h3><%= a.titulo %></h3>
                 <p><%= truncate(a.descricao.to_s, length: 150) %></p>
               </div>
-            </article>
+            </a>
           <% end %>
         </div>
         <div class="btn-end" style="margin-top:24px"><a href="<%= acoes_path %>" class="btn btn-primary">Veja mais →</a></div>
@@ -181,7 +181,7 @@
           <% end %>
         </div>
       </div>
-      <div class="btn-end" style="margin-top:18px"><a href="#" class="btn btn-primary">Veja mais →</a></div>
+      <div class="btn-end" style="margin-top:18px"><a href="<%= members_path %>" class="btn btn-primary">Veja mais →</a></div>
     </section>
 
     <%# ---- Notícias & blog (do banco) ---- %>
@@ -194,20 +194,20 @@
         <% destaques = @posts.first(3); resto = @posts.drop(3) %>
         <div class="cards-3" style="margin:24px 0">
           <% destaques.each_with_index do |p, i| %>
-            <article class="news-card">
+            <a class="news-card" href="<%= post_path(p) %>">
               <div class="news-media" style="background-image:url('<%= card_image_url(p) %>')">
                 <span class="tag solid" style="--tag-color:<%= cores_novidades[i % cores_novidades.size] %>"><%= p.noticia? ? "Notícia" : "Blog" %></span>
               </div>
               <div class="news-body">
                 <p><%= p.caller.presence || p.titulo %></p>
               </div>
-            </article>
+            </a>
           <% end %>
         </div>
         <% if resto.any? %>
           <div class="news-list">
             <% resto.each_with_index do |p, i| %>
-              <a class="news-row" href="#">
+              <a class="news-row" href="<%= post_path(p) %>">
                 <span class="tag outline" style="--tag-color:<%= cores_novidades[i % cores_novidades.size] %>"><%= p.noticia? ? "Notícia" : "Blog" %></span>
                 <span class="meta-mono row-date"><%= data_por_extenso(p.published_at) %></span>
                 <span class="row-title"><%= p.titulo %></span>
@@ -216,7 +216,7 @@
             <% end %>
           </div>
         <% end %>
-        <div class="btn-end" style="margin-top:24px"><a href="#" class="btn btn-primary">Veja mais →</a></div>
+        <div class="btn-end" style="margin-top:24px"><a href="<%= posts_path %>" class="btn btn-primary">Veja mais →</a></div>
       <% else %>
         <div class="empty-state" style="margin-top:24px">
           <span class="empty-mono">// nada por aqui ainda</span>

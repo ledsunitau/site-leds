@@ -24,6 +24,23 @@ Rails.application.configure do
   # Uploads no Cloudflare R2 (RNF-13). Ver config/storage.yml (serviço :r2).
   config.active_storage.service = :r2
 
+  # PROXY em vez do redirect padrão. O redirect devolvia um 302 com
+  # `Cache-Control: max-age=300` (o default de service_urls_expire_in) apontando
+  # para uma URL assinada do R2 que morria nos MESMOS 300s. Quem reaproveitasse o
+  # 302 no fim da janela seguia uma assinatura vencida, o R2 respondia 403 e a
+  # imagem sumia — restava o background-color da caixa. Era o bug de "a foto da
+  # novidade fica branca depois de um tempo, mas aparece ao abrir a notícia":
+  # a listagem repete as MESMAS URLs para todo visitante (são elas que ficam
+  # paradas em cache), enquanto a página do artigo pede uma URL fria.
+  #
+  # O proxy não tem assinatura para expirar e serve os bytes com
+  # `Cache-Control: public, max-age=1 ano`, então o Cloudflare cacheia de vez.
+  # Não custa request a mais: o redirect JÁ passava pelo app uma vez por imagem.
+  # Vale para TODO anexo do site (post, membro, produto, parceiro, ação) porque
+  # rails_blob_path/rails_representation_path são rotas `direct` que despacham
+  # por esta config — FotoUrl não precisou mudar.
+  config.active_storage.resolve_model_to_route = :rails_storage_proxy
+
   # Acesso via proxy SSL do Kamal (Let's Encrypt) atrás do Cloudflare (modo Full).
   config.assume_ssl = true
   config.force_ssl = true

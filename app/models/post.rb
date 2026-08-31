@@ -27,11 +27,17 @@ class Post < ApplicationRecord
   # DUAS variantes porque os dois usos da capa têm tamanhos muito diferentes, e
   # servir a menor nos dois é exatamente o defeito que o b9bf7c7 corrigiu na foto
   # de membro:
-  #   :card   720x480 — .novidade-media no grid/carrossel/relacionadas. A coluna
+  #   :card   720x480 — .novidade-media no grid e nas relacionadas. A coluna
   #           do grid de 3 dá ~373px, então 720 cobre 2x.
-  #   :banner 1600x900 — .artigo-banner da página da notícia, que mede 1180x506
-  #           CSS (.wrap de 1260 menos 80 de padding, aspect-ratio 21/9). Recebia
-  #           a :card de 640 e subia 1,8x — ~3,7x em tela HiDPI.
+  #   :banner 1600x900 — as caixas FULL-BLEED de 1180 CSS (.wrap de 1260 menos 80
+  #           de padding): .artigo-banner da página da notícia (1180x506,
+  #           aspect 21/9) e .carrossel-media do destaque de /novidades
+  #           (1180x590, aspect 16/8). Ambas já receberam a :card e subiram
+  #           ~1,7x — mais de 3x em tela HiDPI.
+  #
+  # A regra é a CAIXA, não o tipo de tela: qualquer lugar de 1180 pede :banner.
+  # O carrossel usava :card porque foi tratado como "card", e é esse o erro que
+  # a lista acima já cometeu uma vez.
   has_one_attached :thumbnail do |anexo|
     anexo.variant :card,   resize_to_limit: [ 720, 480 ],  **ImagemValidavel::VARIANTE
     anexo.variant :banner, resize_to_limit: [ 1600, 900 ], **ImagemValidavel::VARIANTE
