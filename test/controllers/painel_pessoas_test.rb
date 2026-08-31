@@ -119,13 +119,16 @@ class PainelPessoasTest < ActionDispatch::IntegrationTest
     assert_equal "http://lattes.cnpq.br/123", membro.lattes_url
   end
 
-  # Vira href no card público: esquema que não seja http(s) não entra.
+  # Vira href no card público: esquema que não seja http(s) não entra — nem
+  # escondido depois de uma quebra de linha (o que $ deixaria passar).
   test "link do membro com esquema perigoso é recusado" do
     membro = members(:membro_comum)
-    membro.github_url = "javascript:alert(1)"
 
-    assert_not membro.valid?
-    assert_includes membro.errors[:github_url].join, "http"
+    [ "javascript:alert(1)", "https://ok.com\njavascript:alert(1)" ].each do |perigoso|
+      membro.github_url = perigoso
+      assert_not membro.valid?, "#{perigoso.inspect} não podia passar"
+      assert_includes membro.errors[:github_url].join, "http"
+    end
   end
 
   test "remover perfil de membro preserva a conta" do

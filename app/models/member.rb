@@ -27,8 +27,12 @@ class Member < ApplicationRecord
   validate :padrinho_nao_pode_ser_si_mesmo
   # Os três links viram href no card (members/index): só http(s) entra, senão um
   # "javascript:…" colado no painel viraria XSS em todo mundo que abre a aba.
+  #
+  # Ancorado nas DUAS pontas (\A…\z, não $): com âncora só no começo, um
+  # "https://ok\njavascript:alert(1)" passa — $ casa em fim de LINHA. O \S+
+  # fecha a mesma porta pelo outro lado, barrando o espaço e a quebra de linha.
   validates :github_url, :linkedin_url, :lattes_url, allow_blank: true,
-            format: { with: %r{\Ahttps?://}i, message: "precisa começar com http:// ou https://" }
+            format: { with: %r{\Ahttps?://\S+\z}i, message: "precisa começar com http:// ou https://" }
 
   delegate :name, :discord_username, :email, to: :user
 
