@@ -29,7 +29,9 @@
           <div class="carrossel-track" data-carrossel-target="track">
             <% @carrossel.each do |p| %>
               <a class="carrossel-slide" href="<%= post_path(p) %>" draggable="false" data-carrossel-target="slide">
-                <div class="carrossel-media" style="background-image:url('<%= card_image_url(p) %>')">
+                <%# :banner, não :card — o slide é full-bleed (1180x590 CSS) e a
+                    :card tem 720 de largura. Mesma razão do .artigo-banner. %>
+                <div class="carrossel-media" style="background-image:url('<%= banner_image_url(p) %>')">
                   <span class="tag solid" style="--tag-color:var(--cat-<%= p.tipo %>)"><%= p.noticia? ? "Notícia" : "Blog" %></span>
                 </div>
                 <div class="carrossel-info">

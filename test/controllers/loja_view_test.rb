@@ -101,6 +101,22 @@ class LojaViewTest < ActionDispatch::IntegrationTest
 
   # --- avaliações: só quem comprou, uma vez (#LOJA4) ---
 
+  # Os testes abaixo montam os params à mão, então nunca viram que o FORM
+  # renderizado nomeava os campos como "[avaliacao][nota]" (fields_for sobre um
+  # form sem scope) e que todo envio real morria em 400. Este cobre a lacuna:
+  # afirma os nomes que params.require(:avaliacao) exige.
+  test "form de avaliação usa os nomes que o controller exige" do
+    Checkout.do_carrinho(users(:ana)).marcar_pago!
+    sign_in users(:ana)
+    get produto_path(produtos(:camiseta))
+
+    assert_response :success
+    assert_select "form.avaliacao-form" do
+      assert_select "textarea[name=?]", "avaliacao[comentario]"
+      assert_select "input[type=hidden][name=?]", "avaliacao[nota]"
+    end
+  end
+
   test "só quem comprou avalia, e no máximo uma vez" do
     # ana compra a camiseta (carrinho fixture → pedido pago)
     pedido = Checkout.do_carrinho(users(:ana))

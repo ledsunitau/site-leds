@@ -7,10 +7,15 @@
 # (membro, post, parceiro), mas a loja exige login para LER (RN-17): o JSON está
 # protegido, o byte da imagem não.
 # DECISÃO (deploy): NÃO gatear o byte. Membro/post/produto passam pelas MESMAS
-# rotas do Active Storage; gatear só produto exigiria proxy mode + rota autenticada
-# custom por anexo. Custo alto para baixa sensibilidade (fotos de produto, catálogo
-# já protegido, signed_id não-enumerável). Alavanca se um dia importar: proxy mode
-# autenticado só para as imagens da loja.
+# rotas do Active Storage; gatear só produto exigiria uma rota autenticada custom
+# por anexo. Custo alto para baixa sensibilidade (fotos de produto, catálogo já
+# protegido, signed_id não-enumerável). Isso continua valendo tal e qual.
+#
+# Produção usa PROXY mode (config/environments/production.rb) desde o bug da foto
+# que sumia: a rota de proxy é tão pública quanto a de redirect, então nada aqui
+# muda — o que mudou foi só a entrega do byte. A alavanca de gatear a loja, se um
+# dia importar, continua sendo uma rota autenticada custom, agora sem precisar
+# trocar o modo antes.
 #
 #   include ImagemValidavel
 #   valida_imagem :thumbnail

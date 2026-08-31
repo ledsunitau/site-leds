@@ -164,22 +164,29 @@
 
       <%# Form: só quem comprou e ainda não avaliou %>
       <% if @pode_avaliar && !@ja_avaliou %>
-        <%= form_with url: produto_avaliacoes_path(@produto), method: :post, class: "avaliacao-form" do |f| %>
-          <%= f.fields_for :avaliacao do |af| %>
-            <%= af.text_area :comentario, rows: 3, required: true,
-                  placeholder: "Escreva sua avaliação", class: "auth-field-input" %>
-            <div class="avaliacao-form-baixo">
-              <div class="star-picker" data-avaliacao-target="picker">
-                <span>Sua avaliação</span>
-                <% (1..5).each do |n| %>
-                  <button type="button" class="star-btn" data-nota="<%= n %>"
-                          data-action="avaliacao#escolher" aria-label="<%= n %> estrelas">★</button>
-                <% end %>
-              </div>
-              <%= af.hidden_field :nota, data: { avaliacao_target: "nota" } %>
-              <%= f.submit "Post Review", class: "btn btn-primary" %>
+        <%# scope: :avaliacao é obrigatório — é ele que nomeia os campos como
+            avaliacao[nota]/avaliacao[comentario], que é o que o
+            params.require(:avaliacao) do controller exige. Antes daqui saía um
+            fields_for :avaliacao sobre um form SEM model/scope: o object_name era
+            nil e os campos viravam "[avaliacao][nota]", com o colchete solto na
+            frente. O Rack 3 não descarta mais esse colchete, então a chave de topo
+            virava "[avaliacao]", o require levantava ParameterMissing e o envio
+            morria em 400 — sem nada na tela além do 400.html. %>
+        <%= form_with scope: :avaliacao, url: produto_avaliacoes_path(@produto),
+                      method: :post, class: "avaliacao-form" do |f| %>
+          <%= f.text_area :comentario, rows: 3, required: true,
+                placeholder: "Escreva sua avaliação", class: "auth-field-input" %>
+          <div class="avaliacao-form-baixo">
+            <div class="star-picker" data-avaliacao-target="picker">
+              <span>Sua avaliação</span>
+              <% (1..5).each do |n| %>
+                <button type="button" class="star-btn" data-nota="<%= n %>"
+                        data-action="avaliacao#escolher" aria-label="<%= n %> estrelas">★</button>
+              <% end %>
             </div>
-          <% end %>
+            <%= f.hidden_field :nota, data: { avaliacao_target: "nota" } %>
+            <%= f.submit "Publicar avaliação", class: "btn btn-primary" %>
+          </div>
         <% end %>
       <% elsif @ja_avaliou %>
         <p class="avaliacao-aviso">Você já avaliou este produto. Valeu! ⭐</p>

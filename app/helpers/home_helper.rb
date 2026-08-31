@@ -6,10 +6,11 @@ module HomeHelper
     FotoUrl.para(record.thumbnail, :card) || image_path("card-placeholder.svg")
   end
 
-  # Capa em tamanho de HERO (.artigo-banner, 1180x506 CSS). Existe separada da
+  # Capa nas caixas FULL-BLEED de 1180 CSS: .artigo-banner (1180x506) e
+  # .carrossel-media do destaque de /novidades (1180x590). Existe separada da
   # card_image_url porque servir a :card aqui é ampliar uma imagem de 720 em uma
   # caixa de 1180 — o mesmo defeito que a foto de membro tinha antes do b9bf7c7.
-  # Só Post declara :banner; card e carrossel continuam na :card.
+  # Só Post declara :banner; o grid de 3 (~379px) continua na :card.
   def banner_image_url(record)
     FotoUrl.para(record.thumbnail, :banner) || image_path("card-placeholder.svg")
   end
