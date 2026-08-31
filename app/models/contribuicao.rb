@@ -6,8 +6,10 @@ class Contribuicao < ApplicationRecord
   belongs_to :projeto
   belongs_to :member
 
-  PAPEIS = %w[backend frontend ui_ux design infra outro].freeze
-  enum :papel, PAPEIS.index_by(&:itself), validate: true
-
+  # A lista vive na tabela `funcoes` (cadastrável pelo painel), não num enum:
+  # papel novo não pode exigir deploy. Lambda porque `in:` é avaliado uma vez na
+  # carga da classe — cadastrar uma função só valeria depois de reiniciar.
+  validates :papel, inclusion: { in: ->(_) { Funcao.nomes_de("projeto") },
+                                 message: "não é uma função cadastrada" }
   validates :papel, uniqueness: { scope: [ :projeto_id, :member_id ] }
 end

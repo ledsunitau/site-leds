@@ -6,8 +6,10 @@ class EventoMembro < ApplicationRecord
   belongs_to :evento
   belongs_to :member
 
-  PAPEIS = %w[organizador participante].freeze
-  enum :papel, PAPEIS.index_by(&:itself), validate: true
-
+  # Mesma razão da Contribuicao: a lista é cadastro, não enum. organizador e
+  # participante ficam protegidos na tabela porque a API separa as duas listas
+  # por esses nomes.
+  validates :papel, inclusion: { in: ->(_) { Funcao.nomes_de("evento") },
+                                 message: "não é uma função cadastrada" }
   validates :papel, uniqueness: { scope: [ :evento_id, :member_id ] }
 end

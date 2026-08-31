@@ -1,0 +1,56 @@
+<% content_for :title, "Funções — Gestão LEDS" %>
+<% content_for :painel_titulo, "Funções" %>
+
+<p class="painel-dica">
+  Os papéis que uma pessoa pode exercer em cada modalidade de ação — eles alimentam
+  os checkboxes de <strong>Contribuições</strong> (projeto) e <strong>Membros presentes</strong>
+  (evento) no formulário de ação. A mesma pessoa pode acumular vários.
+  O número ao lado é quantas atribuições usam a função. Renomear reescreve essas
+  atribuições junto; apagar só é possível com zero usos.
+</p>
+
+<div class="painel-grid-2">
+  <% { "projeto" => "Projeto", "evento" => "Evento" }.each do |modalidade, titulo| %>
+    <% itens = @por_modalidade[modalidade] || [] %>
+    <section class="painel-panel">
+      <h3 class="painel-panel-title"><%= titulo %> <span class="painel-linha-meta"><%= itens.size %></span></h3>
+
+      <ul class="painel-linhas">
+        <% itens.each do |funcao| %>
+          <% usos = @uso[modalidade][funcao.nome].to_i %>
+          <li class="painel-linha painel-catalogo-linha">
+            <%= form_with url: painel_funcao_path(funcao), method: :patch,
+                          class: "painel-linha-form", scope: :item do |f| %>
+              <%# renomear reescreve as atribuições junto; só as protegidas travam %>
+              <%= f.text_field :nome, value: funcao.nome, class: "painel-input", required: true,
+                    readonly: funcao.protegida?,
+                    title: (funcao.protegida? ? "Função do sistema: a API separa as listas por ela." : nil) %>
+              <%= f.submit "Salvar", class: "painel-mini" unless funcao.protegida? %>
+            <% end %>
+
+            <span class="painel-linha-meta"><%= usos %> uso(s)</span>
+            <% if funcao.protegida? %>
+              <%# organizador/participante sustentam o JSON público do evento %>
+              <span class="painel-linha-meta" title="Função do sistema: a API separa as listas por ela.">fixa</span>
+            <% else %>
+              <%= button_to "×", painel_funcao_path(funcao), method: :delete,
+                    class: "painel-mini perigo",
+                    form: { data: { turbo_confirm: "Apagar “#{funcao.nome}”?" } } %>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+
+      <% if itens.empty? %>
+        <p class="painel-chart-vazio">// vazio</p>
+      <% end %>
+
+      <hr class="painel-sep">
+      <%= form_with url: painel_funcoes_path, method: :post, class: "painel-linha-form", scope: :item do |f| %>
+        <%= f.hidden_field :modalidade, value: modalidade %>
+        <%= f.text_field :nome, placeholder: "Nova função", class: "painel-input", required: true %>
+        <%= f.submit "Criar", class: "btn btn-primary btn-sm" %>
+      <% end %>
+    </section>
+  <% end %>
+</div>

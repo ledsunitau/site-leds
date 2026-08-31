@@ -100,6 +100,8 @@ class Painel::AcoesController < Painel::BaseController
     @temas = Tema.order(:nome)
     @congressos = Congresso.order(:nome)
     @parceiros = Parceiro.order(:nome)
+    @funcoes_projeto = Funcao.de("projeto")
+    @funcoes_evento = Funcao.de("evento")
     # idealizador só sai de ideia APROVADA e que ainda não virou ação (o model
     # valida os dois; o select evita oferecer o que seria recusado)
     @ideias = Ideia.aprovada.where.missing(:acao).order(:titulo)

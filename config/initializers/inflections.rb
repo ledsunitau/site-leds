@@ -32,6 +32,7 @@ ActiveSupport::Inflector.inflections(:en) do |inflect|
   inflect.irregular "acao", "acoes"
   inflect.irregular "tecnologia", "tecnologias"
   inflect.irregular "contribuicao", "contribuicoes"
+  inflect.irregular "funcao", "funcoes"
   inflect.irregular "apresentacao", "apresentacoes"
   inflect.irregular "autor", "autores"
   inflect.irregular "avaliacao", "avaliacoes"

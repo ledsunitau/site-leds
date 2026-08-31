@@ -626,8 +626,7 @@ CREATE TABLE public.contribuicoes (
     member_id bigint NOT NULL,
     papel character varying NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT contribuicoes_papel_check CHECK (((papel)::text = ANY ((ARRAY['backend'::character varying, 'frontend'::character varying, 'ui_ux'::character varying, 'design'::character varying, 'infra'::character varying, 'outro'::character varying])::text[])))
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -1224,8 +1223,7 @@ CREATE TABLE public.evento_membros (
     member_id bigint NOT NULL,
     papel character varying NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT evento_membros_papel_check CHECK (((papel)::text = ANY ((ARRAY['organizador'::character varying, 'participante'::character varying])::text[])))
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -1280,6 +1278,40 @@ CREATE SEQUENCE public.eventos_id_seq
 --
 
 ALTER SEQUENCE public.eventos_id_seq OWNED BY public.eventos.id;
+
+
+--
+-- Name: funcoes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.funcoes (
+    id bigint NOT NULL,
+    modalidade character varying NOT NULL,
+    nome character varying NOT NULL,
+    protegida boolean DEFAULT false NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT funcoes_modalidade_check CHECK (((modalidade)::text = ANY ((ARRAY['projeto'::character varying, 'evento'::character varying])::text[])))
+);
+
+
+--
+-- Name: funcoes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.funcoes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: funcoes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.funcoes_id_seq OWNED BY public.funcoes.id;
 
 
 --
@@ -2526,6 +2558,13 @@ ALTER TABLE ONLY public.eventos ALTER COLUMN id SET DEFAULT nextval('public.even
 
 
 --
+-- Name: funcoes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.funcoes ALTER COLUMN id SET DEFAULT nextval('public.funcoes_id_seq'::regclass);
+
+
+--
 -- Name: gestoes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2992,6 +3031,14 @@ ALTER TABLE ONLY public.evento_membros
 
 ALTER TABLE ONLY public.eventos
     ADD CONSTRAINT eventos_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: funcoes funcoes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.funcoes
+    ADD CONSTRAINT funcoes_pkey PRIMARY KEY (id);
 
 
 --
@@ -3713,6 +3760,13 @@ CREATE INDEX index_evento_membros_on_member_id ON public.evento_membros USING bt
 --
 
 CREATE INDEX index_eventos_on_data_inicio ON public.eventos USING btree (data_inicio);
+
+
+--
+-- Name: index_funcoes_on_modalidade_and_nome; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_funcoes_on_modalidade_and_nome ON public.funcoes USING btree (modalidade, nome);
 
 
 --
@@ -4875,6 +4929,7 @@ ALTER TABLE ONLY public.itens_pedido
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260831120000'),
 ('20260830120001'),
 ('20260830120000'),
 ('20260827120000'),

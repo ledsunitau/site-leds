@@ -244,6 +244,8 @@ Rails.application.routes.draw do
 
     # Conteúdo: ações (projeto/evento/artigo), novidades e ideias.
     resources :acoes, only: %i[index new create edit update destroy]
+    # Papéis das ações (backend, organizador…): eram enum + CHECK, viraram cadastro.
+    resources :funcoes, only: %i[index create update destroy]
     resources :posts, only: %i[index new create edit update destroy] do
       member do
         get :versoes

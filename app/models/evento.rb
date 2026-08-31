@@ -3,7 +3,8 @@ class Evento < ApplicationRecord
 
   has_one :acao, as: :detalhe, dependent: :destroy
   has_many :evento_membros, dependent: :destroy
-  has_many :membros, through: :evento_membros, source: :member
+  # distinct pelo mesmo motivo do Projeto: a junção é (evento, membro, PAPEL).
+  has_many :membros, -> { distinct }, through: :evento_membros, source: :member
   has_many :convidados, dependent: :destroy
 
   validates :data_inicio, presence: true

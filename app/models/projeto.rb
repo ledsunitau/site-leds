@@ -7,7 +7,10 @@ class Projeto < ApplicationRecord
   has_many :projeto_tecnologias, dependent: :destroy
   has_many :tecnologias, through: :projeto_tecnologias
   has_many :contribuicoes, dependent: :destroy
-  has_many :membros, through: :contribuicoes, source: :member
+  # distinct porque a junção é (projeto, membro, PAPEL): quem faz backend+infra
+  # tem duas contribuições e voltaria como dois Members — dois avatares iguais no
+  # card e o contador "+N" inflado.
+  has_many :membros, -> { distinct }, through: :contribuicoes, source: :member
 
   SITUACOES = %w[em_desenvolvimento finalizado].freeze
   enum :situacao, SITUACOES.index_by(&:itself), validate: true

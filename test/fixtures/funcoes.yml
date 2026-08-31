@@ -1,0 +1,37 @@
+# Espelho da semente da migration FuncoesCadastraveis. O banco de teste nasce do
+# structure.sql (só o esquema, sem os dados da migration), então sem estas linhas
+# TODO papel gravado nas contribuições e participações vira 422 na validação.
+backend:
+  modalidade: projeto
+  nome: backend
+
+frontend:
+  modalidade: projeto
+  nome: frontend
+
+ui_ux:
+  modalidade: projeto
+  nome: ui_ux
+
+design:
+  modalidade: projeto
+  nome: design
+
+infra:
+  modalidade: projeto
+  nome: infra
+
+outro:
+  modalidade: projeto
+  nome: outro
+
+# protegidas: a API separa `organizadores`/`participantes` por estes nomes
+organizador:
+  modalidade: evento
+  nome: organizador
+  protegida: true
+
+participante:
+  modalidade: evento
+  nome: participante
+  protegida: true
