@@ -64,6 +64,7 @@ class Painel::MembrosController < Painel::BaseController
     # tecnologia_ids: [""] no fim é o hidden do check_box_tag múltiplo — o
     # Rails filtra o vazio sozinho, e sem ele desmarcar tudo não enviaria a
     # chave e as skills antigas ficariam.
-    params.expect(member: [ :user_id, :bio, :founder, :padrinho_id, :foto, { tecnologia_ids: [] } ])
+    params.expect(member: [ :user_id, :bio, :founder, :padrinho_id, :foto,
+                            :github_url, :linkedin_url, :lattes_url, { tecnologia_ids: [] } ])
   end
 end

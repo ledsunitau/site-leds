@@ -22,6 +22,7 @@
           <th>Cargo vigente</th>
           <th>Diretoria</th>
           <th>Padrinho</th>
+          <th>Links</th>
           <th>Tags</th>
           <th class="acoes"></th>
         </tr>
@@ -53,6 +54,17 @@
             </td>
             <td><%= mandato&.diretoria&.nome || "—" %></td>
             <td><%= membro.padrinho&.name || "—" %></td>
+            <%# quais dos três links do card já estão preenchidos — a pergunta
+                "essa pessoa tem Lattes?" se responde da listagem %>
+            <td>
+              <% preenchidos = { "GH" => membro.github_url, "IN" => membro.linkedin_url,
+                                 "LT" => membro.lattes_url }.select { |_, url| url.present? }.keys %>
+              <% if preenchidos.any? %>
+                <% preenchidos.each do |sigla| %><span class="painel-tag-mono"><%= sigla %></span><% end %>
+              <% else %>
+                <span class="painel-td-sub">—</span>
+              <% end %>
+            </td>
             <td><% if membro.founder? %><span class="painel-tag-mono">FUNDADOR</span><% end %></td>
             <td class="acoes">
               <%= link_to "Editar", edit_painel_membro_path(membro), class: "painel-mini" %>

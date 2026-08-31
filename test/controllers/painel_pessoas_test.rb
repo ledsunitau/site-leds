@@ -105,6 +105,29 @@ class PainelPessoasTest < ActionDispatch::IntegrationTest
     assert_equal [ tecnologias(:ruby).id ], membro.tecnologia_ids
   end
 
+  # Os links do card (GitHub/LinkedIn/Lattes) só têm esta rota de escrita.
+  test "editar membro grava os links do card" do
+    membro = members(:membro_comum)
+    sign_in users(:diretor)
+
+    patch painel_membro_path(membro), params: { member: {
+      github_url: "https://github.com/fulano", lattes_url: "http://lattes.cnpq.br/123"
+    } }
+
+    membro.reload
+    assert_equal "https://github.com/fulano", membro.github_url
+    assert_equal "http://lattes.cnpq.br/123", membro.lattes_url
+  end
+
+  # Vira href no card público: esquema que não seja http(s) não entra.
+  test "link do membro com esquema perigoso é recusado" do
+    membro = members(:membro_comum)
+    membro.github_url = "javascript:alert(1)"
+
+    assert_not membro.valid?
+    assert_includes membro.errors[:github_url].join, "http"
+  end
+
   test "remover perfil de membro preserva a conta" do
     membro = members(:membro_comum)
     conta = membro.user_id

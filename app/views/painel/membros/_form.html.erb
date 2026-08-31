@@ -40,6 +40,25 @@
     </label>
   </div>
 
+  <%# Os três links do card (members/index): sem rota de escrita até aqui, as
+      colunas existiam e ninguém conseguia preencher. Vazio = link não aparece. %>
+  <div class="painel-form-grid">
+    <label class="painel-campo">
+      <span>GitHub <em>(opcional)</em></span>
+      <%= f.url_field :github_url, class: "painel-input", placeholder: "https://github.com/usuario" %>
+    </label>
+
+    <label class="painel-campo">
+      <span>LinkedIn <em>(opcional)</em></span>
+      <%= f.url_field :linkedin_url, class: "painel-input", placeholder: "https://www.linkedin.com/in/usuario" %>
+    </label>
+
+    <label class="painel-campo">
+      <span>Lattes <em>(opcional)</em></span>
+      <%= f.url_field :lattes_url, class: "painel-input", placeholder: "http://lattes.cnpq.br/0000000000000000" %>
+    </label>
+  </div>
+
   <fieldset class="painel-fieldset">
     <legend>Skills do card</legend>
     <div class="painel-checks">

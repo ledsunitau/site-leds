@@ -25,6 +25,10 @@ class Member < ApplicationRecord
 
   validates :user_id, uniqueness: true
   validate :padrinho_nao_pode_ser_si_mesmo
+  # Os três links viram href no card (members/index): só http(s) entra, senão um
+  # "javascript:…" colado no painel viraria XSS em todo mundo que abre a aba.
+  validates :github_url, :linkedin_url, :lattes_url, allow_blank: true,
+            format: { with: %r{\Ahttps?://}i, message: "precisa começar com http:// ou https://" }
 
   delegate :name, :discord_username, :email, to: :user
 
