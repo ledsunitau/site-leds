@@ -76,6 +76,18 @@ class ListagensPublicasTest < ActionDispatch::IntegrationTest
     assert_equal Acao.publicadas.count, cards("acao-card")
   end
 
+  # A lista segue a data que o card MOSTRA (evento: início; projeto/artigo:
+  # finalização), não a data de cadastro — as fixtures nascem todas juntas, então
+  # ordenar por created_at daria a ordem dos ids.
+  test "ações: ordem é a data do acontecido, não a do cadastro" do
+    get acoes_path, headers: { "Accept" => "text/html" }
+    titulos = css_select(".acao-card .acao-titulo").map(&:text)
+    assert_equal [ acoes(:acao_hackathon).titulo,  # evento daqui a 30 dias
+                   acoes(:acao_site).titulo,       # projeto finalizado 2026-01-15
+                   acoes(:acao_artigo).titulo ],   # artigo finalizado 2025-11-20
+                 titulos
+  end
+
   # Card da home aponta para ?destaque=ID (acoes#show é JSON): a ação clicada
   # abre a lista em primeiro lugar, sem esconder as outras.
   test "ações: ?destaque põe a ação clicada em primeiro" do

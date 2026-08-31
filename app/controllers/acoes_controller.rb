@@ -41,7 +41,7 @@ class AcoesController < ApplicationController
       # restringe às ações daquele membro (RF-MEM).
       format.html do
         @membro_filtro = Member.find_by(id: params[:membro])
-        base = @membro_filtro ? @membro_filtro.acoes_participadas : Acao.publicadas.order(created_at: :desc)
+        base = (@membro_filtro ? @membro_filtro.acoes_participadas : Acao.publicadas).por_data_do_acontecido
 
         @tipo = TIPOS_FILTRO.include?(filtro(:tipo)) ? filtro(:tipo) : nil
         @busca = filtro(:q)

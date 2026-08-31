@@ -38,6 +38,24 @@ class Acao < ApplicationRecord
 
   scope :publicadas, -> { where(status: "publicada") }
 
+  # Ordem da vitrine: pela data em que a ação ACONTECEU (evento: início;
+  # projeto/artigo: finalização), não pela data em que foi cadastrada — é a
+  # mesma data que o card mostra (data_da_acao). O detalhe é polimórfico, então
+  # são três LEFT JOINs e um COALESCE; sem data (em desenvolvimento) a ação
+  # está acontecendo AGORA e vai pro topo (NULLS FIRST), com o cadastro
+  # desempatando. reorder porque o escopo de origem costuma vir por created_at.
+  scope :por_data_do_acontecido, -> {
+    joins(<<~SQL.squish)
+      LEFT JOIN eventos ON acoes.detalhe_type = 'Evento' AND eventos.id = acoes.detalhe_id
+      LEFT JOIN projetos ON acoes.detalhe_type = 'Projeto' AND projetos.id = acoes.detalhe_id
+      LEFT JOIN artigos ON acoes.detalhe_type = 'Artigo' AND artigos.id = acoes.detalhe_id
+    SQL
+      .reorder(Arel.sql(
+        "COALESCE(eventos.data_inicio, projetos.data_finalizacao, artigos.data_finalizacao) DESC NULLS FIRST, " \
+        "acoes.created_at DESC"
+      ))
+  }
+
   private
 
   # só ideia aprovada vira ação (RF-IDE-04 → RF-ACO-07)
