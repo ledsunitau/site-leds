@@ -10,10 +10,19 @@
     (acoes#show é JSON), mas o dia em que tiver, sem isto ele responderia
     "Content missing" — foi exatamente o que aconteceu em Novidades. %>
 <turbo-frame id="acoes-lista" target="_top" data-turbo-action="advance">
+  <%# Aviso do ?destaque=ID (clique num card da home). Fica DENTRO do frame: ao
+      trocar de chip o destaque some junto com o realce do card. %>
+  <% if @destaque %>
+    <div class="acoes-membro-filtro">
+      <span>Em destaque: <strong><%= @destaque.titulo %></strong></span>
+      <a href="<%= acoes_path %>" data-turbo-frame="acoes-lista">Ver todas →</a>
+    </div>
+  <% end %>
+
   <div class="acoes-toolbar" data-controller="acoes">
     <div class="chips">
       <% [ [ nil, "Todos" ], [ "Artigo", "Artigos" ], [ "Evento", "Eventos" ], [ "Projeto", "Projetos" ] ].each do |val, label| %>
-        <a href="<%= url_com(tipo: val, pagina: nil) %>" data-turbo-frame="acoes-lista"
+        <a href="<%= url_com(tipo: val, pagina: nil, destaque: nil) %>" data-turbo-frame="acoes-lista"
            class="chip <%= 'active' if @tipo == val %>"><%= label %></a>
       <% end %>
 
@@ -26,7 +35,7 @@
           tem que voltar para a página 1 a cada busca nova. %>
       <%= form_with url: request.path, method: :get,
                     data: { acoes_target: "form", turbo_frame: "acoes-lista" } do %>
-        <% request.query_parameters.except("q", "pagina").each do |chave, valor| %>
+        <% request.query_parameters.except("q", "pagina", "destaque").each do |chave, valor| %>
           <%= hidden_field_tag chave, valor, id: nil %>
         <% end %>
         <button type="button" class="chip chip-lupa" aria-label="Pesquisar" data-action="acoes#toggleBusca">

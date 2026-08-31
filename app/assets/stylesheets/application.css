@@ -492,6 +492,8 @@ h1, h2, h3, p { margin: 0; }
   box-shadow: inset 0 0 0 1px var(--border-hair);
 }
 .acao-card[hidden] { display: none; }
+/* ação vinda do card da home (?destaque=ID) */
+.acao-card.destacada { box-shadow: inset 0 0 0 1px var(--leds-yellow), 0 0 24px rgba(255, 238, 4, .12); }
 .acao-media {
   position: relative; background-color: #111; background-size: cover; background-position: center; min-height: 200px;
   /* card não tem mais overflow:hidden (por causa do popover), então a mídia
@@ -1944,6 +1946,7 @@ body.lightbox-aberto { overflow: hidden; }
 .avaliacao-corpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .avaliacao-topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .avaliacao-topo strong { font-size: 14px; color: var(--text-strong); }
+.avaliacao-autor { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
 .avaliacao-corpo p { margin: 0; color: var(--text-lead); font-size: 14px; line-height: 1.6; }
 
 /* Form de avaliação */

@@ -118,7 +118,8 @@
           <% @acoes.each_with_index do |a, i| %>
             <% cat = a.detalhe_type.downcase %>
             <% cor = cores_acoes[i % cores_acoes.size] %>
-            <a class="action-card" href="<%= acao_path(a) %>" style="--accent:<%= cor %>">
+            <%# acoes#show é JSON: o card leva para a lista de Ações com esta em destaque %>
+            <a class="action-card" href="<%= acoes_path(destaque: a.id) %>" style="--accent:<%= cor %>">
               <div class="action-media" style="background-image:url('<%= card_image_url(a) %>')"></div>
               <div class="action-body">
                 <div class="meta-row">

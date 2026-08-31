@@ -4,16 +4,18 @@
   <span class="avaliacao-avatar"><%= iniciais(avaliacao.autor&.name.presence || "Anônimo") %></span>
   <div class="avaliacao-corpo">
     <div class="avaliacao-topo">
-      <% if avaliacao.autor %>
-        <%= link_to usuario_path(avaliacao.autor) do %>
-          <strong><%= nome_com_emblema(avaliacao.autor) %></strong>
+      <span class="avaliacao-autor">
+        <% if avaliacao.autor %>
+          <%= link_to usuario_path(avaliacao.autor) do %>
+            <strong><%= nome_com_emblema(avaliacao.autor) %></strong>
+          <% end %>
+          <% if avaliacao.autor.emblema_destaque %>
+            <%= emblema_icone(avaliacao.autor.emblema_destaque, tamanho: "mini") %>
+          <% end %>
+        <% else %>
+          <strong>Usuário</strong>
         <% end %>
-        <% if avaliacao.autor.emblema_destaque %>
-          <%= emblema_icone(avaliacao.autor.emblema_destaque, tamanho: "mini") %>
-        <% end %>
-      <% else %>
-        <strong>Usuário</strong>
-      <% end %>
+      </span>
       <%= estrelas(avaliacao.nota) %>
     </div>
     <p><%= avaliacao.comentario %></p>

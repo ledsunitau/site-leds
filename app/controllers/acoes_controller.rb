@@ -53,6 +53,15 @@ class AcoesController < ApplicationController
         @total_paginas = total_de_paginas(escopo, por_pagina: POR_PAGINA)
         @acoes = paginar(escopo.includes(:detalhe, thumbnail_attachment: :blob),
                          por_pagina: POR_PAGINA).to_a
+
+        # ?destaque=ID vem do card da home (acoes#show é JSON, não tem página):
+        # a ação clicada abre esta lista já no topo e realçada. Só na página 1 —
+        # nas seguintes o realce apareceria fora de lugar.
+        if params[:destaque].present? && @pagina == 1
+          @destaque = escopo.includes(:detalhe, thumbnail_attachment: :blob).find_by(id: params[:destaque])
+          @acoes = [ @destaque ] + (@acoes - [ @destaque ]) if @destaque
+        end
+
         preload_cards_de_acao(@acoes)
 
         # Clique em chip/página é requisição de FRAME: renderiza só a lista. Sem

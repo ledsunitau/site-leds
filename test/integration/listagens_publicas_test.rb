@@ -76,6 +76,19 @@ class ListagensPublicasTest < ActionDispatch::IntegrationTest
     assert_equal Acao.publicadas.count, cards("acao-card")
   end
 
+  # Card da home aponta para ?destaque=ID (acoes#show é JSON): a ação clicada
+  # abre a lista no topo e realçada; sem o parâmetro nada muda.
+  test "ações: ?destaque põe a ação clicada em primeiro e realçada" do
+    alvo = acoes(:acao_artigo)
+    get acoes_path(destaque: alvo.id), headers: { "Accept" => "text/html" }
+    assert_response :success
+    assert_equal Acao.publicadas.count, cards("acao-card"), "destaque não pode filtrar a lista"
+    assert_select ".acoes-list .acao-card:first-child.destacada .acao-titulo", alvo.titulo
+
+    get acoes_path, headers: { "Accept" => "text/html" }
+    assert_select ".acao-card.destacada", false
+  end
+
   test "ações: chip de tipo filtra no servidor" do
     get acoes_path(tipo: "Evento"), headers: { "Accept" => "text/html" }
     assert_response :success
