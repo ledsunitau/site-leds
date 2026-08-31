@@ -54,6 +54,46 @@ class PainelConteudoTest < ActionDispatch::IntegrationTest
     assert_equal "backend", acao.detalhe.contribuicoes.first.papel
   end
 
+  # RF-ACO-03: o índice único é (projeto, membro, papel) — uma pessoa acumula
+  # papéis. A tela manda UMA linha por membro com vários `papeis` marcados.
+  test "uma linha de contribuição com vários papéis vira um registro por papel" do
+    sign_in users(:diretor)
+    membro = members(:membro_comum)
+
+    post painel_acoes_path, params: {
+      acao: {
+        tipo: "projeto", titulo: "Portal multipapel", status: "publicada",
+        projeto: { situacao: "em_desenvolvimento" },
+        contribuicoes: {
+          # o "" é o campo escondido que mantém a chave viva quando se
+          # desmarca tudo; o par repetido é erro de digitação, não 422
+          "0" => { member_id: membro.id, papeis: [ "", "backend", "infra", "backend" ] },
+          "zzz_marcador" => { member_id: "" }
+        }
+      }
+    }
+
+    contribuicoes = Acao.find_by(titulo: "Portal multipapel").detalhe.contribuicoes
+    assert_equal %w[backend infra], contribuicoes.pluck(:papel).sort
+    assert_equal [ membro.id ], contribuicoes.pluck(:member_id).uniq
+  end
+
+  test "o formulário traz uma linha por membro com os papéis dele marcados" do
+    projeto = projetos(:site_liga)
+    membro = members(:membro_comum)
+    projeto.contribuicoes.create!(member: membro, papel: "infra")
+
+    sign_in users(:diretor)
+    get edit_painel_acao_path(acoes(:acao_site))
+    assert_response :success
+
+    # dois membros, duas linhas — não uma por contribuição. Escopo nas linhas
+    # renderizadas: o <template> da linha nova também casaria com o seletor.
+    assert_select ".painel-colecao-linhas select[name^='acao[contribuicoes]'][name$='[member_id]']", count: 2
+    marcados = css_select("input[name*='[papeis][]'][checked]").map { |i| i["value"] }
+    assert_equal %w[backend frontend infra], marcados.sort
+  end
+
   test "esvaziar uma coleção pela tela realmente esvazia" do
     acao = acoes(:acao_site)
     assert acao.detalhe.contribuicoes.any?, "fixture precisa ter contribuição"

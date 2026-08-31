@@ -112,12 +112,17 @@
         <%= hidden_field_tag "acao[tecnologia_ids][]", "" %>
       </fieldset>
 
+      <%# Uma LINHA POR MEMBRO, com vários papéis marcáveis: o índice único é
+          (projeto, membro, papel), então acumular backend+infra sempre foi
+          válido — só a tela obrigava a repetir a pessoa uma vez por papel. %>
       <%= render "painel/acoes/colecao",
             titulo: "Contribuições", chave: "contribuicoes", vazio: "Nenhuma contribuição.",
-            itens: (detalhe.persisted? ? detalhe.contribuicoes.includes(member: :user) : []),
+            itens: (detalhe.persisted? ? detalhe.contribuicoes.includes(member: :user).group_by(&:member_id).values : []),
             campos: [
-              { nome: "member_id", tipo: :select, rotulo: "Membro", opcoes: @membros.map { |m| [ m.name, m.id ] } },
-              { nome: "papel", tipo: :select, rotulo: "Papel", opcoes: Contribuicao::PAPEIS.map { |p| [ p.humanize, p ] } }
+              { nome: "member_id", tipo: :select, rotulo: "Membro", opcoes: @membros.map { |m| [ m.name, m.id ] },
+                valor: ->(c) { c.first.member_id } },
+              { nome: "papeis", tipo: :checks, rotulo: "Papéis", opcoes: Contribuicao::PAPEIS.map { |p| [ p.humanize, p ] },
+                valor: ->(c) { c.map(&:papel) } }
             ] %>
 
     <% when "evento" %>
@@ -155,7 +160,10 @@
             campos: [
               { nome: "nome", tipo: :text, rotulo: "Nome" },
               { nome: "bio", tipo: :text, rotulo: "Bio" },
-              { nome: "redes_texto", tipo: :text, rotulo: "Redes (uma por linha: rede: url)",
+              # textarea, não text_field: o servidor separa as redes por LINHA,
+              # e num <input> não dá para digitar quebra de linha.
+              { nome: "redes_texto", tipo: :textarea, rotulo: "Redes (uma por linha)",
+                placeholder: "linkedin: https://…",
                 valor: ->(c) { c.links.map { |l| "#{l.rede}: #{l.url}" }.join("\n") } }
             ] %>
 

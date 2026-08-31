@@ -1,0 +1,51 @@
+<%# Uma linha da coleção. Locals: `chave`, `idx`, `campos`, `item`.
+    item nil = molde da linha nova (idx "__IDX__", trocado pelo Stimulus).
+
+    Renderizado nos DOIS lugares (linhas existentes e <template>) para os dois
+    não divergirem — era duplicado no _colecao e um lado saía sem o outro. %>
+<div class="painel-colecao-linha">
+  <% campos.each do |campo| %>
+    <% nome = "acao[#{chave}][#{idx}][#{campo[:nome]}]" %>
+    <%# campo virtual (não é coluna do model) traz o próprio leitor %>
+    <% valor = item && (campo[:valor] ? campo[:valor].call(item) : item.public_send(campo[:nome])) %>
+
+    <% if campo[:tipo] == :checks %>
+      <%# <label> envolve UM campo só: com vários checkboxes dentro, clicar no
+          rótulo marcaria o primeiro. Aqui o rótulo é <span> e cada opção tem o
+          seu <label>. %>
+      <div class="painel-campo largo">
+        <span><%= campo[:rotulo] %></span>
+        <div class="painel-checks">
+          <% campo[:opcoes].each do |rotulo_opcao, valor_opcao| %>
+            <label class="painel-check-inline">
+              <%= check_box_tag "#{nome}[]", valor_opcao, Array(valor).include?(valor_opcao),
+                    id: "#{chave}_#{idx}_#{campo[:nome]}_#{valor_opcao}" %>
+              <span><%= rotulo_opcao %></span>
+            </label>
+          <% end %>
+        </div>
+        <%# mesma razão da linha-marcador do _colecao: sem um valor sempre
+            enviado, desmarcar TUDO tiraria a chave do payload e os papéis
+            antigos voltariam ao salvar. O servidor descarta o branco. %>
+        <%= hidden_field_tag "#{nome}[]", "", id: nil %>
+      </div>
+    <% else %>
+      <label class="painel-campo">
+        <span><%= campo[:rotulo] %></span>
+        <% case campo[:tipo] %>
+        <% when :select %>
+          <%= select_tag nome, options_for_select(campo[:opcoes], valor),
+                include_blank: campo[:opcional] ? "—" : "escolher…", class: "painel-input compacto" %>
+        <% when :number %>
+          <%= number_field_tag nome, valor, class: "painel-input compacto" %>
+        <% when :textarea %>
+          <%= text_area_tag nome, valor, rows: 3, class: "painel-input", placeholder: campo[:placeholder] %>
+        <% else %>
+          <%= text_field_tag nome, valor, class: "painel-input" %>
+        <% end %>
+      </label>
+    <% end %>
+  <% end %>
+
+  <button type="button" class="painel-mini perigo" data-action="colecao#remover" aria-label="Remover linha">×</button>
+</div>

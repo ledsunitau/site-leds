@@ -1,6 +1,7 @@
 <%# Coleção aninhada com linhas adicionáveis/removíveis.
     Locals: `titulo`, `chave` (nome no payload), `itens`, `campos`, `vazio`.
-    `campos`: [{ nome:, tipo: :text/:select/:number, rotulo:, opcoes:, opcional: }]
+    `campos`: [{ nome:, tipo: :text/:textarea/:select/:number/:checks, rotulo:,
+                 opcoes:, opcional:, valor: ->(item) }]
 
     O índice do name vem de um contador no template para as linhas existentes e
     de Date.now no Stimulus para as novas — só precisa ser único dentro do
@@ -10,30 +11,11 @@
 
   <div class="painel-colecao-linhas" data-colecao-target="linhas">
     <% itens.each_with_index do |item, i| %>
-      <div class="painel-colecao-linha">
-        <% campos.each do |campo| %>
-          <label class="painel-campo">
-            <span><%= campo[:rotulo] %></span>
-            <% nome = "acao[#{chave}][#{i}][#{campo[:nome]}]" %>
-            <%# campo virtual (não é coluna do model) traz o próprio leitor %>
-            <% valor = campo[:valor] ? campo[:valor].call(item) : item.public_send(campo[:nome]) %>
-            <% case campo[:tipo] %>
-            <% when :select %>
-              <%= select_tag nome, options_for_select(campo[:opcoes], valor),
-                    include_blank: campo[:opcional] ? "—" : "escolher…", class: "painel-input compacto" %>
-            <% when :number %>
-              <%= number_field_tag nome, valor, class: "painel-input compacto" %>
-            <% else %>
-              <%= text_field_tag nome, valor, class: "painel-input" %>
-            <% end %>
-          </label>
-        <% end %>
-        <button type="button" class="painel-mini perigo" data-action="colecao#remover" aria-label="Remover linha">×</button>
-      </div>
+      <%= render "painel/acoes/colecao_linha", chave: chave, idx: i, item: item, campos: campos %>
     <% end %>
   </div>
 
-  <p class="painel-chart-vazio" data-colecao-target="vazio" <%= "hidden" if itens.any? %>>// <%= vazio %></p>
+  <p class="painel-colecao-vazio" data-colecao-target="vazio" <%= "hidden" if itens.any? %>>// <%= vazio %></p>
 
   <button type="button" class="painel-mini" data-action="colecao#adicionar">+ adicionar</button>
 
@@ -47,23 +29,6 @@
   <%# Molde da linha nova. <template> não é enviado nem validado pelo browser —
       o Stimulus clona e troca __IDX__ pelo índice. %>
   <template data-colecao-target="molde">
-    <div class="painel-colecao-linha">
-      <% campos.each do |campo| %>
-        <label class="painel-campo">
-          <span><%= campo[:rotulo] %></span>
-          <% nome = "acao[#{chave}][__IDX__][#{campo[:nome]}]" %>
-          <% case campo[:tipo] %>
-          <% when :select %>
-            <%= select_tag nome, options_for_select(campo[:opcoes]),
-                  include_blank: campo[:opcional] ? "—" : "escolher…", class: "painel-input compacto" %>
-          <% when :number %>
-            <%= number_field_tag nome, nil, class: "painel-input compacto" %>
-          <% else %>
-            <%= text_field_tag nome, nil, class: "painel-input" %>
-          <% end %>
-        </label>
-      <% end %>
-      <button type="button" class="painel-mini perigo" data-action="colecao#remover" aria-label="Remover linha">×</button>
-    </div>
+    <%= render "painel/acoes/colecao_linha", chave: chave, idx: "__IDX__", item: nil, campos: campos %>
   </template>
 </fieldset>

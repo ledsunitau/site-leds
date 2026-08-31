@@ -2492,14 +2492,28 @@ a.painel-fila-titulo:hover { color: var(--leds-green); }
 /* ---- Coleções aninhadas ---- */
 .painel-colecao { display: flex; flex-direction: column; gap: 12px; }
 .painel-colecao-linhas { display: flex; flex-direction: column; gap: 10px; }
+/* align-items: flex-start, não flex-end: a linha mistura campos de alturas
+   diferentes (um select ao lado de um bloco de checkboxes ou de um textarea) e
+   com flex-end o select descia para o rodapé da linha, longe do próprio rótulo. */
 .painel-colecao-linha {
-  display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap;
-  padding: 12px; border-radius: var(--radius-btn); background: var(--surface-chip);
+  display: flex; align-items: flex-start; gap: 10px 14px; flex-wrap: wrap;
+  padding: 12px 14px; border-radius: var(--radius-btn); background: var(--surface-chip);
+  box-shadow: inset 0 0 0 1px var(--border-hair);
 }
 .painel-colecao-linha .painel-campo { flex: 1; min-width: 150px; }
+/* o bloco de papéis fica com a sobra: o peso alto empurra o select para uma
+   largura de select, e o basis segura a quebra em telas estreitas */
+.painel-colecao-linha .painel-campo.largo { flex: 4 1 260px; }
 .painel-colecao-linha .painel-input { width: 100%; }
 .painel-colecao-linha .painel-input.compacto { width: 100%; }
+/* o × alinha com os INPUTS, não com o topo dos rótulos */
+.painel-colecao-linha > .painel-mini { margin-top: 22px; flex: 0 0 auto; }
 .painel-colecao > .painel-mini { align-self: flex-start; }
+/* dedicado, e não .painel-chart-vazio: lá o padding de 26px é para o miolo de
+   um gráfico, e aqui abria um buraco entre as linhas e o "+ adicionar" */
+.painel-colecao-vazio {
+  font-family: var(--font-mono); font-size: 12.5px; color: var(--text-faint); margin: 0;
+}
 
 /* ---- Editor de texto rico (Trix) ----
    O Trix traz CSS próprio (gem action_text-trix) desenhado para fundo claro.
@@ -2637,6 +2651,8 @@ trix-toolbar .trix-dialog .trix-button { width: auto; padding: 0 12px; backgroun
 
 @media (max-width: 700px) {
   .painel-colecao-linha { flex-direction: column; align-items: stretch; }
+  /* empilhado, o × não tem rótulo acima com que se alinhar */
+  .painel-colecao-linha > .painel-mini { margin-top: 0; align-self: flex-end; }
   .painel-diff, .painel-diff tbody, .painel-diff tr, .painel-diff th, .painel-diff td { display: block; }
   .painel-diff .seta { display: none; }
 }
