@@ -435,6 +435,10 @@ h1, h2, h3, p { margin: 0; }
   .wrap { padding: 0 18px; }
   .cards-3 { grid-template-columns: 1fr; }
 
+  /* Só a bolinha, para não apertar contra o hambúrguer. O aria-label do link
+     continua dizendo o destino para quem usa leitor de tela. */
+  .entrar-label { display: none; }
+
   .stats { gap: 18px; }
   .stat-divider { display: none; }
 
@@ -1068,7 +1072,7 @@ h1, h2, h3, p { margin: 0; }
   border: none; /* sem a borda, o avatar não encolhe ao equipar um halo */
   box-shadow: 0 0 0 2px var(--surface-page); /* devolve o vão entre avatar e anel */
 }
-.avatar-img, .avatar-initials {
+.avatar-img, .avatar-initials, .entrar-icone {
   position: relative; z-index: 1; width: 38px; height: 38px; border-radius: 50%;
   object-fit: cover; display: grid; place-items: center;
   box-shadow: 0 0 0 2px var(--surface-page);
@@ -1077,6 +1081,18 @@ h1, h2, h3, p { margin: 0; }
   background: var(--surface-card-alt); color: var(--text-strong);
   font-family: var(--font-display); font-weight: 700; font-size: 14px; letter-spacing: .5px;
 }
+
+/* Deslogado: a bolinha do avatar reaproveitada (mesmo anel girando, mesmo miolo
+   do avatar sem foto), com ícone de pessoa e rótulo. É de propósito que seja o
+   mesmo objeto visual: o slot da conta na navbar não muda de forma ao logar. */
+.nav-entrar { display: inline-flex; align-items: center; gap: 10px; }
+.entrar-icone { background: var(--surface-card-alt); color: var(--text-nav); transition: color .18s ease; }
+.entrar-label {
+  font-family: var(--font-mono); font-size: 13px; color: var(--text-nav);
+  transition: color .18s ease;
+}
+.nav-entrar:hover .entrar-icone,
+.nav-entrar:hover .entrar-label { color: var(--text-strong); }
 
 body.no-scroll { overflow: hidden; }
 

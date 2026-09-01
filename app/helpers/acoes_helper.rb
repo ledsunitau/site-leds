@@ -28,12 +28,14 @@ module AcoesHelper
     "microsoftazure" => "azure"
   }.freeze
 
-  # Data do card conforme o tipo: evento usa a data de início; projeto/artigo
-  # mostram "em dev" enquanto não finalizados, senão o mês/ano de finalização.
+  # Data do card conforme o tipo: evento é dia marcado, então vai por extenso
+  # ("12 mai 2026") — o dia é o que importa nele. Projeto/artigo mostram "em dev"
+  # enquanto não finalizados, senão só o mês/ano de finalização, que é a precisão
+  # que uma conclusão tem.
   def data_da_acao(acao)
     d = acao.detalhe
     case d
-    when Evento then mes_ano(d.data_inicio)
+    when Evento then data_por_extenso(d.data_inicio)
     when Projeto, Artigo then d.finalizado? ? mes_ano(d.data_finalizacao) : "em dev"
     else ""
     end

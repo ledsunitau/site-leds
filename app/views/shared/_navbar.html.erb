@@ -29,8 +29,11 @@
         <% end %>
       </div>
 
-      <%# Logado: avatar da conta. Deslogado: nada — o acesso é pelo "Participe
-          da comunidade" na home. %>
+      <%# Logado: avatar da conta. Deslogado: a MESMA bolinha, com ícone de pessoa
+          e o rótulo "Entrar" — este é o único caminho para o login no site (o
+          "Participe da comunidade" da home vai para o convite do Discord, não
+          para o Devise). Fica fora de .nav-links de propósito: dentro dele o
+          acesso sumiria atrás do hambúrguer no mobile. %>
       <% if user_signed_in? %>
         <%# o anel giratório do header é desenhado pelo ::before DESTE botão, não
             pelo avatar. Com halo escolhido, é ele que troca de cor — senão
@@ -41,6 +44,18 @@
                 aria-label="Minha conta" aria-haspopup="dialog">
           <%= render "shared/avatar", user: current_user %>
         </button>
+      <% else %>
+        <a href="<%= new_user_session_path %>" class="nav-entrar" aria-label="Entrar ou criar conta">
+          <span class="account-avatar">
+            <span class="entrar-icone">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+              </svg>
+            </span>
+          </span>
+          <span class="entrar-label">Entrar</span>
+        </a>
       <% end %>
 
       <button class="nav-toggle" type="button" aria-label="Abrir menu" aria-expanded="false"
