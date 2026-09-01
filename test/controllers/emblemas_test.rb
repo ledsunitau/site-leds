@@ -103,6 +103,18 @@ class EmblemasTest < ActionDispatch::IntegrationTest
     assert_equal 1, convite.reload.usos
   end
 
+  test "prefetch do navegador não resgata nem queima vaga" do
+    convite = emblema_convites(:beta_valido)
+    sign_in users(:ana)
+
+    assert_no_difference -> { EmblemaUsuario.count } do
+      get emblema_convite_path(convite.token), headers: { "X-Sec-Purpose" => "prefetch" }
+      get emblema_convite_path(convite.token), headers: { "Sec-Purpose" => "prefetch;prerender" }
+    end
+
+    assert_equal 0, convite.reload.usos
+  end
+
   test "resgatar duas vezes não duplica nem estoura" do
     sign_in users(:ana)
     2.times { get emblema_convite_path(emblema_convites(:beta_valido).token) }

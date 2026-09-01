@@ -130,8 +130,15 @@
         <tbody>
           <% @convites.each do |convite| %>
             <tr>
-              <td class="painel-td-mono">
-                <%= link_to emblema_convite_url(convite.token), emblema_convite_path(convite.token) %>
+              <%# ponytail: texto + botão, nunca uma <a>. O link É a reivindicação
+                  (GET que escreve), então na gestão ele não pode ser clicável:
+                  o prefetch de hover do Turbo resgatava o emblema de quem só
+                  queria copiar. %>
+              <td class="painel-td-mono convite-link">
+                <span><%= emblema_convite_url(convite.token) %></span>
+                <button type="button" class="painel-mini"
+                        data-url="<%= emblema_convite_url(convite.token) %>"
+                        data-action="painel#copiar">Copiar</button>
               </td>
               <td><%= convite.descricao.presence || "—" %></td>
               <td class="painel-td-mono"><%= convite.expira_em ? data_e_hora(convite.expira_em) : "sem prazo" %></td>

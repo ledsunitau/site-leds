@@ -2280,6 +2280,9 @@ select.painel-input { cursor: pointer; }
 .painel-table a { color: var(--text-primary); text-decoration: underline; text-decoration-color: var(--border-strong); }
 .painel-table a:hover { color: var(--text-strong); text-decoration-color: var(--leds-green); }
 .painel-td-mono { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-subtle); white-space: nowrap; }
+/* URL do convite: texto selecionável + botão de copiar, nunca um link. */
+.convite-link { display: flex; align-items: center; gap: 8px; }
+.convite-link span { user-select: all; }
 .painel-td-texto { max-width: 420px; line-height: 1.5; }
 .painel-td-sub { display: block; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-faint); margin-top: 3px; }
 .painel-table th.acoes, .painel-table td.acoes { text-align: right; white-space: nowrap; }

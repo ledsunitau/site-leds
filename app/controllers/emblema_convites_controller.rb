@@ -10,6 +10,10 @@
 class EmblemaConvitesController < ApplicationController
   include RecursoAtivo
 
+  # Este GET escreve, e navegador nenhum sabe disso: o prefetch de hover do
+  # Turbo, o prerender do Chrome e qualquer scanner de link resgatariam o
+  # emblema sem ninguém ter clicado. Todos anunciam a intenção neste header.
+  before_action :ignorar_prefetch
   before_action :authenticate_user!
   exige_recurso "emblemas_ativos"
 
@@ -25,6 +29,11 @@ class EmblemaConvitesController < ApplicationController
   end
 
   private
+
+  def ignorar_prefetch
+    proposito = "#{request.headers['X-Sec-Purpose']} #{request.headers['Sec-Purpose']}"
+    head :no_content if proposito.include?("prefetch") || proposito.include?("prerender")
+  end
 
   # A vaga é reservada ANTES de conceder: o teto de resgates é a promessa do
   # link ("os 10 primeiros"), então o banco decide quem entra. Se a concessão

@@ -15,6 +15,14 @@ export default class extends Controller {
 
   mostrar(e) { this.abrir(e.currentTarget.dataset.vista) }
 
+  // Copiar URL sem navegar até ela (links de convite resgatam ao serem abertos).
+  async copiar(e) {
+    const btn = e.currentTarget
+    await navigator.clipboard.writeText(btn.dataset.url)
+    btn.textContent = "Copiado!"
+    setTimeout(() => (btn.textContent = "Copiar"), 1500)
+  }
+
   abrir(vista) {
     this.tabTargets.forEach((t) => t.classList.toggle("active", t.dataset.vista === vista))
     this.panelTargets.forEach((p) => (p.hidden = p.dataset.vista !== vista))
