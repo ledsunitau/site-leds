@@ -2299,6 +2299,35 @@ select.painel-input { cursor: pointer; }
 /* URL do convite: texto selecionável + botão de copiar, nunca um link. */
 .convite-link { display: flex; align-items: center; gap: 8px; }
 .convite-link span { user-select: all; }
+
+/* Auditoria do link: quem resgatou, em linha própria sob o link. <details>
+   nativo, como .painel-ideia-desc e .escada-svg — nada de JS para abrir.
+   Grid auto-fill: 30 nomes viram colunas em vez de uma lista quilométrica, e
+   em tela estreita reflui sozinho para uma coluna. */
+.painel-table tr.convite-auditoria td { padding-top: 0; }
+.convite-quem summary {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .5px;
+  color: var(--text-faint); cursor: pointer; padding: 2px 0;
+}
+.convite-quem summary:hover { color: var(--text-strong); }
+.convite-quem[open] summary { color: var(--text-subtle); }
+.convite-quem ol {
+  margin: 9px 0 2px; padding: 0; list-style: none; display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 6px 16px;
+}
+.convite-quem li {
+  display: flex; align-items: baseline; gap: 10px; padding: 7px 11px;
+  border-radius: var(--radius-tag); background: var(--surface-chip); font-size: 13px;
+}
+.convite-quem li a { flex: 1; min-width: 0; }
+.convite-ordem {
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--text-faint);
+  min-width: 15px; flex: 0 0 auto;
+}
+.convite-quem time {
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--text-faint);
+  white-space: nowrap;
+}
 .painel-td-texto { max-width: 420px; line-height: 1.5; }
 .painel-td-sub { display: block; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-faint); margin-top: 3px; }
 .painel-table th.acoes, .painel-table td.acoes { text-align: right; white-space: nowrap; }

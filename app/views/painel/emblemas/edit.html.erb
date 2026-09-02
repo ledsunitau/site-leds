@@ -161,9 +161,33 @@
                 <% end %>
                 <%= button_to "Remover", painel_emblema_convite_path(@emblema, convite), method: :delete,
                       class: "painel-mini perigo",
-                      form: { data: { turbo_confirm: "Remover este link? Quem já resgatou continua com o emblema." } } %>
+                      form: { data: { turbo_confirm: "Remover este link? Quem já resgatou continua com o emblema, mas o registro de quem veio por ele se perde." } } %>
               </td>
             </tr>
+            <%# Auditoria: quem entrou por ESTE link, em ordem de chegada. Só
+                existe como lista confiável porque cada pessoa resgata uma vez
+                por link. Linha própria com colspan — a coluna "Resgates" é
+                estreita demais para nome e data. %>
+            <% resgates = convite.conquistas.sort_by(&:ocorrido_em) %>
+            <% if resgates.any? %>
+              <tr class="convite-auditoria">
+                <td colspan="6">
+                  <details class="convite-quem">
+                    <summary>ver quem resgatou (<%= resgates.size %>)</summary>
+                    <ol>
+                      <% resgates.each_with_index do |resgate, i| %>
+                        <% pessoa = resgate.emblema_usuario.user %>
+                        <li>
+                          <span class="convite-ordem"><%= i + 1 %></span>
+                          <%= link_to pessoa.name, usuario_path(pessoa) %>
+                          <time><%= data_e_hora(resgate.ocorrido_em) %></time>
+                        </li>
+                      <% end %>
+                    </ol>
+                  </details>
+                </td>
+              </tr>
+            <% end %>
           <% end %>
         </tbody>
       </table>

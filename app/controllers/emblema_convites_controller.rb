@@ -35,12 +35,17 @@ class EmblemaConvitesController < ApplicationController
     head :no_content if proposito.include?("prefetch") || proposito.include?("prerender")
   end
 
-  # A vaga é reservada ANTES de conceder: o teto de resgates é a promessa do
-  # link ("os 10 primeiros"), então o banco decide quem entra. Se a concessão
-  # não render nada (já tinha o emblema único), a vaga volta — senão um clique
-  # repetido queimaria a vaga de outra pessoa.
+  # ORDEM: quem já resgatou sai ANTES de mexer no contador. Se a checagem viesse
+  # depois, um link esgotado responderia "as vagas acabaram" a quem só clicou de
+  # novo no próprio resgate — e ainda daria um sobe-desce no contador a cada F5.
+  #
+  # Passada essa porta, a vaga é reservada ANTES de conceder: o teto é a promessa
+  # do link ("os 10 primeiros"), então o banco decide quem entra. Se mesmo assim
+  # a concessão não render nada, a vaga volta — senão um clique repetido queimaria
+  # a vaga de outra pessoa.
   def conceder(convite)
     emblema = convite.emblema
+    return ja_resgatou(convite) if convite.resgatado_por?(current_user)
     return recusar(convite) unless convite.reservar_vaga!
 
     registro = emblema.conceder!(current_user, origem: "convite", convite: convite,
@@ -49,8 +54,31 @@ class EmblemaConvitesController < ApplicationController
       redirect_to emblemas_path, notice: mensagem(emblema, registro)
     else
       EmblemaConvite.where(id: convite.id).update_all("usos = usos - 1")
-      redirect_to emblemas_path, notice: "Você já tem o emblema “#{emblema.nome}”."
+      redirect_to emblemas_path, **recusa_da_concessao(emblema)
     end
+  end
+
+  # Clique repetido no mesmo link. No emblema único isso é só "você já tem"; no
+  # escalonável a pessoa PODE ganhar de novo, mas por outro link, e a mensagem
+  # tem que ensinar isso — senão parece bug.
+  def ja_resgatou(convite)
+    emblema = convite.emblema
+    aviso = if emblema.unico?
+              "Você já tem o emblema “#{emblema.nome}”."
+            else
+              "Você já resgatou este link. Cada link vale uma vez — evento novo, link novo."
+            end
+    redirect_to emblemas_path, notice: aviso
+  end
+
+  # conceder! devolve nil por DOIS motivos (Emblema#registrar) e a mensagem tem
+  # que dizer qual: ou a pessoa já tinha o emblema único, ou o teto de donos
+  # fechou antes dela. Ter o vínculo separa os casos — quem não tem, não entrou.
+  # Teto é recusa, então vai em alert; "você já tem" é só informação.
+  def recusa_da_concessao(emblema)
+    return { notice: "Você já tem o emblema “#{emblema.nome}”." } if emblema.emblema_usuarios.exists?(user: current_user)
+
+    { alert: "O emblema “#{emblema.nome}” atingiu o teto de #{emblema.limite_donos} donos." }
   end
 
   def recusar(convite)

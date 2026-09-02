@@ -228,6 +228,29 @@ class PainelEmblemasTest < ActionDispatch::IntegrationTest
     assert_equal 10, convite.vagas_restantes
   end
 
+  # Auditoria: com um resgate por link, convite.conquistas É a lista de quem
+  # entrou por aquele link — e a gestão precisa vê-la na página do emblema.
+  test "a página do emblema lista quem resgatou cada link" do
+    sign_in users(:membro_user)
+    get emblema_convite_path(emblema_convites(:maratona_link).token)
+
+    sign_in users(:diretor)
+    get edit_painel_emblema_path(emblemas(:maratonista))
+
+    assert_response :success
+    assert_select ".convite-quem" do
+      assert_select "a", text: users(:membro_user).name
+    end
+  end
+
+  test "link sem resgate não gera linha de auditoria" do
+    sign_in users(:diretor)
+    get edit_painel_emblema_path(emblemas(:maratonista))
+
+    assert_response :success
+    assert_select ".convite-quem", false, "link sem resgate não tem o que auditar"
+  end
+
   test "concessão a dedo grava descrição e data retroativa" do
     sign_in users(:diretor)
 

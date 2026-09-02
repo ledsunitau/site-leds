@@ -29,3 +29,19 @@ maratona_link:
   token: tokendamaratonasbc2026000123456789
   ativo: true
   descricao: Maratona SBC 2026
+
+# SEGUNDO link do mesmo emblema escalonável: é assim que se sobe de rank —
+# um evento, um link. Resgatar os dois dá dois registros; resgatar o mesmo
+# duas vezes, não.
+maratona_nacional_link:
+  emblema: maratonista
+  token: tokendamaratonanacional26000123456
+  ativo: true
+  descricao: Maratona SBC 2026 Nacional
+
+# link de emblema com TETO DE DONOS (comprador_pioneiro tem limite_donos: 2),
+# para provar a mensagem de teto no caminho do link
+pioneiro_link:
+  emblema: comprador_pioneiro
+  token: tokendocompradorpioneiro0123456789
+  ativo: true

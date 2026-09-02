@@ -110,7 +110,10 @@ class Painel::EmblemasController < Painel::BaseController
   def carregar_ficha
     @donos = @emblema.emblema_usuarios.recentes
                      .includes(:user, { nivel: :rank }, { conquistas: :concedido_por })
-    @convites = @emblema.convites.recentes.includes(:criado_por)
+    # conquistas + user: a lista "quem resgatou" de cada link. Sem o preload é
+    # uma consulta por link, e o painel mostra todos de uma vez.
+    @convites = @emblema.convites.recentes
+                        .includes(:criado_por, conquistas: { emblema_usuario: :user })
     @niveis = @emblema.niveis.ordenados.includes(:rank)
   end
 

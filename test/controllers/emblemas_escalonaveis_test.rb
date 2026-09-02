@@ -19,13 +19,30 @@ class EmblemasEscalonaveisTest < ActionDispatch::IntegrationTest
     assert_match(/Bronze/, flash[:notice])
   end
 
-  test "resgatar o mesmo link de novo acrescenta registro no escalonável" do
+  # A trava do rank: o escalonável acumula EVENTOS, e cada evento é um link.
+  # Sem isto, um link sem teto de vagas era rank infinito a golpe de F5.
+  test "resgatar o mesmo link de novo não acrescenta registro nem queima vaga" do
+    convite = emblema_convites(:maratona_link)
     sign_in users(:diretor)
-    2.times { get emblema_convite_path(emblema_convites(:maratona_link).token) }
+    2.times { get emblema_convite_path(convite.token) }
+
+    vinculo = emblemas(:maratonista).emblema_usuarios.find_by(user: users(:diretor))
+    assert_equal 1, vinculo.conquistas_count
+    assert_equal "Bronze", vinculo.nivel.nome
+    assert_equal 1, convite.reload.usos, "clique repetido não pode mexer no contador"
+    assert_match(/já resgatou este link/i, flash[:notice])
+  end
+
+  test "dois links diferentes do mesmo emblema acrescentam registro e sobem o rank" do
+    sign_in users(:diretor)
+    get emblema_convite_path(emblema_convites(:maratona_link).token)
+    get emblema_convite_path(emblema_convites(:maratona_nacional_link).token)
 
     vinculo = emblemas(:maratonista).emblema_usuarios.find_by(user: users(:diretor))
     assert_equal 2, vinculo.conquistas_count
     assert_equal "Prata", vinculo.nivel.nome
+    assert_equal [ "Maratona SBC 2026", "Maratona SBC 2026 Nacional" ],
+                 vinculo.conquistas.map(&:descricao).sort
   end
 
   # ------------------------------------------------------------- Vagas
@@ -45,6 +62,22 @@ class EmblemasEscalonaveisTest < ActionDispatch::IntegrationTest
     assert_match(/vagas acabaram/i, flash[:alert])
     assert_not_includes users(:escritor_user).emblemas.reload, emblemas(:convidado_beta)
     assert_equal 2, convite.reload.usos
+  end
+
+  # Teto de donos e "já tem" caem no mesmo retorno nil de conceder!, e por muito
+  # tempo davam a mesma mensagem — dizendo a quem esbarrou no teto que ele já
+  # tinha o emblema, o oposto do que aconteceu.
+  test "emblema lotado recusa o link dizendo do teto, não 'você já tem'" do
+    emblema = emblemas(:comprador_pioneiro)
+    [ users(:ana), users(:membro_user) ].each { |u| emblema.conceder!(u, origem: "concessao") }
+
+    sign_in users(:diretor)
+    get emblema_convite_path(emblema_convites(:pioneiro_link).token)
+
+    assert_match(/teto de 2 donos/i, flash[:alert])
+    assert_nil flash[:notice]
+    assert_not_includes users(:diretor).emblemas.reload, emblema
+    assert_equal 0, emblema_convites(:pioneiro_link).reload.usos, "vaga tem que voltar"
   end
 
   test "resgate repetido de emblema único devolve a vaga" do

@@ -3470,6 +3470,13 @@ CREATE UNIQUE INDEX index_congressos_on_nome ON public.congressos USING btree (n
 
 
 --
+-- Name: index_conquistas_unicas_por_convite; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_conquistas_unicas_por_convite ON public.emblema_conquistas USING btree (convite_id, emblema_usuario_id) WHERE (convite_id IS NOT NULL);
+
+
+--
 -- Name: index_contribuicoes_on_member_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3565,13 +3572,6 @@ CREATE UNIQUE INDEX index_elos_on_pontos_minimos ON public.elos USING btree (pon
 --
 
 CREATE INDEX index_emblema_conquistas_on_concedido_por_id ON public.emblema_conquistas USING btree (concedido_por_id);
-
-
---
--- Name: index_emblema_conquistas_on_convite_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_emblema_conquistas_on_convite_id ON public.emblema_conquistas USING btree (convite_id);
 
 
 --
@@ -4930,6 +4930,7 @@ ALTER TABLE ONLY public.itens_pedido
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260901000000'),
 ('20260831130000'),
 ('20260831120000'),
 ('20260830120001'),

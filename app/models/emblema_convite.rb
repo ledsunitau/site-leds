@@ -31,6 +31,23 @@ class EmblemaConvite < ApplicationRecord
 
   def vagas_restantes = usos_max.present? ? [ usos_max - usos, 0 ].max : nil
 
+  # Um resgate por pessoa POR LINK. O escalonável sobe de rank acumulando EVENTOS
+  # diferentes — cada um com seu link —, não com F5 no mesmo: sem isto, um link
+  # sem teto de vagas era rank infinito a golpe de recarregar a página.
+  #
+  # Vale para os três tipos. Emblema único já era barrado em Emblema#registrar;
+  # o escalonável de métrica não subiria de rank mesmo assim, mas o clique
+  # repetido duplicaria a linha no hover do perfil.
+  #
+  # Quem garante isto de verdade é o índice único parcial em
+  # (convite_id, emblema_usuario_id) — este predicado existe para dar a mensagem
+  # certa antes de queimar uma vaga, não para ser a tranca.
+  def resgatado_por?(user)
+    return false if user.nil?
+
+    conquistas.joins(:emblema_usuario).exists?(emblema_usuarios: { user_id: user.id })
+  end
+
   # Reserva uma vaga e devolve true se conseguiu. UM update condicional, não
   # "checa e depois incrementa": dez pessoas clicando junto num link de 10 vagas
   # passariam todas pela checagem antes de qualquer incremento, e onze entrariam.
