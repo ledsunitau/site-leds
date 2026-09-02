@@ -64,10 +64,10 @@ class EmblemaConvitesController < ApplicationController
   def ja_resgatou(convite)
     emblema = convite.emblema
     aviso = if emblema.unico?
-              "Você já tem o emblema “#{emblema.nome}”."
-            else
-              "Você já resgatou este link. Cada link vale uma vez — evento novo, link novo."
-            end
+      "Você já tem o emblema “#{emblema.nome}”."
+    else
+      "Você já resgatou este link. Cada link vale uma vez — evento novo, link novo."
+    end
     redirect_to emblemas_path, notice: aviso
   end
 
