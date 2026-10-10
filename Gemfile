@@ -78,7 +78,7 @@ gem "paper_trail"
 gem "mission_control-jobs"
 
 # Notificações: evento único → N entregas por destinatário/canal (RF-NOT-01..06)
-gem "noticed", "~> 3.0"
+gem "noticed", "~> 3.1"
 # Web Push (VAPID) para o canal push do navegador (RF-NOT-02)
 gem "web-push", "~> 3.1"
 
